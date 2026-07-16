@@ -162,9 +162,9 @@ body {
   margin-left: auto;
 }
 .sidebar-toggle-btn:hover { background: rgba(255,255,255,0.16); color: #fff; }
-.sidebar.collapsed .sidebar-brand { justify-content: center; padding: 22px 8px 18px; gap: 0; }
+.sidebar.collapsed .sidebar-brand { flex-direction: column; justify-content: center; padding: 16px 8px 14px; gap: 8px; }
 .sidebar.collapsed .brand-text { display: none; }
-.sidebar.collapsed .sidebar-toggle-btn { margin-left: 0; position: absolute; top: 8px; right: 8px; }
+.sidebar.collapsed .sidebar-toggle-btn { margin-left: 0; position: static; }
 .sidebar.collapsed .nav-group-label { display: none; }
 .sidebar.collapsed .nav-item { justify-content: center; padding: 10px 0; gap: 0; }
 .sidebar.collapsed .nav-label { display: none; }
@@ -534,7 +534,8 @@ body {
 #viewPetugas .card-map { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
 #viewPetugas .card-map .card-header { flex-shrink: 0; }
 #viewMap .card-map .card-header { flex-shrink: 0; }
-#viewPetugas .grid-2-3 { align-items: stretch; }
+#viewPetugas { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+#viewPetugas .grid-2-3 { flex: 1; min-height: 0; margin-bottom: 0; align-items: stretch; }
 #viewPetugas .side-panel { min-height: 0; overflow: hidden; }
 #map { flex: 1; min-height: 0; height: auto !important; width: 100%; border-radius: 0 0 var(--radius) var(--radius); }
 #viewMap .side-panel { overflow-y: auto; min-height: 0; }
@@ -755,7 +756,7 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
 ══════════════════════════════════════ */
 .firebase-view { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow-y: auto; }
 .fb-header { display:flex; align-items:center; justify-content:space-between; padding:4px 0 2px; }
-#map-petugas { height: 480px; width: 100%; border-radius: 0 0 var(--radius) var(--radius); }
+#map-petugas { flex: 1; min-height: 0; height: auto !important; width: 100%; border-radius: 0 0 var(--radius) var(--radius); }
 
 /* petugas card in list */
 .petugas-card {
@@ -856,6 +857,8 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
   body, .app, .main { height: auto; overflow: auto; }
   #viewMap .grid-2-3 { height: auto; }
   #map { height: 400px !important; }
+  #viewPetugas .grid-2-3 { height: auto; }
+  #map-petugas { height: 400px !important; }
 }
 </style>
 </head>
@@ -1171,14 +1174,22 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
       <div class="fb-header">
         <div>
           <div class="card-title" style="font-size:16px">👷 Petugas Aktif — GPS Realtime</div>
-          <div style="font-size:12px;color:var(--text-secondary);margin-top:3px">Update otomatis dari Firebase · Setiap petugas yang sedang bertugas · 📋 checkpoint muncul tiap ada laporan pekerjaan masuk</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:3px">Update otomatis dari Firebase · Setiap petugas yang sedang bertugas · 📋 checkpoint default tampilkan hari ini saja (bisa diganti tanggalnya di atas peta)</div>
         </div>
         <span class="tag tag-green" style="font-size:11px;padding:5px 12px">● LIVE</span>
       </div>
       <div class="grid-2-3" style="margin-top:14px;">
         <div class="card card-map">
-          <div class="card-header">
-            <div class="card-title">Peta Posisi Petugas</div>
+          <div class="card-header" style="flex-wrap:wrap;gap:8px;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <div class="card-title">Peta Posisi Petugas</div>
+              <select id="checkpointDateFilter" onchange="onCheckpointDateFilterChange()" title="Filter tanggal checkpoint laporan" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:5px 8px;font-size:11.5px;font-weight:600;background:var(--surface);color:var(--text-1);">
+                <option value="today" selected>📋 Checkpoint: Hari Ini</option>
+                <option value="yesterday">📋 Checkpoint: Kemarin</option>
+                <option value="custom">📋 Checkpoint: Pilih Tanggal…</option>
+              </select>
+              <input type="date" id="checkpointDatePicker" onchange="onCheckpointDateFilterChange()" style="display:none;border:1px solid var(--line);border-radius:var(--radius-xs);padding:4.5px 8px;font-size:11.5px;background:var(--surface);color:var(--text-1);">
+            </div>
             <span class="card-count" id="petugasMapCount">0 petugas</span>
           </div>
           <div id="map-petugas"></div>
@@ -1276,6 +1287,22 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
             </table>
           </div>
         </div>
+        <div class="pagination-bar" id="absensiDetailPagination" style="display:none;">
+          <div class="pagination-info" id="absensiDetailPgInfo">—</div>
+          <div class="pagination-controls">
+            <select class="pg-size" id="absensiDetailPgSize" onchange="onAbsensiDetailPageSizeChange()">
+              <option value="10">10 / halaman</option>
+              <option value="20" selected>20 / halaman</option>
+              <option value="50">50 / halaman</option>
+              <option value="100">100 / halaman</option>
+            </select>
+            <button class="pg-btn" id="absensiDetailPgFirst" onclick="goToAbsensiDetailPage(1)" title="Halaman pertama">«</button>
+            <button class="pg-btn" id="absensiDetailPgPrev" onclick="goToAbsensiDetailPage(absensiDetailPage-1)" title="Sebelumnya">‹</button>
+            <span id="absensiDetailPgNumbers" style="display:flex;gap:6px"></span>
+            <button class="pg-btn" id="absensiDetailPgNext" onclick="goToAbsensiDetailPage(absensiDetailPage+1)" title="Berikutnya">›</button>
+            <button class="pg-btn" id="absensiDetailPgLast" onclick="goToAbsensiDetailPage(absensiDetailTotalPages)" title="Halaman terakhir">»</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1289,13 +1316,53 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
         <div style="display:flex;align-items:center;gap:10px">
           <span id="laporanCount" class="card-count">0 laporan</span>
           <div class="export-group">
-            <button class="btn-export xlsx" onclick="exportLaporanExcel()" title="Export semua laporan ke Excel">📥 Excel</button>
-            <button class="btn-export pdf" onclick="exportLaporanPDF()" title="Export semua laporan ke PDF">📄 PDF</button>
+            <button class="btn-export xlsx" onclick="exportLaporanExcel()" title="Export laporan sesuai filter ke Excel">📥 Excel</button>
+            <button class="btn-export pdf" onclick="exportLaporanPDF()" title="Export laporan sesuai filter ke PDF">📄 PDF</button>
           </div>
         </div>
       </div>
+
+      <!-- Filter: tanggal / ULP / regu -->
+      <div class="card" style="margin-top:14px;padding:14px 16px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
+          <div style="min-width:150px;">
+            <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-2);display:block;margin-bottom:5px">Tanggal</label>
+            <input type="date" id="laporanFilterTanggal" onchange="onLaporanFilterChange()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:7px 10px;font-size:12px;outline:none;background:var(--surface);color:var(--text-1);">
+          </div>
+          <div style="min-width:150px;">
+            <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-2);display:block;margin-bottom:5px">ULP</label>
+            <select id="laporanFilterUlp" onchange="onLaporanFilterChange()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:7px 8px;font-size:12px;background:var(--surface);color:var(--text-1);">
+              <option value="">Semua ULP</option>
+            </select>
+          </div>
+          <div style="min-width:170px;">
+            <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:var(--text-2);display:block;margin-bottom:5px">Regu</label>
+            <select id="laporanFilterRegu" onchange="onLaporanFilterChange()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:7px 8px;font-size:12px;background:var(--surface);color:var(--text-1);">
+              <option value="">Semua Regu</option>
+            </select>
+          </div>
+          <button onclick="resetLaporanFilter()" style="padding:7px 14px;border:1px solid var(--line);border-radius:var(--radius-xs);background:none;font-size:12px;font-weight:600;cursor:pointer;color:var(--text-2)">↺ Reset Filter</button>
+        </div>
+      </div>
+
       <div id="laporanGrid" style="margin-top:14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;">
         <div style="text-align:center;color:var(--text-muted);padding:40px;font-size:13px;grid-column:1/-1">Menunggu data Firebase...</div>
+      </div>
+      <div class="pagination-bar" id="laporanPagination" style="display:none;margin-top:14px;">
+        <div class="pagination-info" id="laporanPgInfo">—</div>
+        <div class="pagination-controls">
+          <select class="pg-size" id="laporanPgSize" onchange="onLaporanPageSizeChange()">
+            <option value="6">6 / halaman</option>
+            <option value="12" selected>12 / halaman</option>
+            <option value="24">24 / halaman</option>
+            <option value="48">48 / halaman</option>
+          </select>
+          <button class="pg-btn" id="laporanPgFirst" onclick="goToLaporanPage(1)" title="Halaman pertama">«</button>
+          <button class="pg-btn" id="laporanPgPrev" onclick="goToLaporanPage(laporanPage-1)" title="Sebelumnya">‹</button>
+          <span id="laporanPgNumbers" style="display:flex;gap:6px"></span>
+          <button class="pg-btn" id="laporanPgNext" onclick="goToLaporanPage(laporanPage+1)" title="Berikutnya">›</button>
+          <button class="pg-btn" id="laporanPgLast" onclick="goToLaporanPage(laporanTotalPages)" title="Halaman terakhir">»</button>
+        </div>
       </div>
     </div>
 
@@ -1535,27 +1602,48 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
               <input id="tiket-lokasi" type="text" placeholder="cth: Gardu GH-024 Jl. Raya Sentani" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;transition:border-color 0.18s" onfocus="this.style.borderColor='var(--pln-blue-light)'" onblur="this.style.borderColor='var(--line)'">
             </div>
             <div>
-              <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">ULP</label>
-              <input id="tiket-ulp" type="text" placeholder="cth: ULP Sentani" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;transition:border-color 0.18s" onfocus="this.style.borderColor='var(--pln-blue-light)'" onblur="this.style.borderColor='var(--line)'">
-            </div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-            <div>
-              <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Koordinat (lat, lng)</label>
-              <input id="tiket-koordinat" type="text" placeholder="cth: -2.5916, 140.6719" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;font-family:var(--mono);outline:none;transition:border-color 0.18s" onfocus="this.style.borderColor='var(--pln-blue-light)'" onblur="this.style.borderColor='var(--line)'" oninput="renderTimTerdekat()">
-            </div>
-            <div>
-              <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Target Volume</label>
+              <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Target Volume <span style="font-weight:400;color:var(--text-3)">(cth: 12 gardu)</span></label>
               <input id="tiket-target" type="number" placeholder="0" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;transition:border-color 0.18s" onfocus="this.style.borderColor='var(--pln-blue-light)'" onblur="this.style.borderColor='var(--line)'">
             </div>
           </div>
+
+          <div style="border-top:1px dashed var(--line);margin:16px 0;padding-top:14px">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);margin-bottom:10px">📌 Tugaskan ke Tim (langsung pilih, bukan berdasarkan GPS)</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px">
+              <div>
+                <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Unit Kerja (ULP) *</label>
+                <select id="tiket-ulp" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;height:38px;background:var(--surface)" onchange="onTiketUlpChange()">
+                  <option value="">— Pilih ULP —</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Tim / Regu *</label>
+                <select id="tiket-regu" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;height:38px;background:var(--surface)" onchange="onTiketReguChange()">
+                  <option value="">— Pilih ULP dulu —</option>
+                </select>
+              </div>
+            </div>
+            <div id="tiket-tim-aktif-panel" style="margin-bottom:4px;background:var(--surface-2);border-radius:var(--radius-xs);padding:10px 12px;">
+              <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);margin-bottom:6px">🟢 Tim yang Sedang Aktif Hari Ini</div>
+              <div id="tiket-tim-aktif-list" style="display:flex;flex-wrap:wrap;gap:6px">
+                <div style="font-size:11px;color:var(--text-3)">Memuat status tim…</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0 12px">
+            <div>
+              <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Titik Koordinat Awal <span style="font-weight:400;color:var(--text-3)">(opsional)</span></label>
+              <input id="tiket-koordinat-awal" type="text" placeholder="cth: -2.5916, 140.6719" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;font-family:var(--mono);outline:none;transition:border-color 0.18s" onfocus="this.style.borderColor='var(--pln-blue-light)'" onblur="this.style.borderColor='var(--line)'">
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Titik Koordinat Akhir <span style="font-weight:400;color:var(--text-3)">(opsional)</span></label>
+              <input id="tiket-koordinat-akhir" type="text" placeholder="cth: -2.6011, 140.6890" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;font-family:var(--mono);outline:none;transition:border-color 0.18s" onfocus="this.style.borderColor='var(--pln-blue-light)'" onblur="this.style.borderColor='var(--line)'">
+            </div>
+          </div>
+
           <div id="tiket-assigned-chip" style="display:none;align-items:center;justify-content:space-between;background:var(--ok-bg);border:1px solid rgba(26,140,60,0.25);border-radius:var(--radius-xs);padding:8px 12px;margin-bottom:12px;font-size:12px">
             <span>📌 Ditugaskan ke: <b id="tiket-assigned-nama"></b></span>
-            <button type="button" onclick="clearAssignTiket()" style="background:none;border:none;color:var(--crit);font-weight:700;cursor:pointer;font-size:12px">Batal</button>
-          </div>
-          <div id="tiket-tim-terdekat" style="display:none;margin-bottom:16px;background:var(--surface-2);border-radius:var(--radius-xs);padding:12px 13px;">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);margin-bottom:8px">🎯 Tim Terdekat dari Lokasi Ini</div>
-            <div id="tiket-tim-terdekat-list" style="display:flex;flex-direction:column;gap:6px"></div>
           </div>
           <div id="tiket-err" style="display:none;background:var(--crit-bg);color:var(--crit);padding:9px 13px;border-radius:var(--radius-xs);font-size:12px;margin-bottom:12px;border:1px solid rgba(220,53,69,0.2)"></div>
           <div style="display:flex;gap:10px">
@@ -1588,7 +1676,7 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
                 </tr>
               </thead>
               <tbody id="tiketBody">
-                <tr><td colspan="9" class="empty">Belum ada penugasan. Buat penugasan baru di atas.</td></tr>
+                <tr><td colspan="10" class="empty">Belum ada penugasan. Buat penugasan baru di atas.</td></tr>
               </tbody>
             </table>
           </div>
@@ -2679,10 +2767,11 @@ async function initFirebase() {
   if (fbApp) return true;
   try {
     const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-    const { getDatabase, ref, onValue, remove, update } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+    const { getDatabase, ref, onValue, remove, update, query, orderByChild, startAt, endAt } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
     fbApp = initializeApp(FB_CONFIG, 'supervisor');
     fbDb  = getDatabase(fbApp);
     window._fbRef = ref; window._fbOnValue = onValue; window._fbRemove = remove; window._fbUpdate = update;
+    window._fbQuery = query; window._fbOrderByChild = orderByChild; window._fbStartAt = startAt; window._fbEndAt = endAt;
     return true;
   } catch(e) {
     console.error('Firebase init gagal:', e);
@@ -3175,7 +3264,7 @@ function statusClass(s) {
   return 'ps-offline';
 }
 
-let lastPetugasEntries = null;   // selalu berisi SEMUA entri mentah (dipakai juga oleh renderTimTerdekat)
+let lastPetugasEntries = null;   // selalu berisi SEMUA entri mentah (dipakai juga oleh renderTimAktif)
 let petugasFilteredEntries = [];  // hasil setelah difilter (search/ULP/status)
 
 // ── Filter (search + ULP + status) ─────────────────
@@ -3379,7 +3468,10 @@ function listenPetugas() {
   const ref = window._fbRef(fbDb, 'petugas');
   fbListeners.petugas = window._fbOnValue(ref, snap => {
     const data = snap.val() || {};
-    const entries = Object.entries(data);
+    // hanya petugas yang absen/update posisi HARI INI — log GPS hari
+    // sebelumnya (belum ke-overwrite / lupa logout) tidak dihitung.
+    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+    const entries = Object.entries(data).filter(([,v]) => v.ts && v.ts >= todayStart.getTime());
 
     // update badge
     const aktif = entries.filter(([,v]) => v.status !== 'Offline').length;
@@ -3400,7 +3492,7 @@ function listenPetugas() {
         petugasMarkers[id] = m;
       }
     });
-    // remove stale markers
+    // remove stale markers (termasuk petugas hari sebelumnya yang tersaring di atas)
     Object.keys(petugasMarkers).forEach(id => {
       if (!seen.has(id)) { mapPetugas.removeLayer(petugasMarkers[id]); delete petugasMarkers[id]; }
     });
@@ -3461,13 +3553,82 @@ function buildCheckpointPopup(l) {
   `;
 }
 
-function listenLaporanCheckpoints() {
-  if (fbListeners.laporanCheckpoint) return;
-  const ref = window._fbRef(fbDb, 'laporan');
-  fbListeners.laporanCheckpoint = window._fbOnValue(ref, snap => {
+// Hitung rentang awal-akhir hari (dalam ms) dari pilihan filter tanggal
+// checkpoint di atas peta "Petugas Aktif". Default: hari ini.
+// UP3 Jayapura beroperasi di WIT (Waktu Indonesia Timur / UTC+9). Batas hari
+// untuk filter checkpoint DIHITUNG BERDASARKAN WIT, bukan zona waktu lokal
+// perangkat yang dipakai membuka dashboard — supaya "Hari Ini"/"Kemarin"
+// tetap konsisten walau dashboard dibuka dari device dengan setting zona
+// waktu lain (mis. laptop di kantor pusat yang di-set WIB).
+const WIT_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+function witDayBounds(y, m, d) {
+  // y,m(1-12),d = tanggal kalender WIT yang dimaksud
+  const start = Date.UTC(y, m - 1, d, 0, 0, 0, 0) - WIT_OFFSET_MS;
+  const end   = Date.UTC(y, m - 1, d, 23, 59, 59, 999) - WIT_OFFSET_MS;
+  return { start, end };
+}
+
+function getCheckpointDateRange() {
+  const mode = document.getElementById('checkpointDateFilter')?.value || 'today';
+  if (mode === 'custom') {
+    const picker = document.getElementById('checkpointDatePicker');
+    if (picker && picker.value) {
+      const [y, m, d] = picker.value.split('-').map(Number);
+      return witDayBounds(y, m, d);
+    }
+  }
+  let epoch = Date.now();
+  if (mode === 'yesterday') epoch -= 24 * 60 * 60 * 1000;
+  const wit = new Date(epoch + WIT_OFFSET_MS); // geser ke "jam dinding" WIT lewat komponen UTC
+  return witDayBounds(wit.getUTCFullYear(), wit.getUTCMonth() + 1, wit.getUTCDate());
+}
+
+// Dipanggil saat user mengganti pilihan filter tanggal checkpoint.
+function onCheckpointDateFilterChange() {
+  const mode = document.getElementById('checkpointDateFilter')?.value;
+  const picker = document.getElementById('checkpointDatePicker');
+  if (picker) {
+    picker.style.display = (mode === 'custom') ? '' : 'none';
+    if (mode === 'custom' && !picker.value) {
+      const t = new Date();
+      picker.value = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+    }
+  }
+  listenLaporanCheckpoints(true);
+}
+
+// Checkpoint laporan di peta "Petugas Aktif" DIBATASI per rentang tanggal
+// terpilih (default: hari ini) — bukan seluruh riwayat laporan — supaya
+// tidak semua checkpoint lama ikut ter-render sekaligus (penyebab lag saat
+// jumlah laporan sudah ribuan). Query dipersempit langsung lewat Firebase
+// (orderByChild('waktu') + startAt/endAt) kalau tersedia; kalau tidak,
+// fallback ke filter di sisi klien seperti sebelumnya.
+// Set forceRefresh=true untuk melepas listener lama & muat ulang saat
+// tanggal filter diganti.
+function listenLaporanCheckpoints(forceRefresh) {
+  if (fbListeners.laporanCheckpoint && !forceRefresh) return;
+  if (fbListeners.laporanCheckpoint) {
+    fbListeners.laporanCheckpoint();       // unsubscribe listener tanggal lama
+    fbListeners.laporanCheckpoint = null;
+  }
+  // bersihkan marker checkpoint tanggal sebelumnya dari peta
+  if (checkpointLayerGroup) {
+    Object.keys(checkpointMarkers).forEach(id => checkpointLayerGroup.removeLayer(checkpointMarkers[id]));
+  }
+  checkpointMarkers = {};
+
+  const { start, end } = getCheckpointDateRange();
+  const baseRef = window._fbRef(fbDb, 'laporan');
+  const canQuery = window._fbQuery && window._fbOrderByChild && window._fbStartAt && window._fbEndAt;
+  const target = canQuery
+    ? window._fbQuery(baseRef, window._fbOrderByChild('waktu'), window._fbStartAt(start), window._fbEndAt(end))
+    : baseRef;
+
+  fbListeners.laporanCheckpoint = window._fbOnValue(target, snap => {
     if (!checkpointLayerGroup) return;
     const data = snap.val() || {};
-    const entries = Object.entries(data).filter(([, l]) => l.lat && l.lng);
+    const entries = Object.entries(data).filter(([, l]) => l.lat && l.lng && l.waktu && l.waktu >= start && l.waktu <= end);
 
     const seen = new Set();
     entries.forEach(([id, l]) => {
@@ -3482,7 +3643,7 @@ function listenLaporanCheckpoints() {
         checkpointMarkers[id] = m;
       }
     });
-    // buang checkpoint yang laporannya sudah dihapus
+    // buang checkpoint yang laporannya sudah dihapus / keluar dari rentang
     Object.keys(checkpointMarkers).forEach(id => {
       if (!seen.has(id)) { checkpointLayerGroup.removeLayer(checkpointMarkers[id]); delete checkpointMarkers[id]; }
     });
@@ -3498,42 +3659,105 @@ const FASE_COLORS = {
   'Selesai':       {bg:'var(--done-bg)',  color:'var(--done)',  border:'rgba(107,122,147,0.35)',icon:'✅'},
 };
 
+function renderAbsensiDetailRowHtml(id, a) {
+  const waktu = a.waktu ? new Date(a.waktu).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '—';
+  const gps = a.lat ? `${a.lat.toFixed(4)}, ${a.lng.toFixed(4)}` : '—';
+  const fotoSrc = a.fotoBase64 || a.fotoUrl || '';
+  const foto = fotoSrc
+    ? `<img class="absen-thumb" src="${fotoSrc}" onclick="bukaFotoFullscreen(this)" title="Lihat foto" style="cursor:pointer">`
+    : '<span style="color:var(--text-muted);font-size:11px">—</span>';
+  const fase = a.fase || a.lokasi || 'Standby';
+  const fc = FASE_COLORS[fase] || FASE_COLORS['Standby'];
+  const faseBadge = `<span class="badge" style="background:${fc.bg};color:${fc.color};border:1px solid ${fc.border}">${fc.icon} ${fase}</span>`;
+  const aksiCell = isAdminMode
+    ? `<td><button class="btn-del" title="Hapus" onclick="hapusAbsensi('${id}')">🗑</button></td>`
+    : '';
+  return `<tr>
+    <td style="font-family:var(--mono);font-size:11px;white-space:nowrap">${waktu}</td>
+    <td style="font-weight:600">${a.regu||'—'}</td>
+    <td>${a.ulp||'—'}</td>
+    <td>${a.anggotaHadir||'—'}</td>
+    <td>${faseBadge}</td>
+    <td style="font-family:var(--mono);font-size:10px;color:var(--text-secondary)">${gps}</td>
+    <td>${foto}</td>
+    ${aksiCell}
+  </tr>`;
+}
+
+// ── Detail table: pagination ──
+let absensiDetailPage = 1;
+let absensiDetailPageSize = 20;
+let absensiDetailTotalPages = 1;
+
+function renderAbsensiDetailTablePaged() {
+  const tbody = document.getElementById('absensiBody');
+  const pagBar = document.getElementById('absensiDetailPagination');
+  const colspan = isAdminMode ? 8 : 7;
+  const entries = lastAbsensiEntries || [];
+  document.getElementById('absensiDetailCount').textContent = entries.length + ' entri';
+
+  if (entries.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${colspan}" class="empty">Belum ada absensi hari ini</td></tr>`;
+    pagBar.style.display = 'none';
+    return;
+  }
+
+  absensiDetailTotalPages = Math.max(1, Math.ceil(entries.length / absensiDetailPageSize));
+  absensiDetailPage = Math.min(Math.max(1, absensiDetailPage), absensiDetailTotalPages);
+
+  const start = (absensiDetailPage - 1) * absensiDetailPageSize;
+  const shown = entries.slice(start, start + absensiDetailPageSize);
+  tbody.innerHTML = shown.map(([id, a]) => renderAbsensiDetailRowHtml(id, a)).join('');
+
+  pagBar.style.display = absensiDetailTotalPages > 1 ? 'flex' : 'none';
+  renderAbsensiDetailPaginationControls();
+}
+
+function renderAbsensiDetailPaginationControls() {
+  const entries = lastAbsensiEntries || [];
+  const start = (absensiDetailPage - 1) * absensiDetailPageSize + 1;
+  const end   = Math.min(absensiDetailPage * absensiDetailPageSize, entries.length);
+  document.getElementById('absensiDetailPgInfo').innerHTML =
+    `Menampilkan <b>${start}–${end}</b> dari <b>${entries.length}</b> entri`;
+
+  document.getElementById('absensiDetailPgFirst').disabled = absensiDetailPage <= 1;
+  document.getElementById('absensiDetailPgPrev').disabled  = absensiDetailPage <= 1;
+  document.getElementById('absensiDetailPgNext').disabled  = absensiDetailPage >= absensiDetailTotalPages;
+  document.getElementById('absensiDetailPgLast').disabled  = absensiDetailPage >= absensiDetailTotalPages;
+
+  const nums = [];
+  const windowStart = Math.max(1, absensiDetailPage - 2);
+  const windowEnd   = Math.min(absensiDetailTotalPages, absensiDetailPage + 2);
+  if (windowStart > 1) { nums.push(1); if (windowStart > 2) nums.push('…'); }
+  for (let n = windowStart; n <= windowEnd; n++) nums.push(n);
+  if (windowEnd < absensiDetailTotalPages) { if (windowEnd < absensiDetailTotalPages - 1) nums.push('…'); nums.push(absensiDetailTotalPages); }
+
+  document.getElementById('absensiDetailPgNumbers').innerHTML = nums.map(n =>
+    n === '…'
+      ? `<span style="padding:0 4px;color:var(--text-3);font-size:12px">…</span>`
+      : `<button class="pg-btn${n===absensiDetailPage?' active':''}" onclick="goToAbsensiDetailPage(${n})">${n}</button>`
+  ).join('');
+}
+
+window.goToAbsensiDetailPage = function(n) {
+  n = Math.min(Math.max(1, n), absensiDetailTotalPages);
+  if (n === absensiDetailPage) return;
+  absensiDetailPage = n;
+  renderAbsensiDetailTablePaged();
+};
+
+window.onAbsensiDetailPageSizeChange = function() {
+  absensiDetailPageSize = parseInt(document.getElementById('absensiDetailPgSize').value, 10) || 20;
+  absensiDetailPage = 1;
+  renderAbsensiDetailTablePaged();
+};
+
 function renderAbsensiTable(todayEntries) {
   lastAbsensiEntries = todayEntries;
 
   // ── Detail table ──────────────────────────────────
-  const tbody = document.getElementById('absensiBody');
-  const colspan = isAdminMode ? 8 : 7;
-  document.getElementById('absensiDetailCount').textContent = todayEntries.length + ' entri';
-
-  if (todayEntries.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="${colspan}" class="empty">Belum ada absensi hari ini</td></tr>`;
-  } else {
-    tbody.innerHTML = todayEntries.map(([id, a]) => {
-      const waktu = a.waktu ? new Date(a.waktu).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '—';
-      const gps = a.lat ? `${a.lat.toFixed(4)}, ${a.lng.toFixed(4)}` : '—';
-      const fotoSrc = a.fotoBase64 || a.fotoUrl || '';
-      const foto = fotoSrc
-        ? `<img class="absen-thumb" src="${fotoSrc}" onclick="bukaFotoFullscreen(this)" title="Lihat foto" style="cursor:pointer">`
-        : '<span style="color:var(--text-muted);font-size:11px">—</span>';
-      const fase = a.fase || a.lokasi || 'Standby';
-      const fc = FASE_COLORS[fase] || FASE_COLORS['Standby'];
-      const faseBadge = `<span class="badge" style="background:${fc.bg};color:${fc.color};border:1px solid ${fc.border}">${fc.icon} ${fase}</span>`;
-      const aksiCell = isAdminMode
-        ? `<td><button class="btn-del" title="Hapus" onclick="hapusAbsensi('${id}')">🗑</button></td>`
-        : '';
-      return `<tr>
-        <td style="font-family:var(--mono);font-size:11px;white-space:nowrap">${waktu}</td>
-        <td style="font-weight:600">${a.regu||'—'}</td>
-        <td>${a.ulp||'—'}</td>
-        <td>${a.anggotaHadir||'—'}</td>
-        <td>${faseBadge}</td>
-        <td style="font-family:var(--mono);font-size:10px;color:var(--text-secondary)">${gps}</td>
-        <td>${foto}</td>
-        ${aksiCell}
-      </tr>`;
-    }).join('');
-  }
+  absensiDetailPage = 1;
+  renderAbsensiDetailTablePaged();
 
   // ── Per-petugas phase log cards ───────────────────
   // Kelompokkan by regu (1 akun login = 1 regu, sesuai skema login baru)
@@ -3750,51 +3974,160 @@ function listenAbsensi() {
   });
 }
 
-let lastLaporanEntries = null;
+let lastLaporanEntries = null;       // selalu berisi SEMUA laporan mentah (dipakai juga oleh edit/hapus)
+let laporanFilteredEntries = [];      // hasil setelah difilter (tanggal/ULP/regu)
+let laporanPage = 1;
+let laporanPageSize = 12;
+let laporanTotalPages = 1;
+
+// ── Filter: tanggal / ULP / regu ──
+function populateLaporanFilterOptions(entries) {
+  const ulpSel = document.getElementById('laporanFilterUlp');
+  const reguSel = document.getElementById('laporanFilterRegu');
+  if (!ulpSel || !reguSel) return;
+  const curUlp = ulpSel.value;
+  const curRegu = reguSel.value;
+  const ulpList = Array.from(new Set(entries.map(([, l]) => l.ulp).filter(Boolean))).sort();
+  const reguList = Array.from(new Set(entries.map(([, l]) => l.regu).filter(Boolean))).sort();
+  ulpSel.innerHTML = '<option value="">Semua ULP</option>' + ulpList.map(u => `<option value="${u}">${u}</option>`).join('');
+  reguSel.innerHTML = '<option value="">Semua Regu</option>' + reguList.map(r => `<option value="${r}">${r}</option>`).join('');
+  if (ulpList.includes(curUlp)) ulpSel.value = curUlp;
+  if (reguList.includes(curRegu)) reguSel.value = curRegu;
+}
+
+function applyLaporanFilters() {
+  const tanggal = document.getElementById('laporanFilterTanggal')?.value || '';
+  const ulpF = document.getElementById('laporanFilterUlp')?.value || '';
+  const reguF = document.getElementById('laporanFilterRegu')?.value || '';
+  laporanFilteredEntries = (lastLaporanEntries || []).filter(([, l]) => {
+    if (ulpF && (l.ulp || '') !== ulpF) return false;
+    if (reguF && (l.regu || '') !== reguF) return false;
+    if (tanggal) {
+      if (!l.waktu) return false;
+      const d = new Date(l.waktu);
+      const dStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      if (dStr !== tanggal) return false;
+    }
+    return true;
+  });
+}
+
+window.onLaporanFilterChange = function() {
+  laporanPage = 1;
+  applyLaporanFilters();
+  renderLaporanGridPaged();
+};
+
+window.resetLaporanFilter = function() {
+  document.getElementById('laporanFilterTanggal').value = '';
+  document.getElementById('laporanFilterUlp').value = '';
+  document.getElementById('laporanFilterRegu').value = '';
+  window.onLaporanFilterChange();
+};
+
+window.onLaporanPageSizeChange = function() {
+  laporanPageSize = parseInt(document.getElementById('laporanPgSize').value, 10) || 12;
+  laporanPage = 1;
+  renderLaporanGridPaged();
+};
+
+function renderLaporanCardHtml(id, l) {
+  const waktu = l.waktu ? new Date(l.waktu).toLocaleString('id-ID') : '—';
+  const before = l.fotoBeforeBase64 || l.fotoBeforeUrl || l.fotoBefore || '';
+  const after  = l.fotoAfterBase64  || l.fotoAfterUrl  || l.fotoAfter  || '';
+  const photos = (before || after) ? `
+    <div class="laporan-photos">
+      <div>
+        ${before ? `<img src="${before}" onclick="bukaFotoFullscreen(this)" style="cursor:pointer">` : '<div style="background:#f1f5f9;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:24px">📷</div>'}
+        <div class="photo-label">SEBELUM</div>
+      </div>
+      <div>
+        ${after ? `<img src="${after}" onclick="bukaFotoFullscreen(this)" style="cursor:pointer">` : '<div style="background:#f1f5f9;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:24px">📷</div>'}
+        <div class="photo-label">SESUDAH</div>
+      </div>
+    </div>` : '';
+  const editBtn = isAdminMode ? `<button class="btn-edit" title="Edit laporan ini" onclick="bukaModalEditLaporan('${id}')">✏️</button>` : '';
+  const delBtn  = isAdminMode ? `<button class="btn-del" title="Hapus laporan ini" onclick="hapusLaporan('${id}')">🗑</button>` : '';
+  const editedBadge = l.editedAt ? `<div style="font-size:10.5px;color:var(--warn);margin-top:4px">✏️ Diedit ${l.statusVerifikasi ? '' : '— menunggu verifikasi ulang '}oleh ${l.editedBy||'Supervisor'} · ${new Date(l.editedAt).toLocaleString('id-ID')}</div>` : '';
+  return `<div class="laporan-card">
+    <div class="laporan-card-header">
+      <div>
+        <div class="laporan-card-name">👷 ${l.regu||'—'} <span style="font-weight:400;color:var(--text-secondary);font-size:11px">${l.ulp||''}${l.anggotaHadir ? ' · ' + l.anggotaHadir : ''}</span></div>
+        <div class="laporan-card-meta">${waktu}</div>
+        ${editedBadge}
+      </div>
+      <div style="display:flex;gap:6px">${editBtn}${delBtn}</div>
+    </div>
+    ${photos}
+    <div class="laporan-card-body">
+      <b>Pekerjaan:</b> ${l.rincian||'—'}<br>
+      <b>Material:</b> ${l.material||'—'}<br>
+      <b>Target:</b> ${l.target||'—'} &nbsp;|&nbsp; <b>Realisasi:</b> ${l.realisasi||'—'}
+    </div>
+  </div>`;
+}
 
 function renderLaporanGrid(entries) {
   lastLaporanEntries = entries;
+  populateLaporanFilterOptions(entries);
+  applyLaporanFilters();
+  renderLaporanGridPaged();
+}
+
+function renderLaporanGridPaged() {
   const grid = document.getElementById('laporanGrid');
-  if (entries.length === 0) {
-    grid.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px;font-size:13px;grid-column:1/-1">Belum ada laporan pekerjaan</div>';
+  const pagBar = document.getElementById('laporanPagination');
+  document.getElementById('laporanCount').textContent = laporanFilteredEntries.length + ' laporan';
+
+  if (laporanFilteredEntries.length === 0) {
+    const noData = !lastLaporanEntries || lastLaporanEntries.length === 0;
+    grid.innerHTML = `<div style="text-align:center;color:var(--text-muted);padding:40px;font-size:13px;grid-column:1/-1">${noData ? 'Belum ada laporan pekerjaan' : 'Tidak ada laporan yang cocok dengan filter'}</div>`;
+    pagBar.style.display = 'none';
     return;
   }
-  grid.innerHTML = entries.map(([id, l]) => {
-    const waktu = l.waktu ? new Date(l.waktu).toLocaleString('id-ID') : '—';
-    const before = l.fotoBeforeBase64 || l.fotoBeforeUrl || l.fotoBefore || '';
-    const after  = l.fotoAfterBase64  || l.fotoAfterUrl  || l.fotoAfter  || '';
-    const photos = (before || after) ? `
-      <div class="laporan-photos">
-        <div>
-          ${before ? `<img src="${before}" onclick="bukaFotoFullscreen(this)" style="cursor:pointer">` : '<div style="background:#f1f5f9;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:24px">📷</div>'}
-          <div class="photo-label">SEBELUM</div>
-        </div>
-        <div>
-          ${after ? `<img src="${after}" onclick="bukaFotoFullscreen(this)" style="cursor:pointer">` : '<div style="background:#f1f5f9;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:24px">📷</div>'}
-          <div class="photo-label">SESUDAH</div>
-        </div>
-      </div>` : '';
-    const editBtn = isAdminMode ? `<button class="btn-edit" title="Edit laporan ini" onclick="bukaModalEditLaporan('${id}')">✏️</button>` : '';
-    const delBtn  = isAdminMode ? `<button class="btn-del" title="Hapus laporan ini" onclick="hapusLaporan('${id}')">🗑</button>` : '';
-    const editedBadge = l.editedAt ? `<div style="font-size:10.5px;color:var(--warn);margin-top:4px">✏️ Diedit ${l.statusVerifikasi ? '' : '— menunggu verifikasi ulang '}oleh ${l.editedBy||'Supervisor'} · ${new Date(l.editedAt).toLocaleString('id-ID')}</div>` : '';
-    return `<div class="laporan-card">
-      <div class="laporan-card-header">
-        <div>
-          <div class="laporan-card-name">👷 ${l.regu||'—'} <span style="font-weight:400;color:var(--text-secondary);font-size:11px">${l.ulp||''}${l.anggotaHadir ? ' · ' + l.anggotaHadir : ''}</span></div>
-          <div class="laporan-card-meta">${waktu}</div>
-          ${editedBadge}
-        </div>
-        <div style="display:flex;gap:6px">${editBtn}${delBtn}</div>
-      </div>
-      ${photos}
-      <div class="laporan-card-body">
-        <b>Pekerjaan:</b> ${l.rincian||'—'}<br>
-        <b>Material:</b> ${l.material||'—'}<br>
-        <b>Target:</b> ${l.target||'—'} &nbsp;|&nbsp; <b>Realisasi:</b> ${l.realisasi||'—'}
-      </div>
-    </div>`;
-  }).join('');
+
+  laporanTotalPages = Math.max(1, Math.ceil(laporanFilteredEntries.length / laporanPageSize));
+  laporanPage = Math.min(Math.max(1, laporanPage), laporanTotalPages);
+
+  const start = (laporanPage - 1) * laporanPageSize;
+  const shown = laporanFilteredEntries.slice(start, start + laporanPageSize);
+  grid.innerHTML = shown.map(([id, l]) => renderLaporanCardHtml(id, l)).join('');
+
+  pagBar.style.display = laporanTotalPages > 1 ? 'flex' : 'none';
+  renderLaporanPaginationControls();
 }
+
+function renderLaporanPaginationControls() {
+  const start = (laporanPage - 1) * laporanPageSize + 1;
+  const end   = Math.min(laporanPage * laporanPageSize, laporanFilteredEntries.length);
+  document.getElementById('laporanPgInfo').innerHTML =
+    `Menampilkan <b>${start}–${end}</b> dari <b>${laporanFilteredEntries.length}</b>`;
+
+  document.getElementById('laporanPgFirst').disabled = laporanPage <= 1;
+  document.getElementById('laporanPgPrev').disabled  = laporanPage <= 1;
+  document.getElementById('laporanPgNext').disabled  = laporanPage >= laporanTotalPages;
+  document.getElementById('laporanPgLast').disabled  = laporanPage >= laporanTotalPages;
+
+  const nums = [];
+  const windowStart = Math.max(1, laporanPage - 2);
+  const windowEnd   = Math.min(laporanTotalPages, laporanPage + 2);
+  if (windowStart > 1) { nums.push(1); if (windowStart > 2) nums.push('…'); }
+  for (let n = windowStart; n <= windowEnd; n++) nums.push(n);
+  if (windowEnd < laporanTotalPages) { if (windowEnd < laporanTotalPages - 1) nums.push('…'); nums.push(laporanTotalPages); }
+
+  document.getElementById('laporanPgNumbers').innerHTML = nums.map(n =>
+    n === '…'
+      ? `<span style="padding:0 4px;color:var(--text-3);font-size:12px">…</span>`
+      : `<button class="pg-btn${n===laporanPage?' active':''}" onclick="goToLaporanPage(${n})">${n}</button>`
+  ).join('');
+}
+
+window.goToLaporanPage = function(n) {
+  n = Math.min(Math.max(1, n), laporanTotalPages);
+  if (n === laporanPage) return;
+  laporanPage = n;
+  renderLaporanGridPaged();
+};
 
 // ── Laporan Pekerjaan ─────────────────
 function listenLaporan() {
@@ -3851,7 +4184,7 @@ function buildLaporanRows(entries) {
 }
 
 window.exportLaporanExcel = function() {
-  const entries = lastLaporanEntries || [];
+  const entries = laporanFilteredEntries || [];
   if (!entries.length) { showToast('Belum ada data laporan untuk di-export.', 'warn'); return; }
   if (typeof XLSX === 'undefined') { showToast('Gagal memuat modul Excel. Cek koneksi internet lalu coba lagi.', 'err'); return; }
   try {
@@ -3871,7 +4204,7 @@ window.exportLaporanExcel = function() {
 };
 
 window.exportLaporanPDF = function() {
-  const entries = lastLaporanEntries || [];
+  const entries = laporanFilteredEntries || [];
   if (!entries.length) { showToast('Belum ada data laporan untuk di-export.', 'warn'); return; }
   if (typeof window.jspdf === 'undefined') { showToast('Gagal memuat modul PDF. Cek koneksi internet lalu coba lagi.', 'err'); return; }
   try {
@@ -4003,108 +4336,174 @@ let lastTiketEntries = null;
 
 let currentAssignRegu = null;
 
-window.bukaModalTiket = function(id, data) {
-  currentEditTiketId = id || null;
-  document.getElementById('tiket-nomor').value    = data?.nomor    || '';
-  document.getElementById('tiket-prioritas').value= data?.prioritas|| 'P1';
-  document.getElementById('tiket-jenis').value    = data?.jenis    || '';
-  document.getElementById('tiket-lokasi').value   = data?.lokasi   || '';
-  document.getElementById('tiket-ulp').value      = data?.ulp      || '';
-  document.getElementById('tiket-koordinat').value= data?.koordinat|| '';
-  document.getElementById('tiket-target').value   = data?.target   || '';
-  document.getElementById('tiket-err').style.display = 'none';
+// Isi dropdown ULP dari ROSTER_ULP_TEAMS (sama seperti dropdown "Kelola Target")
+function populateTiketUlpSelect() {
+  const sel = document.getElementById('tiket-ulp');
+  if (!sel || sel.options.length > 1) return; // sudah pernah diisi
+  Object.keys(ROSTER_ULP_TEAMS).forEach(ulp => {
+    const opt = document.createElement('option');
+    opt.value = ulp; opt.textContent = ulp;
+    sel.appendChild(opt);
+  });
+}
 
-  currentAssignRegu = data?.assignedRegu || null;
+// Saat ULP dipilih, isi dropdown Tim/Regu sesuai roster ULP tsb.
+// Ini yang menggantikan mekanisme "tim terdekat via GPS" — supervisor
+// menugaskan LANGSUNG ke tim tertentu di ULP tertentu, bukan hasil hitung jarak.
+window.onTiketUlpChange = function() {
+  const ulp = document.getElementById('tiket-ulp').value;
+  const reguSel = document.getElementById('tiket-regu');
+  const teams = ROSTER_ULP_TEAMS[ulp] || [];
+  reguSel.innerHTML = teams.length
+    ? '<option value="">— Pilih Tim —</option>' + teams.map(t => `<option value="${t}">${t}</option>`).join('')
+    : '<option value="">— Pilih ULP dulu —</option>';
+  currentAssignRegu = null;
   updateAssignedChip();
+  renderTimAktif();
+};
 
-  document.getElementById('modal-tiket').style.display = 'flex';
-  renderTimTerdekat();
+window.onTiketReguChange = function() {
+  currentAssignRegu = document.getElementById('tiket-regu').value || null;
+  updateAssignedChip();
+  renderTimAktif();
 };
 
 function updateAssignedChip() {
   const chip = document.getElementById('tiket-assigned-chip');
+  const ulp = document.getElementById('tiket-ulp').value;
   if (currentAssignRegu) {
     chip.style.display = 'flex';
-    document.getElementById('tiket-assigned-nama').textContent = currentAssignRegu;
+    document.getElementById('tiket-assigned-nama').textContent = currentAssignRegu + (ulp ? ' · ' + ulp : '');
   } else {
     chip.style.display = 'none';
   }
 }
 
-window.assignTiket = function(regu) {
+// ── Ringkasan tim yang sedang aktif hari ini (chip list), ditampilkan di
+// dalam modal Kelola Penugasan sebagai INFO untuk supervisor — bukan lagi
+// dasar penugasan (dasarnya sekarang dropdown ULP → Tim di atas). Dipakai
+// dari data realtime node "petugas" (sama sumbernya dgn peta & absensi).
+window.renderTimAktif = function() {
+  const el = document.getElementById('tiket-tim-aktif-list');
+  if (!el) return;
+  const ulpTerpilih = document.getElementById('tiket-ulp')?.value || '';
+
+  if (!lastPetugasEntries) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--text-3)">Memuat status tim…</div>';
+    return;
+  }
+  if (lastPetugasEntries.length === 0) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--text-3)">Belum ada tim aktif saat ini.</div>';
+    return;
+  }
+
+  const byRegu = {};
+  lastPetugasEntries.forEach(([, p]) => {
+    const regu = p.regu || 'Tanpa Regu';
+    if (ulpTerpilih && p.ulp && p.ulp !== ulpTerpilih) return; // fokuskan ke ULP yang sedang dipilih
+    if (p.status === 'Offline' || p.status === 'Selesai') return;
+    if (!byRegu[regu]) byRegu[regu] = { count: 0, ulp: p.ulp || '' };
+    byRegu[regu].count++;
+  });
+
+  const rows = Object.entries(byRegu).sort((a, b) => b[1].count - a[1].count);
+  if (rows.length === 0) {
+    el.innerHTML = `<div style="font-size:11px;color:var(--text-3)">${ulpTerpilih ? 'Tidak ada tim aktif di ' + ulpTerpilih + ' saat ini.' : 'Belum ada tim aktif saat ini.'}</div>`;
+    return;
+  }
+  el.innerHTML = rows.map(([regu, info]) => {
+    const isSelected = currentAssignRegu === regu;
+    return `
+    <button type="button" onclick="pilihTimAktif('${regu.replace(/'/g, "\\'")}','${(info.ulp||'').replace(/'/g, "\\'")}')"
+      style="display:flex;align-items:center;gap:6px;background:${isSelected?'var(--ok)':'var(--ok-bg)'};color:${isSelected?'#fff':'var(--text-1)'};border:1px solid rgba(14,161,91,0.3);border-radius:999px;padding:5px 12px;font-size:11px;white-space:nowrap;cursor:pointer;">
+      <span style="width:6px;height:6px;border-radius:50%;background:${isSelected?'#fff':'var(--ok)'};flex-shrink:0"></span>
+      <b>${regu}</b><span style="opacity:0.8">: ${info.count} — Aktif</span>
+    </button>`;
+  }).join('');
+};
+
+// Klik salah satu chip "tim aktif" akan otomatis mengisi dropdown ULP + Tim
+// di atas (shortcut), tapi penugasan tetap tersimpan lewat dropdown itu.
+window.pilihTimAktif = function(regu, ulp) {
+  if (ulp) {
+    document.getElementById('tiket-ulp').value = ulp;
+    onTiketUlpChange();
+  }
+  const reguSel = document.getElementById('tiket-regu');
+  if ([...reguSel.options].some(o => o.value === regu)) {
+    reguSel.value = regu;
+  }
   currentAssignRegu = regu;
   updateAssignedChip();
+  renderTimAktif();
 };
-window.clearAssignTiket = function() {
-  currentAssignRegu = null;
+
+window.bukaModalTiket = function(id, data) {
+  currentEditTiketId = id || null;
+  populateTiketUlpSelect();
+
+  document.getElementById('tiket-nomor').value    = data?.nomor    || '';
+  document.getElementById('tiket-prioritas').value= data?.prioritas|| 'P1';
+  document.getElementById('tiket-jenis').value    = data?.jenis    || '';
+  document.getElementById('tiket-lokasi').value   = data?.lokasi   || '';
+  document.getElementById('tiket-target').value   = data?.target   || '';
+  document.getElementById('tiket-koordinat-awal').value  = data?.koordinatAwal  || '';
+  document.getElementById('tiket-koordinat-akhir').value = data?.koordinatAkhir || '';
+  document.getElementById('tiket-err').style.display = 'none';
+
+  document.getElementById('tiket-ulp').value = data?.ulp || '';
+  onTiketUlpChange(); // isi ulang dropdown tim sesuai ulp (kosong kalau ulp kosong)
+  const reguSel = document.getElementById('tiket-regu');
+  currentAssignRegu = data?.assignedRegu || null;
+  if (currentAssignRegu && [...reguSel.options].some(o => o.value === currentAssignRegu)) {
+    reguSel.value = currentAssignRegu;
+  }
   updateAssignedChip();
-};
 
-// Jarak antar 2 titik GPS pakai formula Haversine, hasil dalam km
-function jarakKm(lat1, lng1, lat2, lng2) {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-}
+  document.getElementById('modal-tiket').style.display = 'flex';
+  renderTimAktif();
 
-window.renderTimTerdekat = function() {
-  const panel = document.getElementById('tiket-tim-terdekat');
-  const listEl = document.getElementById('tiket-tim-terdekat-list');
-  const raw = document.getElementById('tiket-koordinat').value.trim();
-  const parts = raw.split(',').map(s => parseFloat(s.trim()));
-
-  if (parts.length !== 2 || parts.some(isNaN)) { panel.style.display = 'none'; return; }
-  const [lat, lng] = parts;
-  if (!lastPetugasEntries || lastPetugasEntries.length === 0) {
-    panel.style.display = 'block';
-    listEl.innerHTML = `<div style="font-size:12px;color:var(--text-3)">Belum ada data posisi tim (semua tim offline/belum login).</div>`;
-    return;
-  }
-
-  const withJarak = lastPetugasEntries
-    .filter(([,p]) => p.lat && p.lng)
-    .map(([id, p]) => ({ id, p, jarak: jarakKm(lat, lng, p.lat, p.lng) }))
-    .sort((a,b) => a.jarak - b.jarak)
-    .slice(0, 5);
-
-  panel.style.display = 'block';
-  if (withJarak.length === 0) {
-    listEl.innerHTML = `<div style="font-size:12px;color:var(--text-3)">Belum ada data posisi tim.</div>`;
-    return;
-  }
-  const statusIcon = { 'Aktif Bekerja':'🟢', 'Perjalanan':'🟡', 'Standby':'🔵', 'Offline':'🔴' };
-  listEl.innerHTML = withJarak.map(({p, jarak}, i) => {
-    const regu = p.regu || '';
-    const isAssigned = currentAssignRegu && regu && currentAssignRegu === regu;
-    return `
-    <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface);border-radius:var(--radius-xs);padding:7px 10px;font-size:12px;${i===0?'border:1px solid var(--pln-blue-light)':''}">
-      <span>${i===0?'⭐ ':''}${statusIcon[p.status]||'⚪'} <b>${p.regu||'—'}</b> <span style="color:var(--text-3)">· ${p.ulp||''}</span></span>
-      <span style="display:flex;align-items:center;gap:8px">
-        <span style="font-family:var(--mono);font-weight:700;color:${i===0?'var(--pln-blue-light)':'var(--text-2)'}">${jarak.toFixed(1)} km</span>
-        ${regu ? `<button type="button" onclick="assignTiket('${regu.replace(/'/g, "\\'")}')" style="background:${isAssigned?'var(--ok)':'var(--info-bg)'};color:${isAssigned?'#fff':'var(--info)'};border:none;border-radius:6px;padding:3px 8px;font-size:10.5px;font-weight:700;cursor:pointer;white-space:nowrap">${isAssigned?'✓ Ditugaskan':'📌 Assign'}</button>` : ''}
-      </span>
-    </div>`;
-  }).join('');
+  // Pastikan data posisi/status tim (node "petugas") sudah ditarik walau
+  // supervisor belum pernah buka menu Peta — supaya list "Tim Aktif" terisi.
+  initFirebase().then(ok => { if (ok) listenPetugas(); });
 };
 
 window.tutupModalTiket = function() {
   document.getElementById('modal-tiket').style.display = 'none';
 };
 
+// Validasi ringan format "lat, lng" untuk field koordinat opsional.
+// Return true kalau kosong (opsional) ATAU formatnya valid.
+function koordinatValidOrEmpty(raw) {
+  if (!raw) return true;
+  const parts = raw.split(',').map(s => parseFloat(s.trim()));
+  return parts.length === 2 && !parts.some(isNaN);
+}
+
 window.simpanTiket = async function() {
-  const nomor     = document.getElementById('tiket-nomor').value.trim();
-  const prioritas = document.getElementById('tiket-prioritas').value;
-  const jenis     = document.getElementById('tiket-jenis').value.trim();
-  const lokasi    = document.getElementById('tiket-lokasi').value.trim();
-  const ulp       = document.getElementById('tiket-ulp').value.trim();
-  const koordinat = document.getElementById('tiket-koordinat').value.trim();
-  const target    = document.getElementById('tiket-target').value.trim();
-  const errEl     = document.getElementById('tiket-err');
+  const nomor          = document.getElementById('tiket-nomor').value.trim();
+  const prioritas      = document.getElementById('tiket-prioritas').value;
+  const jenis          = document.getElementById('tiket-jenis').value.trim();
+  const lokasi         = document.getElementById('tiket-lokasi').value.trim();
+  const ulp            = document.getElementById('tiket-ulp').value;
+  const regu           = document.getElementById('tiket-regu').value;
+  const koordinatAwal  = document.getElementById('tiket-koordinat-awal').value.trim();
+  const koordinatAkhir = document.getElementById('tiket-koordinat-akhir').value.trim();
+  const target         = document.getElementById('tiket-target').value.trim();
+  const errEl          = document.getElementById('tiket-err');
 
   if (!nomor || !jenis) {
     errEl.textContent = 'Nomor Penugasan dan Jenis Pekerjaan wajib diisi.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (!ulp || !regu) {
+    errEl.textContent = 'Pilih Unit Kerja (ULP) dan Tim/Regu yang ditugaskan.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (!koordinatValidOrEmpty(koordinatAwal) || !koordinatValidOrEmpty(koordinatAkhir)) {
+    errEl.textContent = 'Format titik koordinat harus "lat, lng", cth: -2.5916, 140.6719.';
     errEl.style.display = 'block';
     return;
   }
@@ -4112,11 +4511,19 @@ window.simpanTiket = async function() {
 
   if (!fbDb) { showToast('Firebase belum terhubung.', 'err'); return; }
   const id = currentEditTiketId || ('tiket_' + nomor.replace(/[^a-zA-Z0-9]/g,'_') + '_' + Date.now().toString(36));
-  const payload = { nomor, prioritas, jenis, lokasi, ulp, koordinat, target: target||null, waktu: Date.now(), statusTiket: 'Aktif', assignedRegu: currentAssignRegu || null };
+  const payload = {
+    nomor, prioritas, jenis, lokasi, ulp,
+    koordinatAwal: koordinatAwal || null,
+    koordinatAkhir: koordinatAkhir || null,
+    target: target || null,
+    waktu: Date.now(),
+    statusTiket: 'Aktif',
+    assignedRegu: regu
+  };
   try {
     await window._fbSet(window._fbRef(fbDb, 'tiket/' + id), payload);
     tutupModalTiket();
-    showToast('Penugasan ' + nomor + ' disimpan.', 'ok');
+    showToast('Penugasan ' + nomor + ' disimpan → ditugaskan ke ' + regu + '.', 'ok');
   } catch(e) {
     errEl.textContent = 'Gagal menyimpan: ' + e.message;
     errEl.style.display = 'block';
@@ -4150,7 +4557,7 @@ function renderTiketTable(entries) {
       <td style="font-family:var(--mono);font-size:12px;font-weight:700">${t.nomor||'—'}</td>
       <td><span class="badge ${pClass}"><span class="badge-dot"></span>${t.prioritas||'—'}</span></td>
       <td style="font-weight:600">${t.jenis||'—'}</td>
-      <td style="font-size:12px;color:var(--text-2)">${t.lokasi||'—'}</td>
+      <td style="font-size:12px;color:var(--text-2)">${t.lokasi||'—'}${(t.koordinatAwal||t.koordinatAkhir) ? `<div style="font-family:var(--mono);font-size:10px;color:var(--text-3);margin-top:2px">📍 ${t.koordinatAwal||'—'} → ${t.koordinatAkhir||'—'}</div>` : ''}</td>
       <td>${t.ulp||'—'}</td>
       <td style="font-size:12px">${t.assignedRegu ? `📌 ${t.assignedRegu}` : '<span style="color:var(--text-3)">Belum ditugaskan</span>'}</td>
       <td style="font-family:var(--mono);font-size:11px">${t.target||'—'}</td>

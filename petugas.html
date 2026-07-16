@@ -3126,6 +3126,8 @@ window.listenRevisiDanTugas = function() {
         </div>
         <div style="font-size:12.5px;font-weight:700;color:var(--text);margin-top:5px">${t.jenis || '—'}</div>
         <div style="font-size:11px;color:var(--text-sec);margin-top:2px">${t.lokasi || '—'}</div>
+        ${t.target ? `<div style="font-size:11px;color:var(--text-sec);margin-top:2px">🎯 Target: <b>${t.target}</b></div>` : ''}
+        ${(t.koordinatAwal || t.koordinatAkhir) ? `<div style="font-size:10.5px;color:var(--text-muted);margin-top:2px;font-family:'SF Mono','Fira Code',monospace">📍 ${t.koordinatAwal||'—'} → ${t.koordinatAkhir||'—'}</div>` : ''}
         <button type="button" onclick="bukaModalLaporUntuk('${t.nomor||''}')" style="margin-top:8px;background:var(--pln-blue);color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;width:100%">📋 Kerjakan Tugas Ini</button>
       </div>
     `).join('');
@@ -3147,7 +3149,12 @@ window.cariTiket = async function() {
     if (!found) {
       infoBox.innerHTML = '❌ Penugasan <b>' + nomor + '</b> tidak ditemukan.';
     } else {
-      infoBox.innerHTML = '✅ <b>' + (found.jenis || '—') + '</b> · ' + (found.ulp || '—');
+      let extra = '';
+      if (found.target) extra += '<div>🎯 Target: <b>' + found.target + '</b></div>';
+      if (found.koordinatAwal || found.koordinatAkhir) {
+        extra += '<div>📍 Rute: ' + (found.koordinatAwal || '—') + ' → ' + (found.koordinatAkhir || '—') + '</div>';
+      }
+      infoBox.innerHTML = '✅ <b>' + (found.jenis || '—') + '</b> · ' + (found.ulp || '—') + extra;
       if (found.jenis && !document.getElementById('lapor-rincian').value) document.getElementById('lapor-rincian').value = found.jenis;
     }
   } catch (e) {
