@@ -534,6 +534,8 @@ body {
 #viewPetugas .card-map { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
 #viewPetugas .card-map .card-header { flex-shrink: 0; }
 #viewMap .card-map .card-header { flex-shrink: 0; }
+#viewPetugas .grid-2-3 { align-items: stretch; }
+#viewPetugas .side-panel { min-height: 0; overflow: hidden; }
 #map { flex: 1; min-height: 0; height: auto !important; width: 100%; border-radius: 0 0 var(--radius) var(--radius); }
 #viewMap .side-panel { overflow-y: auto; min-height: 0; }
 
@@ -1182,10 +1184,37 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
           <div id="map-petugas"></div>
         </div>
         <div class="side-panel">
-          <div class="card" style="flex:1;overflow-y:auto;">
-            <div class="card-header"><div class="card-title">Daftar Petugas Online</div></div>
-            <div id="petugasList" style="padding:12px;display:flex;flex-direction:column;gap:8px;">
+          <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden;">
+            <div class="card-header">
+              <div class="card-title">Daftar Petugas Online</div>
+              <span class="card-count" id="petugasListCount">0 petugas</span>
+            </div>
+            <div style="padding:10px 12px 0;display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0;">
+              <input type="text" id="petugasFilterSearch" placeholder="🔍 Cari regu / anggota..." oninput="onPetugasFilterChange()" style="flex:1;min-width:120px;border:1px solid var(--line);border-radius:var(--radius-xs);padding:7px 10px;font-size:12px;outline:none;background:var(--surface);color:var(--text-1);">
+              <select id="petugasFilterUlp" onchange="onPetugasFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:7px 8px;font-size:12px;background:var(--surface);color:var(--text-1);">
+                <option value="">Semua ULP</option>
+              </select>
+              <select id="petugasFilterStatus" onchange="onPetugasFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:7px 8px;font-size:12px;background:var(--surface);color:var(--text-1);">
+                <option value="">Semua Status</option>
+                <option value="Aktif Bekerja">Aktif Bekerja</option>
+                <option value="Perjalanan">Perjalanan</option>
+                <option value="Standby">Standby</option>
+                <option value="Tidak Terhubung">Tidak Terhubung</option>
+                <option value="Offline">Offline</option>
+              </select>
+            </div>
+            <div id="petugasList" style="padding:12px;display:flex;flex-direction:column;gap:8px;flex:1;min-height:0;overflow:hidden;">
               <div style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px">Menunggu data Firebase...</div>
+            </div>
+            <div class="pagination-bar" id="petugasListPagination" style="display:none;flex-shrink:0;">
+              <div class="pagination-info" id="petugasListPgInfo">—</div>
+              <div class="pagination-controls">
+                <button class="pg-btn" id="petugasListPgFirst" onclick="goToPetugasListPage(1)" title="Halaman pertama">«</button>
+                <button class="pg-btn" id="petugasListPgPrev" onclick="goToPetugasListPage(petugasListPage-1)" title="Sebelumnya">‹</button>
+                <span id="petugasListPgNumbers" style="display:flex;gap:6px"></span>
+                <button class="pg-btn" id="petugasListPgNext" onclick="goToPetugasListPage(petugasListPage+1)" title="Berikutnya">›</button>
+                <button class="pg-btn" id="petugasListPgLast" onclick="goToPetugasListPage(petugasListTotalPages)" title="Halaman terakhir">»</button>
+              </div>
             </div>
           </div>
         </div>
@@ -3146,34 +3175,61 @@ function statusClass(s) {
   return 'ps-offline';
 }
 
-let lastPetugasEntries = null;
+let lastPetugasEntries = null;   // selalu berisi SEMUA entri mentah (dipakai juga oleh renderTimTerdekat)
+let petugasFilteredEntries = [];  // hasil setelah difilter (search/ULP/status)
 
-function renderPetugasList(entries) {
-  lastPetugasEntries = entries;
-  const list = document.getElementById('petugasList');
-  if (entries.length === 0) {
-    list.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px">Tidak ada petugas online</div>';
-    return;
-  }
-  list.innerHTML = entries.sort((a,b) => (b[1].ts||0)-(a[1].ts||0)).map(([id, p]) => {
-    const minsAgo = p.ts ? Math.round((Date.now()-p.ts)/60000) : null;
-    const ago = minsAgo === null ? '—' : minsAgo < 1 ? 'baru saja' : minsAgo + ' menit lalu';
-    const delBtn = isAdminMode ? `<button class="btn-del" title="Hapus data petugas ini" onclick="hapusPetugas('${id}')">🗑</button>` : '';
-    const isTerputus = p.status === 'Tidak Terhubung';
-    const ulpColor  = getUlpColor(p.ulp);
-    const teamIcon  = getTeamIcon(p.regu);
-    const avatarEmoji = isTerputus ? '📴' : teamIcon.icon;
-    const avatarBadge  = (!isTerputus && teamIcon.badge) ? `<span class="team-icon-badge">${teamIcon.badge}</span>` : '';
-    // "Tidak Terhubung" berarti koneksi realtime terputus otomatis (app ditutup/
-    // di-kill, HP mati, atau lama tidak dibuka) — BUKAN petugas sengaja selesai
-    // tugas (itu baru jadi 'Offline'). Jadi pesannya dibedakan supaya supervisor
-    // tidak salah kira "sudah selesai" padahal cuma HP-nya yang tidak merespons.
-    const peringatan = isTerputus
-      ? `<div style="font-size:10.5px;color:var(--done);font-weight:700;margin-top:3px">📴 Tidak terhubung — terakhir terlihat ${ago}, belum tentu selesai tugas</div>`
-      : (p.status !== 'Offline' && minsAgo !== null && minsAgo > 240
-          ? `<div style="font-size:10.5px;color:var(--warn);font-weight:700;margin-top:3px">⚠ Sesi tidak aktif — GPS terakhir ${ago}, mohon dicek</div>`
-          : '');
-    return `<div class="petugas-card">
+// ── Filter (search + ULP + status) ─────────────────
+function populatePetugasUlpOptions(entries) {
+  const sel = document.getElementById('petugasFilterUlp');
+  if (!sel) return;
+  const current = sel.value;
+  const ulpSet = new Set(entries.map(([, p]) => p.ulp).filter(Boolean));
+  const ulpList = Array.from(ulpSet).sort();
+  sel.innerHTML = '<option value="">Semua ULP</option>' +
+    ulpList.map(u => `<option value="${u}">${u}</option>`).join('');
+  if (ulpList.includes(current)) sel.value = current;
+}
+
+function applyPetugasFilters() {
+  const search = (document.getElementById('petugasFilterSearch')?.value || '').toLowerCase().trim();
+  const ulpF = document.getElementById('petugasFilterUlp')?.value || '';
+  const statusF = document.getElementById('petugasFilterStatus')?.value || '';
+  petugasFilteredEntries = (lastPetugasEntries || []).filter(([, p]) => {
+    if (ulpF && (p.ulp || '') !== ulpF) return false;
+    if (statusF && (p.status || 'Offline') !== statusF) return false;
+    if (search) {
+      const hay = ((p.regu || '') + ' ' + (p.anggotaHadir || '') + ' ' + (p.ulp || '')).toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  }).sort((a, b) => (b[1].ts || 0) - (a[1].ts || 0));
+}
+
+window.onPetugasFilterChange = function() {
+  petugasListPage = 1;
+  applyPetugasFilters();
+  renderPetugasListPaged();
+};
+
+function renderPetugasCardHtml(id, p) {
+  const minsAgo = p.ts ? Math.round((Date.now() - p.ts) / 60000) : null;
+  const ago = minsAgo === null ? '—' : minsAgo < 1 ? 'baru saja' : minsAgo + ' menit lalu';
+  const delBtn = isAdminMode ? `<button class="btn-del" title="Hapus data petugas ini" onclick="hapusPetugas('${id}')">🗑</button>` : '';
+  const isTerputus = p.status === 'Tidak Terhubung';
+  const ulpColor  = getUlpColor(p.ulp);
+  const teamIcon  = getTeamIcon(p.regu);
+  const avatarEmoji = isTerputus ? '📴' : teamIcon.icon;
+  const avatarBadge  = (!isTerputus && teamIcon.badge) ? `<span class="team-icon-badge">${teamIcon.badge}</span>` : '';
+  // "Tidak Terhubung" berarti koneksi realtime terputus otomatis (app ditutup/
+  // di-kill, HP mati, atau lama tidak dibuka) — BUKAN petugas sengaja selesai
+  // tugas (itu baru jadi 'Offline'). Jadi pesannya dibedakan supaya supervisor
+  // tidak salah kira "sudah selesai" padahal cuma HP-nya yang tidak merespons.
+  const peringatan = isTerputus
+    ? `<div style="font-size:10.5px;color:var(--done);font-weight:700;margin-top:3px">📴 Tidak terhubung — terakhir terlihat ${ago}, belum tentu selesai tugas</div>`
+    : (p.status !== 'Offline' && minsAgo !== null && minsAgo > 240
+        ? `<div style="font-size:10.5px;color:var(--warn);font-weight:700;margin-top:3px">⚠ Sesi tidak aktif — GPS terakhir ${ago}, mohon dicek</div>`
+        : '');
+  return `<div class="petugas-card">
       <div class="team-avatar-wrap">
         <div class="petugas-avatar" style="background:${ulpColor};box-shadow:0 2px 8px ${hexToRgba(ulpColor,0.35)}">${avatarEmoji}</div>
         ${avatarBadge}
@@ -3187,8 +3243,118 @@ function renderPetugasList(entries) {
       <span class="petugas-status ${statusClass(p.status)}">${p.status||'Offline'}</span>
       ${delBtn}
     </div>`;
-  }).join('');
 }
+
+function renderPetugasList(entries) {
+  lastPetugasEntries = entries;
+  populatePetugasUlpOptions(entries);
+  applyPetugasFilters();
+  renderPetugasListPaged();
+}
+
+// ── Daftar Petugas Online: render + pagination (otomatis pas 1 layar) ──
+let petugasListPage = 1;
+let petugasListPageSize = 6;
+let petugasListTotalPages = 1;
+let petugasListSizeStable = false;
+
+function calcPetugasListPageSize() {
+  const container = document.getElementById('petugasList');
+  const firstCard = container && container.firstElementChild;
+  if (!firstCard) return null;
+  const cardHeight = firstCard.getBoundingClientRect().height;
+  if (!cardHeight) return null;
+
+  const gap = 8;
+  const containerTop = container.getBoundingClientRect().top;
+  const pagBarEl = document.getElementById('petugasListPagination');
+  const pagBarHeight = pagBarEl ? pagBarEl.getBoundingClientRect().height + 12 : 50;
+  const bottomMargin = 16;
+
+  const availableHeight = window.innerHeight - containerTop - pagBarHeight - bottomMargin;
+  let n = Math.floor((availableHeight + gap) / (cardHeight + gap));
+  n = Math.max(3, Math.min(10, n));
+  return n;
+}
+
+function renderPetugasListPaged() {
+  const list = document.getElementById('petugasList');
+  const pagBar = document.getElementById('petugasListPagination');
+  const countEl = document.getElementById('petugasListCount');
+  if (countEl) countEl.textContent = petugasFilteredEntries.length + ' petugas';
+
+  if (petugasFilteredEntries.length === 0) {
+    const noData = !lastPetugasEntries || lastPetugasEntries.length === 0;
+    list.innerHTML = `<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px">${noData ? 'Tidak ada petugas online' : 'Tidak ada petugas yang cocok dengan filter'}</div>`;
+    pagBar.style.display = 'none';
+    return;
+  }
+
+  petugasListTotalPages = Math.max(1, Math.ceil(petugasFilteredEntries.length / petugasListPageSize));
+  petugasListPage = Math.min(Math.max(1, petugasListPage), petugasListTotalPages);
+
+  const start = (petugasListPage - 1) * petugasListPageSize;
+  const shown = petugasFilteredEntries.slice(start, start + petugasListPageSize);
+  list.innerHTML = shown.map(([id, p]) => renderPetugasCardHtml(id, p)).join('');
+
+  pagBar.style.display = petugasListTotalPages > 1 ? 'flex' : 'none';
+  renderPetugasListPaginationControls();
+
+  // Hitung ulang jumlah kartu/halaman berdasar tinggi kartu sesungguhnya,
+  // supaya persis 1 layar tanpa scroll (sama seperti pola di tab Absensi).
+  if (!petugasListSizeStable) {
+    requestAnimationFrame(() => {
+      const newSize = calcPetugasListPageSize();
+      petugasListSizeStable = true;
+      if (newSize && newSize !== petugasListPageSize) {
+        petugasListPageSize = newSize;
+        renderPetugasListPaged();
+      }
+    });
+  }
+}
+
+function renderPetugasListPaginationControls() {
+  const start = (petugasListPage - 1) * petugasListPageSize + 1;
+  const end   = Math.min(petugasListPage * petugasListPageSize, petugasFilteredEntries.length);
+  document.getElementById('petugasListPgInfo').innerHTML =
+    `<b>${start}–${end}</b> dari <b>${petugasFilteredEntries.length}</b>`;
+
+  document.getElementById('petugasListPgFirst').disabled = petugasListPage <= 1;
+  document.getElementById('petugasListPgPrev').disabled  = petugasListPage <= 1;
+  document.getElementById('petugasListPgNext').disabled  = petugasListPage >= petugasListTotalPages;
+  document.getElementById('petugasListPgLast').disabled  = petugasListPage >= petugasListTotalPages;
+
+  const nums = [];
+  const windowStart = Math.max(1, petugasListPage - 2);
+  const windowEnd   = Math.min(petugasListTotalPages, petugasListPage + 2);
+  if (windowStart > 1) { nums.push(1); if (windowStart > 2) nums.push('…'); }
+  for (let n = windowStart; n <= windowEnd; n++) nums.push(n);
+  if (windowEnd < petugasListTotalPages) { if (windowEnd < petugasListTotalPages - 1) nums.push('…'); nums.push(petugasListTotalPages); }
+
+  document.getElementById('petugasListPgNumbers').innerHTML = nums.map(n =>
+    n === '…'
+      ? `<span style="padding:0 4px;color:var(--text-3);font-size:12px">…</span>`
+      : `<button class="pg-btn${n===petugasListPage?' active':''}" onclick="goToPetugasListPage(${n})">${n}</button>`
+  ).join('');
+}
+
+window.goToPetugasListPage = function(n) {
+  n = Math.min(Math.max(1, n), petugasListTotalPages);
+  if (n === petugasListPage) return;
+  petugasListPage = n;
+  renderPetugasListPaged();
+};
+
+// Recalculate kartu/halaman saat window resize (debounce ~200ms)
+let petugasListResizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(petugasListResizeTimer);
+  petugasListResizeTimer = setTimeout(() => {
+    petugasListSizeStable = false;
+    if (petugasFilteredEntries.length > 0) renderPetugasListPaged();
+  }, 200);
+});
 
 function buildPetugasPopup(p) {
   const ulpColor = getUlpColor(p.ulp);
