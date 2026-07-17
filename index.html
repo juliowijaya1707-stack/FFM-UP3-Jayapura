@@ -1679,6 +1679,114 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
           </div>
         </div>
       </div>
+
+      <!-- ══ TARGET KERJA REGU (digabung ke Kelola Penugasan Pekerjaan) ══ -->
+      <div class="fb-header" style="margin-top:22px;border-top:1px dashed var(--line);padding-top:18px">
+        <div>
+          <div class="card-title" style="font-size:16px">🎯 Target Kerja Regu</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:3px">Target volume per Regu, per periode (Harian/Mingguan/Bulanan) — dipakai untuk hitung % capaian di Beranda &amp; Rekap</div>
+        </div>
+        <button class="topbar-btn-yellow" onclick="bukaModalTarget()" style="font-size:13px;padding:9px 18px">+ Tambah Target</button>
+      </div>
+
+      <!-- Modal Tambah/Edit Target -->
+      <div id="modal-target" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(10,20,36,0.55);align-items:center;justify-content:center;">
+        <div style="background:var(--surface);border-radius:var(--radius-lg);padding:28px;width:100%;max-width:440px;box-shadow:var(--shadow-lg);margin:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+            <div id="target-modal-title" style="font-family:var(--font-display);font-size:16px;font-weight:800">Tambah Target</div>
+            <button onclick="tutupModalTarget()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-3);padding:4px">✕</button>
+          </div>
+
+          <div style="margin-bottom:12px">
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Unit Kerja *</label>
+            <select id="target-ulp" onchange="onTargetUlpChange()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
+              <option value="">— Pilih Unit Kerja —</option>
+            </select>
+          </div>
+          <div style="margin-bottom:12px">
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Regu / Tim *</label>
+            <select id="target-regu" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
+              <option value="">— Pilih Unit Kerja dulu —</option>
+            </select>
+          </div>
+          <div style="margin-bottom:12px">
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Tipe Periode *</label>
+            <div style="display:flex;gap:8px">
+              <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px;cursor:pointer;font-size:12.5px;font-weight:600">
+                <input type="radio" name="target-tipe" value="harian" checked onchange="onTargetTipeChange()"> Harian
+              </label>
+              <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px;cursor:pointer;font-size:12.5px;font-weight:600">
+                <input type="radio" name="target-tipe" value="mingguan" onchange="onTargetTipeChange()"> Mingguan
+              </label>
+              <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px;cursor:pointer;font-size:12.5px;font-weight:600">
+                <input type="radio" name="target-tipe" value="bulanan" onchange="onTargetTipeChange()"> Bulanan
+              </label>
+            </div>
+          </div>
+          <div id="target-range-toggle-wrap" style="margin-bottom:12px;display:none">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--text-2);background:rgba(0,87,184,0.06);border:1px dashed var(--line);border-radius:var(--radius-xs);padding:9px 12px">
+              <input type="checkbox" id="target-range-mode" onchange="onTargetRangeModeChange()">
+              🔁 Isi untuk beberapa hari sekaligus (opsional) — 1 angka target langsung berlaku ke semua tanggal dalam rentang
+            </label>
+          </div>
+          <div style="margin-bottom:12px">
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px" id="target-periode-label">Tanggal *</label>
+            <input id="target-periode-harian" type="date" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
+            <input id="target-periode-mingguan" type="week" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;display:none">
+            <input id="target-periode-bulanan" type="month" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;display:none">
+            <div id="target-range-fields" style="display:none">
+              <div style="display:flex;gap:8px">
+                <div style="flex:1">
+                  <label style="font-size:10.5px;font-weight:700;color:var(--text-3);display:block;margin-bottom:4px">Dari Tanggal *</label>
+                  <input id="target-range-mulai" type="date" onchange="updateTargetRangeInfo()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
+                </div>
+                <div style="flex:1">
+                  <label style="font-size:10.5px;font-weight:700;color:var(--text-3);display:block;margin-bottom:4px">Sampai Tanggal *</label>
+                  <input id="target-range-selesai" type="date" onchange="updateTargetRangeInfo()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
+                </div>
+              </div>
+              <div id="target-range-info" style="font-size:11px;color:var(--text-3);margin-top:6px"></div>
+            </div>
+          </div>
+          <div style="margin-bottom:12px">
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Target Volume *</label>
+            <input id="target-volume" type="number" min="0" placeholder="cth: 50" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;font-family:var(--mono);outline:none">
+            <div id="target-volume-hint" style="font-size:11px;color:var(--text-3);margin-top:4px;display:none">Angka ini akan diterapkan ke setiap tanggal dalam rentang (bukan dijumlah/dibagi).</div>
+          </div>
+          <div id="target-err" style="display:none;background:var(--crit-bg);color:var(--crit);padding:9px 13px;border-radius:var(--radius-xs);font-size:12px;margin-bottom:12px;border:1px solid rgba(220,53,69,0.2)"></div>
+          <div style="display:flex;gap:10px">
+            <button onclick="tutupModalTarget()" style="flex:1;padding:11px;border:1px solid var(--line);border-radius:var(--radius-xs);background:none;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-2)">Batal</button>
+            <button onclick="simpanTarget()" style="flex:2;padding:11px;border:none;border-radius:var(--radius-xs);background:linear-gradient(135deg,var(--pln-yellow),var(--pln-yellow-deep));color:var(--ink-900);font-size:13px;font-weight:800;cursor:pointer;box-shadow:var(--shadow-glow-yellow)">✓ Simpan Target</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <div class="card-header">
+          <div class="card-title">Daftar Target</div>
+          <span class="card-count" id="targetCount">0 target</span>
+        </div>
+        <div class="table-container" style="max-height:none;">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Unit Kerja</th>
+                  <th>Regu / Tim</th>
+                  <th>Tipe Periode</th>
+                  <th>Periode</th>
+                  <th>Target Volume</th>
+                  <th>Dibuat Oleh</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="targetBody">
+                <tr><td colspan="7" class="empty">Menunggu data Firebase...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ══ VERIFIKASI SUPERVISOR VIEW ══ -->
@@ -1802,96 +1910,6 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
               </thead>
               <tbody id="akunBody">
                 <tr><td colspan="4" class="empty">Menunggu data Firebase...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ KELOLA TARGET VIEW (poin 2b) ══ -->
-    <div id="viewTarget" style="display:none;" class="firebase-view">
-      <div class="fb-header">
-        <div>
-          <div class="card-title" style="font-size:16px">🎯 Kelola Target Kerja</div>
-          <div style="font-size:12px;color:var(--text-secondary);margin-top:3px">Target volume per Regu, per periode (Harian/Mingguan/Bulanan) — dipakai untuk hitung % capaian di Beranda &amp; Rekap</div>
-        </div>
-        <button class="topbar-btn-yellow" onclick="bukaModalTarget()" style="font-size:13px;padding:9px 18px">+ Tambah Target</button>
-      </div>
-
-      <!-- Modal Tambah/Edit Target -->
-      <div id="modal-target" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(10,20,36,0.55);align-items:center;justify-content:center;">
-        <div style="background:var(--surface);border-radius:var(--radius-lg);padding:28px;width:100%;max-width:440px;box-shadow:var(--shadow-lg);margin:16px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-            <div id="target-modal-title" style="font-family:var(--font-display);font-size:16px;font-weight:800">Tambah Target</div>
-            <button onclick="tutupModalTarget()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-3);padding:4px">✕</button>
-          </div>
-
-          <div style="margin-bottom:12px">
-            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Unit Kerja *</label>
-            <select id="target-ulp" onchange="onTargetUlpChange()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
-              <option value="">— Pilih Unit Kerja —</option>
-            </select>
-          </div>
-          <div style="margin-bottom:12px">
-            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Regu / Tim *</label>
-            <select id="target-regu" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
-              <option value="">— Pilih Unit Kerja dulu —</option>
-            </select>
-          </div>
-          <div style="margin-bottom:12px">
-            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Tipe Periode *</label>
-            <div style="display:flex;gap:8px">
-              <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px;cursor:pointer;font-size:12.5px;font-weight:600">
-                <input type="radio" name="target-tipe" value="harian" checked onchange="onTargetTipeChange()"> Harian
-              </label>
-              <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px;cursor:pointer;font-size:12.5px;font-weight:600">
-                <input type="radio" name="target-tipe" value="mingguan" onchange="onTargetTipeChange()"> Mingguan
-              </label>
-              <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px;cursor:pointer;font-size:12.5px;font-weight:600">
-                <input type="radio" name="target-tipe" value="bulanan" onchange="onTargetTipeChange()"> Bulanan
-              </label>
-            </div>
-          </div>
-          <div style="margin-bottom:12px">
-            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px" id="target-periode-label">Tanggal *</label>
-            <input id="target-periode-harian" type="date" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
-            <input id="target-periode-mingguan" type="week" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;display:none">
-            <input id="target-periode-bulanan" type="month" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;display:none">
-          </div>
-          <div style="margin-bottom:12px">
-            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Target Volume *</label>
-            <input id="target-volume" type="number" min="0" placeholder="cth: 50" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;font-family:var(--mono);outline:none">
-          </div>
-          <div id="target-err" style="display:none;background:var(--crit-bg);color:var(--crit);padding:9px 13px;border-radius:var(--radius-xs);font-size:12px;margin-bottom:12px;border:1px solid rgba(220,53,69,0.2)"></div>
-          <div style="display:flex;gap:10px">
-            <button onclick="tutupModalTarget()" style="flex:1;padding:11px;border:1px solid var(--line);border-radius:var(--radius-xs);background:none;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-2)">Batal</button>
-            <button onclick="simpanTarget()" style="flex:2;padding:11px;border:none;border-radius:var(--radius-xs);background:linear-gradient(135deg,var(--pln-yellow),var(--pln-yellow-deep));color:var(--ink-900);font-size:13px;font-weight:800;cursor:pointer;box-shadow:var(--shadow-glow-yellow)">✓ Simpan Target</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="card" style="margin-top:14px;">
-        <div class="card-header">
-          <div class="card-title">Daftar Target</div>
-          <span class="card-count" id="targetCount">0 target</span>
-        </div>
-        <div class="table-container" style="max-height:none;">
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Unit Kerja</th>
-                  <th>Regu / Tim</th>
-                  <th>Tipe Periode</th>
-                  <th>Periode</th>
-                  <th>Target Volume</th>
-                  <th>Dibuat Oleh</th>
-                  <th>Aksi</th>
-                </tr>
-              </thead>
-              <tbody id="targetBody">
-                <tr><td colspan="7" class="empty">Menunggu data Firebase...</td></tr>
               </tbody>
             </table>
           </div>
@@ -2535,7 +2553,7 @@ function switchView(view) {
   } else if (view === 'tiket') {
     document.getElementById('viewTiket').style.display = '';
     document.getElementById('nav-tiket').classList.add('active');
-    initFirebase().then(ok => { if (ok) listenTiket(); });
+    initFirebase().then(ok => { if (ok) { listenTiket(); listenTargetKerja(); } });
   } else if (view === 'verifikasi') {
     document.getElementById('viewVerifikasi').style.display = '';
     document.getElementById('nav-verifikasi').classList.add('active');
@@ -2849,7 +2867,7 @@ function getTeamIcon(regu) {
 // di index.html/petugas.html untuk dropdown login. Diduplikasi di sini
 // (bukan file bersama) karena dashboard & petugas app 2 file HTML
 // terpisah. PENTING: kalau roster diubah/nambah tim di salah satu file,
-// WAJIB disamakan di file satunya juga, supaya dropdown "Kelola Target"
+// WAJIB disamakan di file satunya juga, supaya dropdown target di "Kelola Penugasan Pekerjaan"
 // di dashboard tetap sinkron dengan pilihan Tim yang bisa dipilih petugas
 // saat login.
 // ══════════════════════════════════════════════════════════════
@@ -2925,6 +2943,69 @@ window.onTargetTipeChange = function() {
     document.getElementById('target-periode-' + t).style.display = (t === tipe) ? 'block' : 'none';
   });
   label.textContent = tipe === 'harian' ? 'Tanggal *' : tipe === 'mingguan' ? 'Minggu *' : 'Bulan *';
+
+  // Toggle "isi beberapa hari sekaligus" cuma relevan untuk tipe Harian
+  // (Mingguan/Bulanan sudah otomatis mewakili satu rentang periode sendiri).
+  const toggleWrap = document.getElementById('target-range-toggle-wrap');
+  const isEdit = !!targetEditKey;
+  if (tipe === 'harian' && !isEdit) {
+    toggleWrap.style.display = 'block';
+  } else {
+    toggleWrap.style.display = 'none';
+    document.getElementById('target-range-mode').checked = false;
+  }
+  onTargetRangeModeChange();
+};
+
+// ── Poin tambahan: "isi sekali, otomatis berlaku untuk beberapa hari sekaligus" ──
+// Opsional — default tetap input 1 tanggal seperti semula. Kalau dicentang,
+// field tanggal tunggal disembunyikan dan diganti rentang Dari–Sampai;
+// 1 angka Target Volume yang diisi akan disalin ke SETIAP tanggal dalam
+// rentang itu sebagai target harian tersendiri (bukan dibagi/dijumlah).
+window.onTargetRangeModeChange = function() {
+  const tipe = document.querySelector('input[name="target-tipe"]:checked').value;
+  const rangeOn = tipe === 'harian' && document.getElementById('target-range-mode').checked;
+  document.getElementById('target-periode-harian').style.display = rangeOn ? 'none' : (tipe === 'harian' ? 'block' : 'none');
+  document.getElementById('target-range-fields').style.display = rangeOn ? 'block' : 'none';
+  document.getElementById('target-volume-hint').style.display = rangeOn ? 'block' : 'none';
+  updateTargetRangeInfo();
+};
+
+// Daftar tanggal (yyyy-mm-dd) inklusif dari mulai..selesai
+function daftarTanggalRange(mulai, selesai) {
+  const out = [];
+  let d = new Date(mulai + 'T00:00:00');
+  const end = new Date(selesai + 'T00:00:00');
+  while (d <= end) {
+    out.push(d.toISOString().slice(0, 10));
+    d.setDate(d.getDate() + 1);
+  }
+  return out;
+}
+
+function fmtTglRangeID(dateStr) {
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+const TARGET_RANGE_MAKS_HARI = 62; // pengaman — cegah 1 klik menulis ratusan node Firebase sekaligus
+
+window.updateTargetRangeInfo = function() {
+  const infoEl = document.getElementById('target-range-info');
+  if (!infoEl) return;
+  const rangeOn = document.getElementById('target-range-mode') && document.getElementById('target-range-mode').checked;
+  if (!rangeOn) { infoEl.textContent = ''; return; }
+  const mulai = document.getElementById('target-range-mulai').value;
+  const selesai = document.getElementById('target-range-selesai').value;
+  if (!mulai || !selesai) { infoEl.textContent = 'Pilih tanggal Dari dan Sampai.'; infoEl.style.color = 'var(--text-3)'; return; }
+  if (selesai < mulai) { infoEl.textContent = '⚠️ Tanggal Sampai tidak boleh sebelum Tanggal Mulai.'; infoEl.style.color = 'var(--crit)'; return; }
+  const jumlah = daftarTanggalRange(mulai, selesai).length;
+  if (jumlah > TARGET_RANGE_MAKS_HARI) {
+    infoEl.textContent = `⚠️ Rentang ${jumlah} hari melebihi batas maksimal ${TARGET_RANGE_MAKS_HARI} hari sekali isi. Persempit rentangnya.`;
+    infoEl.style.color = 'var(--crit)';
+    return;
+  }
+  infoEl.textContent = `✓ Target akan dibuat untuk ${jumlah} hari (${fmtTglRangeID(mulai)} – ${fmtTglRangeID(selesai)}), masing-masing dengan angka yang sama.`;
+  infoEl.style.color = 'var(--text-3)';
 };
 
 window.bukaModalTarget = function(ulp, regu, periodeKey) {
@@ -2940,6 +3021,8 @@ window.bukaModalTarget = function(ulp, regu, periodeKey) {
     onTargetUlpChange();
     document.getElementById('target-regu').value = regu;
     document.querySelector(`input[name="target-tipe"][value="${entry.tipePeriode}"]`).checked = true;
+    // Mode rentang hanya untuk tambah target baru, bukan edit satu entry — reset dulu sebelum onTargetTipeChange()
+    document.getElementById('target-range-mode').checked = false;
     onTargetTipeChange();
     document.getElementById('target-periode-' + entry.tipePeriode).value = periodeKey;
     document.getElementById('target-volume').value = entry.targetVolume;
@@ -2952,6 +3035,10 @@ window.bukaModalTarget = function(ulp, regu, periodeKey) {
     document.getElementById('target-regu').innerHTML = '<option value="">— Pilih Unit Kerja dulu —</option>';
     document.getElementById('target-regu').disabled = false;
     document.querySelector('input[name="target-tipe"][value="harian"]').checked = true;
+    document.getElementById('target-range-mode').checked = false;
+    document.getElementById('target-range-mulai').value = '';
+    document.getElementById('target-range-selesai').value = '';
+    document.getElementById('target-range-info').textContent = '';
     onTargetTipeChange();
     document.getElementById('target-periode-harian').value = '';
     document.getElementById('target-periode-mingguan').value = '';
@@ -2972,14 +3059,50 @@ window.simpanTarget = async function() {
   const ulp  = document.getElementById('target-ulp').value;
   const regu = document.getElementById('target-regu').value;
   const tipePeriode = document.querySelector('input[name="target-tipe"]:checked').value;
-  const periodeKey  = document.getElementById('target-periode-' + tipePeriode).value;
   const targetVolume = document.getElementById('target-volume').value;
+  const rangeOn = tipePeriode === 'harian' && !targetEditKey && document.getElementById('target-range-mode').checked;
 
   if (!ulp || !regu) { errEl.textContent = 'Unit Kerja dan Regu/Tim wajib dipilih.'; errEl.style.display = 'block'; return; }
-  if (!periodeKey) { errEl.textContent = 'Periode wajib diisi.'; errEl.style.display = 'block'; return; }
   if (targetVolume === '' || +targetVolume < 0) { errEl.textContent = 'Target Volume wajib diisi (angka ≥ 0).'; errEl.style.display = 'block'; return; }
-
   if (!(await initFirebase())) { errEl.textContent = 'Firebase belum terhubung.'; errEl.style.display = 'block'; return; }
+
+  // ── Mode rentang (opsional): 1 angka Target Volume ditulis ke banyak
+  // tanggal Harian sekaligus. Tetap memakai skema data yang sama persis
+  // (targetKerja/{ulp}/{regu}/{tanggal}) — cuma dibuat banyak sekali kirim,
+  // bukan skema baru — supaya perhitungan capaian di poin 4c/5 tidak berubah.
+  if (rangeOn) {
+    const mulai = document.getElementById('target-range-mulai').value;
+    const selesai = document.getElementById('target-range-selesai').value;
+    if (!mulai || !selesai) { errEl.textContent = 'Tanggal Dari dan Sampai wajib diisi.'; errEl.style.display = 'block'; return; }
+    if (selesai < mulai) { errEl.textContent = 'Tanggal Sampai tidak boleh sebelum Tanggal Dari.'; errEl.style.display = 'block'; return; }
+    const tanggalList = daftarTanggalRange(mulai, selesai);
+    if (tanggalList.length > TARGET_RANGE_MAKS_HARI) {
+      errEl.textContent = `Rentang ${tanggalList.length} hari melebihi batas maksimal ${TARGET_RANGE_MAKS_HARI} hari sekali isi.`;
+      errEl.style.display = 'block';
+      return;
+    }
+    try {
+      const waktu = Date.now();
+      await Promise.all(tanggalList.map(periodeKey =>
+        window._fbSet(window._fbRef(fbDb, `targetKerja/${ulp}/${regu}/${periodeKey}`), {
+          ulp, regu, periodeKey, tipePeriode: 'harian',
+          targetVolume: +targetVolume,
+          dibuatOleh: 'Supervisor',
+          waktu
+        })
+      ));
+      showToast(`Target berhasil disimpan untuk ${tanggalList.length} hari (${fmtTglRangeID(mulai)} – ${fmtTglRangeID(selesai)}).`, 'ok');
+      tutupModalTarget();
+    } catch (e) {
+      errEl.textContent = 'Gagal menyimpan: ' + e.message;
+      errEl.style.display = 'block';
+    }
+    return;
+  }
+
+  // ── Mode normal: 1 tanggal/minggu/bulan seperti semula ──
+  const periodeKey = document.getElementById('target-periode-' + tipePeriode).value;
+  if (!periodeKey) { errEl.textContent = 'Periode wajib diisi.'; errEl.style.display = 'block'; return; }
 
   try {
     const path = `targetKerja/${ulp}/${regu}/${periodeKey}`;
@@ -4357,7 +4480,7 @@ let lastTiketEntries = null;
 
 let currentAssignRegu = null;
 
-// Isi dropdown ULP dari ROSTER_ULP_TEAMS (sama seperti dropdown "Kelola Target")
+// Isi dropdown ULP dari ROSTER_ULP_TEAMS (sama seperti dropdown target di "Kelola Penugasan Pekerjaan")
 function populateTiketUlpSelect() {
   const sel = document.getElementById('tiket-ulp');
   if (!sel || sel.options.length > 1) return; // sudah pernah diisi
@@ -5238,7 +5361,7 @@ function renderProgres() {
   // dikelompokkan per nama regu, datanya akan tertukar/tergabung salah.
   // Target/% tidak ditampilkan di sini karena ini rekap SEPANJANG MASA
   // (tanpa filter periode), sedangkan target sekarang per-periode — lihat
-  // menu "Kelola Target" & Rekap Laporan (yang punya filter Hari/Minggu/Bulan)
+  // menu "Kelola Penugasan Pekerjaan" (bagian Target Kerja Regu) & Rekap Laporan (yang punya filter Hari/Minggu/Bulan)
   // untuk lihat % capaian.
   const byTim = {};
   progresLaporanAll.forEach(l => {

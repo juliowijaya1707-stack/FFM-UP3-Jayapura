@@ -525,6 +525,8 @@ body {
   display:flex; align-items:center; justify-content:center;
   color:var(--text-sec); font-size:14px; cursor:pointer;
 }
+.sync-spinner { font-size:40px; display:inline-block; animation:sync-spin 1.4s linear infinite; }
+@keyframes sync-spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
 
 /* ── ONBOARDING SLIDES ── */
 .ob-slide { display:none; text-align:center; padding:4px 4px 8px; }
@@ -761,8 +763,8 @@ body {
   <div class="card">
     <div class="card-title">Anggota Bertugas</div>
     <div class="field">
-      <label>Anggota Regu Hari Ini</label>
-      <textarea id="in-anggota" rows="2" placeholder="Nama A, Nama B, Nama C"></textarea>
+      <label>Anggota Regu Hari Ini <span style="color:var(--red)">*</span></label>
+      <textarea id="in-anggota" rows="2" placeholder="Nama A, Nama B, Nama C" required></textarea>
     </div>
   </div>
 
@@ -1301,6 +1303,25 @@ body {
   </div>
 </div>
 
+<!-- ══════ MODAL: SINKRONISASI SEBELUM SELESAI BERTUGAS ══════
+     Muncul kalau masih ada data (GPS/absensi/laporan) yang belum berhasil
+     terkirim ke server saat petugas menutup shift. Shift TIDAK ditutup
+     (cache/sesi TIDAK dihapus) sampai semua data ini terkirim — supaya
+     tidak ada data lapangan yang hilang begitu saja. -->
+<div class="modal-backdrop" id="modal-sync-selesai">
+  <div class="modal-sheet" style="text-align:center;padding-top:32px;padding-bottom:32px">
+    <div class="sync-spinner" id="sync-spinner-icon">🕓</div>
+    <h3 style="font-size:16px;font-weight:800;color:var(--pln-blue);margin:14px 0 6px">Menyinkronkan Data</h3>
+    <div style="font-size:13px;color:var(--text-sec);line-height:1.6;margin-bottom:6px" id="sync-selesai-desc">
+      Masih ada data yang belum terkirim ke server.
+    </div>
+    <div style="font-size:13px;font-weight:700;color:var(--pln-blue);margin-bottom:18px" id="sync-selesai-count">0 data tersisa</div>
+    <div style="font-size:11.5px;color:var(--text-3);margin-bottom:18px">Pastikan sinyal internet stabil. Shift baru bisa ditutup setelah semua data ini terkirim, supaya tidak ada data lapangan yang hilang.</div>
+    <button class="btn btn-yellow" id="sync-selesai-retry" onclick="retryProsesSelesaiBertugas()">↻ Coba Kirim Lagi</button>
+    <button class="btn btn-ghost" style="margin-top:8px" onclick="batalProsesSelesaiBertugas()">Kembali ke Tracking</button>
+  </div>
+</div>
+
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getDatabase, ref, set, get, onValue, update, onDisconnect, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
@@ -1463,6 +1484,7 @@ window.addEventListener('online', () => {
   updateConnUI();
   flushOfflineQueue();
   applyOfflineOverride(false);
+  if (syncSelesaiAktif) { clearTimeout(syncSelesaiTimer); jalankanSiklusSyncSelesai(); }
 });
 window.addEventListener('offline', () => {
   isOnline = false;
@@ -1829,6 +1851,12 @@ window.doLogin = function() {
     errEl.style.display = 'block';
     return;
   }
+  if (!anggota) {
+    errEl.textContent = 'Nama Anggota Regu Hari Ini wajib diisi.';
+    errEl.style.display = 'block';
+    document.getElementById('in-anggota').focus();
+    return;
+  }
   if (!ulp) {
     errEl.textContent = 'Unit Kerja wajib dipilih.';
     errEl.style.display = 'block';
@@ -1855,7 +1883,66 @@ window.doLogout = async function() {
   if (!(await confirmDialog('Selesai bertugas dan hentikan tracking GPS?', { title: 'Selesai Bertugas', okLabel: 'Ya, Selesai' }))) return;
   // Sebelum benar-benar mengakhiri shift, wajib absen selfie + GPS dulu
   // sebagai bukti penutupan tugas (bukan cuma klik tombol).
-  bukaAbsenCepat('selesai', finalizeLogout);
+  bukaAbsenCepat('selesai', prosesSelesaiBertugas);
+};
+
+// ════════════════════════════════════════════════════════
+// GERBANG SINKRONISASI SEBELUM SELESAI BERTUGAS
+// Selfie+GPS "Selesai" (di atas) bisa saja gagal terkirim & masuk antrean
+// offline (safeSet -> enqueueOffline), begitu juga data lain sepanjang shift
+// (GPS berkala, laporan, absensi lain) yang sempat gagal kirim karena sinyal
+// jelek. Supaya TIDAK ADA data lapangan yang hilang, shift baru benar-benar
+// ditutup (sesi & cache dihapus) SETELAH seluruh antrean ini kosong —
+// dicoba kirim ulang otomatis di sini, dengan progres ditampilkan ke
+// petugas. Kalau petugas menekan "Kembali ke Tracking", proses dibatalkan
+// dan TIDAK ada apapun yang dihapus — sama seperti kalau petugas cuma
+// kehilangan koneksi biasa, aman untuk dilanjutkan/ditutup lagi nanti.
+// ════════════════════════════════════════════════════════
+let syncSelesaiTimer = null;
+let syncSelesaiAktif = false;
+
+function updateSyncSelesaiUI() {
+  const n = getOfflineQueue().length;
+  const countEl = document.getElementById('sync-selesai-count');
+  const descEl  = document.getElementById('sync-selesai-desc');
+  if (countEl) countEl.textContent = n + ' data tersisa';
+  if (descEl)  descEl.textContent = isOnline
+    ? 'Mengirim data yang tertunda ke server...'
+    : 'Menunggu sinyal internet untuk mengirim data...';
+  return n;
+}
+
+window.prosesSelesaiBertugas = async function() {
+  syncSelesaiAktif = true;
+  document.getElementById('modal-sync-selesai').classList.add('active');
+  await jalankanSiklusSyncSelesai();
+};
+
+async function jalankanSiklusSyncSelesai() {
+  if (!syncSelesaiAktif) return;
+  await flushOfflineQueue();
+  const sisa = updateSyncSelesaiUI();
+  clearTimeout(syncSelesaiTimer);
+  if (sisa === 0) {
+    syncSelesaiAktif = false;
+    document.getElementById('modal-sync-selesai').classList.remove('active');
+    await finalizeLogout();
+    return;
+  }
+  // masih ada sisa (kemungkinan besar masih offline) — coba lagi tiap 5 detik
+  syncSelesaiTimer = setTimeout(jalankanSiklusSyncSelesai, 5000);
+}
+
+window.retryProsesSelesaiBertugas = function() {
+  clearTimeout(syncSelesaiTimer);
+  jalankanSiklusSyncSelesai();
+};
+
+window.batalProsesSelesaiBertugas = function() {
+  syncSelesaiAktif = false;
+  clearTimeout(syncSelesaiTimer);
+  document.getElementById('modal-sync-selesai').classList.remove('active');
+  addLog('Selesai Bertugas dibatalkan — masih ada data belum terkirim, sesi tetap dilanjutkan', 'warn');
 };
 
 async function finalizeLogout() {
@@ -1889,6 +1976,8 @@ async function finalizeLogout() {
   absenPerjalananDone = false;
   resetAbsensiTerakhir();
   clearSession(); // shift resmi selesai — hapus sesi tersimpan supaya TIDAK auto-login lagi saat app dibuka berikutnya
+  clearLaporDraft(); // buang draft foto Before/After laporan lama (kalau ada) — supaya TIDAK muncul lagi nyangkut di shift berikutnya
+  laporFotoBefore = null; laporFotoAfter = null;
   document.getElementById('send-count').textContent = '0';
   document.getElementById('bottom-nav').style.display = 'none';
   // reset form login supaya shift berikutnya mulai dari kosong lagi
@@ -2059,6 +2148,13 @@ function applyOfflineOverride(isOff) {
     if (currentStatus === 'Offline') return;
     currentStatus = 'Offline';
     renderStatusUI('Offline');
+    // FIX: sebelumnya cabang ini tidak memberi tahu NativeLocationSyncService,
+    // jadi service native (yang jalan independen di background) tetap
+    // mengirim status lama (mis. "Aktif Bekerja") ke Firebase walau
+    // tampilan aplikasi sudah menunjukkan "Offline" — bikin data di
+    // dashboard supervisor bisa beda antara status & yang sebenarnya
+    // terkirim. Disamakan dengan cabang else di bawah yang sudah benar.
+    updateNativeSyncStatus('Offline');
     addLog('Status otomatis: Offline (koneksi/teknis bermasalah)', 'warn');
   } else {
     if (currentStatus !== 'Offline') return;
@@ -3290,7 +3386,7 @@ window.submitLaporan = async function() {
 
   if (!rincian) { errEl.textContent = 'Rincian pekerjaan wajib diisi.'; errEl.style.display = 'block'; return; }
   // Realisasi wajib diisi (boleh 0), target sudah tidak diisi petugas —
-  // ditentukan supervisor lewat menu Kelola Target di dashboard.
+  // ditentukan supervisor lewat menu Kelola Penugasan Pekerjaan (bagian Target Kerja Regu) di dashboard.
   if (realisasi === '') { errEl.textContent = 'Realisasi Volume wajib diisi (boleh 0).'; errEl.style.display = 'block'; realisasiEl.focus(); return; }
   if (!laporFotoBefore || !laporFotoAfter) { errEl.textContent = 'Foto Before dan After wajib diambil keduanya.'; errEl.style.display = 'block'; return; }
   errEl.style.display = 'none';
@@ -3379,7 +3475,8 @@ window.submitLaporan = async function() {
 
 // Update tampilan progres tugas: jumlah laporan terkirim hari ini
 // (tanpa target individual — target sekarang dikelola per regu/periode
-// oleh supervisor lewat menu Kelola Target di dashboard).
+// oleh supervisor lewat menu Kelola Penugasan Pekerjaan (bagian Target
+// Kerja Regu) di dashboard).
 function updateProgres() {
   tugasSelesai = laporTugasList.length;
   const countEl = document.getElementById('tugas-selesai-count');
