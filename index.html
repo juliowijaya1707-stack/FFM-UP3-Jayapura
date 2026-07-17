@@ -55,6 +55,13 @@
   --text-1: #0B1626;
   --text-2: #4D5D78;
   --text-3: #8C9AB3;
+  /* aliases — dipakai di banyak tempat lama sebagai --text-secondary/--text-muted/--green,
+     tapi belum pernah didefinisikan sehingga fallback ke warna default (bukan abu-abu redup
+     yang dimaksud). Alias di sini memperbaiki hierarki teks di seluruh app tanpa perlu
+     mengganti satu-satu tiap pemakaiannya. */
+  --text-secondary: var(--text-2);
+  --text-muted:     var(--text-3);
+  --green:          var(--ok);
 
   /* semantic — più saturated, less corporate-pastel */
   --ok:       #0EA15B;
@@ -766,6 +773,16 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
 ══════════════════════════════════════ */
 .firebase-view { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow-y: auto; }
 .fb-header { display:flex; align-items:center; justify-content:space-between; padding:4px 0 2px; flex-shrink:0; }
+.fb-subtitle { font-size: 12px; color: var(--text-2); margin-top: 3px; line-height: 1.45; }
+.fb-info-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.info-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600; color: var(--text-2);
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: 20px; padding: 4px 11px;
+  cursor: help; transition: background 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+.info-chip:hover { background: var(--surface-3); border-color: var(--line-strong); }
 #map-petugas { flex: 1; min-height: 0; height: auto !important; width: 100%; border-radius: 0 0 var(--radius) var(--radius); }
 
 /* petugas card in list */
@@ -1181,7 +1198,11 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
       <div class="fb-header">
         <div>
           <div class="card-title" style="font-size:16px">👷 Petugas Aktif — GPS Realtime</div>
-          <div style="font-size:12px;color:var(--text-secondary);margin-top:3px">Update otomatis dari Firebase · Setiap petugas yang sedang bertugas · 📋 checkpoint default tampilkan hari ini saja (bisa diganti tanggalnya di atas peta) · ℹ️ "Aktif" = belum lapor Selesai (petugas yang sudah Offline tidak dihitung, tapi tetap muncul di daftar sebelah)</div>
+          <div class="fb-subtitle">Update otomatis dari Firebase · seluruh petugas yang sedang bertugas hari ini</div>
+          <div class="fb-info-chips">
+            <span class="info-chip" title="Checkpoint laporan yang muncul di peta menampilkan hari ini saja secara default — bisa diganti tanggalnya lewat filter di atas peta">📋 Checkpoint: Hari Ini</span>
+            <span class="info-chip" title="Petugas yang sudah Offline tidak dihitung sebagai Aktif, tapi tetap tampil di daftar sebelah">ℹ️ "Aktif" = belum lapor Selesai</span>
+          </div>
         </div>
         <span class="tag tag-green" style="font-size:11px;padding:5px 12px">● LIVE</span>
       </div>
