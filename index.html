@@ -944,9 +944,6 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
         <span class="nav-icon">✅</span> <span class="nav-label">Verifikasi Laporan</span>
         <span class="nav-badge" id="nav-badge-verifikasi" style="background:var(--warn);display:none">0</span>
       </a>
-      <a class="nav-item" id="nav-target" href="#" title="Kelola Target" onclick="switchView('target');return false;">
-        <span class="nav-icon">🎯</span> <span class="nav-label">Kelola Target</span>
-      </a>
       <a class="nav-item" id="nav-akun" href="#" title="Akun Regu" onclick="switchView('akun');return false;" style="display:none">
         <span class="nav-icon">🔑</span> <span class="nav-label">Akun Regu</span>
       </a>
@@ -1174,7 +1171,7 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
       <div class="fb-header">
         <div>
           <div class="card-title" style="font-size:16px">👷 Petugas Aktif — GPS Realtime</div>
-          <div style="font-size:12px;color:var(--text-secondary);margin-top:3px">Update otomatis dari Firebase · Setiap petugas yang sedang bertugas · 📋 checkpoint default tampilkan hari ini saja (bisa diganti tanggalnya di atas peta)</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:3px">Update otomatis dari Firebase · Setiap petugas yang sedang bertugas · 📋 checkpoint default tampilkan hari ini saja (bisa diganti tanggalnya di atas peta) · ℹ️ "Aktif" = belum lapor Selesai (petugas yang sudah Offline tidak dihitung, tapi tetap muncul di daftar sebelah)</div>
         </div>
         <span class="tag tag-green" style="font-size:11px;padding:5px 12px">● LIVE</span>
       </div>
@@ -1197,7 +1194,7 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
         <div class="side-panel">
           <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden;">
             <div class="card-header">
-              <div class="card-title">Daftar Petugas Online</div>
+              <div class="card-title" title="Semua petugas yang tercatat hari ini, termasuk yang statusnya Tidak Terhubung / sudah Offline">Daftar Petugas Hari Ini</div>
               <span class="card-count" id="petugasListCount">0 petugas</span>
             </div>
             <div style="padding:10px 12px 0;display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0;">
@@ -1214,7 +1211,7 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
                 <option value="Offline">Offline</option>
               </select>
             </div>
-            <div id="petugasList" style="padding:12px;display:flex;flex-direction:column;gap:8px;flex:1;min-height:0;overflow:hidden;">
+            <div id="petugasList" style="padding:12px;display:flex;flex-direction:column;gap:8px;flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;">
               <div style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px">Menunggu data Firebase...</div>
             </div>
             <div class="pagination-bar" id="petugasListPagination" style="display:none;flex-shrink:0;">
@@ -2486,11 +2483,11 @@ window.onPageSizeChange = function() {
 };
 
 function switchView(view) {
-  const allViews = ['viewBeranda','viewMap','viewTable','viewPetugas','viewAbsensi','viewLaporan','viewTiket','viewVerifikasi','viewRekap','viewProgres','viewAkun','viewTarget'];
+  const allViews = ['viewBeranda','viewMap','viewTable','viewPetugas','viewAbsensi','viewLaporan','viewTiket','viewVerifikasi','viewRekap','viewProgres','viewAkun'];
   allViews.forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
   document.getElementById('filterBar').style.display = 'none';
 
-  const allNavIds = ['nav-beranda','nav-map','nav-table','nav-petugas','nav-absensi','nav-laporan','nav-tiket','nav-verifikasi','nav-rekap','nav-progres','nav-akun','nav-target'];
+  const allNavIds = ['nav-beranda','nav-map','nav-table','nav-petugas','nav-absensi','nav-laporan','nav-tiket','nav-verifikasi','nav-rekap','nav-progres','nav-akun'];
   allNavIds.forEach(id => { const el = document.getElementById(id); if(el) el.classList.remove('active'); });
 
   if (view === 'beranda') {
@@ -2548,10 +2545,6 @@ function switchView(view) {
     document.getElementById('viewAkun').style.display = '';
     document.getElementById('nav-akun').classList.add('active');
     initFirebase().then(ok => { if (ok) listenAkunRegu(); });
-  } else if (view === 'target') {
-    document.getElementById('viewTarget').style.display = '';
-    document.getElementById('nav-target').classList.add('active');
-    initFirebase().then(ok => { if (ok) listenTargetKerja(); });
   }
 }
 
@@ -3349,9 +3342,16 @@ let petugasListSizeStable = false;
 
 function calcPetugasListPageSize() {
   const container = document.getElementById('petugasList');
-  const firstCard = container && container.firstElementChild;
-  if (!firstCard) return null;
-  const cardHeight = firstCard.getBoundingClientRect().height;
+  if (!container || !container.children.length) return null;
+  // Pakai kartu TERTINGGI di antara yang sedang tampil, bukan cuma kartu pertama —
+  // kartu dgn status "Tidak Terhubung" / peringatan sesi punya baris ekstra jadi
+  // lebih tinggi dari kartu biasa. Kalau cuma pakai kartu pertama (yg kebetulan
+  // pendek), kartu lain yg lebih tinggi bisa kepotong overflow.
+  let cardHeight = 0;
+  for (const child of container.children) {
+    const h = child.getBoundingClientRect().height;
+    if (h > cardHeight) cardHeight = h;
+  }
   if (!cardHeight) return null;
 
   const gap = 8;
@@ -3498,7 +3498,8 @@ function listenPetugas() {
     });
 
     // update count
-    document.getElementById('petugasMapCount').textContent = aktif + ' petugas aktif';
+    document.getElementById('petugasMapCount').textContent = aktif + ' aktif dari ' + entries.length + ' hari ini';
+    document.getElementById('petugasMapCount').title = 'Aktif = status bukan "Offline" (masih Standby/Perjalanan/Aktif Bekerja/Tidak Terhubung). Total ' + entries.length + ' termasuk yang sudah Offline (lapor Selesai / logout).';
 
     // update list
     renderPetugasList(entries);
