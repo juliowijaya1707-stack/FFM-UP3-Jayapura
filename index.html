@@ -755,7 +755,7 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
    FIREBASE VIEWS
 ══════════════════════════════════════ */
 .firebase-view { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow-y: auto; }
-.fb-header { display:flex; align-items:center; justify-content:space-between; padding:4px 0 2px; }
+.fb-header { display:flex; align-items:center; justify-content:space-between; padding:4px 0 2px; flex-shrink:0; }
 #map-petugas { flex: 1; min-height: 0; height: auto !important; width: 100%; border-radius: 0 0 var(--radius) var(--radius); }
 
 /* petugas card in list */
@@ -1243,10 +1243,10 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
       </div>
 
       <!-- Ringkasan tim aktif hari ini -->
-      <div id="absensi-team-summary" style="margin-top:14px;display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;"></div>
+      <div id="absensi-team-summary" style="flex-shrink:0;margin-top:14px;display:flex;flex-wrap:wrap;gap:8px;"></div>
 
       <!-- Per-petugas phase log cards -->
-      <div id="absensi-log-cards" style="margin-top:12px;display:flex;flex-direction:column;gap:12px;">
+      <div id="absensi-log-cards" style="margin-top:12px;display:flex;flex-direction:column;gap:12px;flex-shrink:0;">
         <div style="text-align:center;color:var(--text-muted);padding:40px;font-size:13px">Menunggu data Firebase...</div>
       </div>
       <div class="pagination-bar" id="absensiPagination" style="display:none;margin-top:12px;">
@@ -3818,6 +3818,25 @@ let absensiSizeStable = false;
 
 const FASE_ORDER = ['Standby','Perjalanan','Aktif Bekerja','Selesai'];
 
+// Hitung rentang & durasi jam kerja dari fase "Aktif Bekerja" sampai "Selesai".
+// Kalau belum "Selesai", dihitung sampai sekarang (masih berjalan).
+function hitungJamKerja(p) {
+  const mulai = p.fases['Aktif Bekerja'] && p.fases['Aktif Bekerja'].waktu;
+  if (!mulai) return '';
+  const selesaiTs = p.fases['Selesai'] && p.fases['Selesai'].waktu;
+  const startStr = new Date(mulai).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+  const endMs = selesaiTs || Date.now();
+  const durMin = Math.max(0, Math.round((endMs - mulai) / 60000));
+  const jam = Math.floor(durMin / 60), menit = durMin % 60;
+  const durStr = (jam > 0 ? jam + 'j ' : '') + menit + 'm';
+
+  if (selesaiTs) {
+    const endStr = new Date(selesaiTs).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+    return `<div style="font-size:11px;color:var(--text-2);margin-top:3px">🕐 Jam Kerja: <b style="font-family:var(--mono)">${startStr}–${endStr}</b> <span style="color:var(--text-3)">(${durStr})</span></div>`;
+  }
+  return `<div style="font-size:11px;color:var(--text-2);margin-top:3px">🕐 Aktif sejak <b style="font-family:var(--mono)">${startStr}</b> <span style="color:var(--text-3)">(berjalan ${durStr})</span></div>`;
+}
+
 function renderAbsensiCardHtml(p) {
   const lastFase = FASE_ORDER.slice().reverse().find(f => p.fases[f]) || 'Standby';
   const lc = FASE_COLORS[lastFase] || FASE_COLORS['Standby'];
@@ -3850,6 +3869,7 @@ function renderAbsensiCardHtml(p) {
       <div style="flex:1">
         <div style="font-size:13px;font-weight:700;color:var(--text-1)">${p.regu}</div>
         <div style="font-size:11px;color:var(--text-2);margin-top:1px">${p.ulp}${p.anggotaHadir && p.anggotaHadir !== '—' ? ' · Anggota: ' + p.anggotaHadir : ''}</div>
+        ${hitungJamKerja(p)}
       </div>
       <span class="badge" style="background:${lc.bg};color:${lc.color};border:1px solid ${lc.border}">${lc.icon} ${lastFase}</span>
     </div>
