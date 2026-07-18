@@ -1589,50 +1589,36 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
       </div>
     </div>
 
-    <!-- ══ TIKET P0/P1 VIEW ══ -->
+    <!-- ══ PENUGASAN VIEW (gabungan Penugasan Pekerjaan + Target Kerja Regu) ══ -->
     <div id="viewTiket" style="display:none;" class="firebase-view">
       <div class="fb-header">
         <div>
           <div class="card-title" style="font-size:16px">🎫 Kelola Penugasan Pekerjaan</div>
-          <div style="font-size:12px;color:var(--text-secondary);margin-top:3px">Supervisor input penugasan — petugas lapangan tinggal masukan nomor penugasan saat laporan</div>
+          <div class="fb-subtitle">Buat penugasan sekaligus target volumenya di sini — petugas lapangan tinggal pilih dari daftar tugasnya saat lapor, tidak perlu ketik nomor apa pun</div>
         </div>
         <button class="topbar-btn-yellow" onclick="bukaModalTiket()" style="font-size:13px;padding:9px 18px">+ Buat Penugasan Baru</button>
       </div>
 
       <!-- Form Tiket Modal -->
       <div id="modal-tiket" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(10,20,36,0.55);align-items:center;justify-content:center;">
-        <div style="background:var(--surface);border-radius:var(--radius-lg);padding:28px;width:100%;max-width:520px;box-shadow:var(--shadow-lg);position:relative;margin:16px;">
+        <div style="background:var(--surface);border-radius:var(--radius-lg);padding:28px;width:100%;max-width:520px;max-height:calc(100vh - 32px);overflow-y:auto;box-shadow:var(--shadow-lg);position:relative;margin:16px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
             <div style="font-family:var(--font-display);font-size:16px;font-weight:800">Buat Penugasan Pekerjaan</div>
             <button onclick="tutupModalTiket()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-3);padding:4px">✕</button>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-            <div>
-              <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Nomor Penugasan *</label>
-              <input id="tiket-nomor" type="text" placeholder="cth: P1-2025-0042" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;font-family:var(--mono);outline:none;transition:border-color 0.18s" onfocus="this.style.borderColor='var(--pln-blue-light)'" onblur="this.style.borderColor='var(--line)'">
-            </div>
-            <div>
-              <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Prioritas *</label>
-              <select id="tiket-prioritas" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;height:38px;background:var(--surface)">
-                <option value="P0">P0 — Darurat</option>
-                <option value="P1">P1 — Segera</option>
-                <option value="P2">P2 — Normal</option>
-              </select>
-            </div>
+
+          <div style="margin-bottom:12px" id="tiket-nomor-wrap">
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Nomor Penugasan</label>
+            <div id="tiket-nomor-preview" style="width:100%;border:1px dashed var(--line-strong);border-radius:var(--radius-xs);padding:9px 12px;font-size:12.5px;font-family:var(--mono);color:var(--text-3);background:var(--surface-2)">Dibuat otomatis saat disimpan</div>
           </div>
+
           <div style="margin-bottom:12px">
             <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Jenis Pekerjaan *</label>
             <input id="tiket-jenis" type="text" placeholder="cth: Perbaikan kabel putus penyulang Entrop" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;transition:border-color 0.18s" onfocus="this.style.borderColor='var(--pln-blue-light)'" onblur="this.style.borderColor='var(--line)'">
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-            <div>
-              <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Lokasi / Aset</label>
-              <input id="tiket-lokasi" type="text" placeholder="cth: Gardu GH-024 Jl. Raya Sentani" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;transition:border-color 0.18s" onfocus="this.style.borderColor='var(--pln-blue-light)'" onblur="this.style.borderColor='var(--line)'">
-            </div>
-            <div>
-              <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Target Volume <span style="font-weight:400;color:var(--text-3)">(cth: 12 gardu)</span></label>
-              <input id="tiket-target" type="number" placeholder="0" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;transition:border-color 0.18s" onfocus="this.style.borderColor='var(--pln-blue-light)'" onblur="this.style.borderColor='var(--line)'">
-            </div>
+          <div style="margin-bottom:12px">
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Lokasi / Aset <span style="font-weight:400;color:var(--text-3)">(opsional)</span></label>
+            <input id="tiket-lokasi" type="text" placeholder="cth: Gardu GH-024 Jl. Raya Sentani" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;transition:border-color 0.18s" onfocus="this.style.borderColor='var(--pln-blue-light)'" onblur="this.style.borderColor='var(--line)'">
           </div>
 
           <div style="border-top:1px dashed var(--line);margin:16px 0;padding-top:14px">
@@ -1659,7 +1645,54 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
             </div>
           </div>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0 12px">
+          <div style="border-top:1px dashed var(--line);margin:16px 0;padding-top:14px">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);margin-bottom:10px">🎯 Target Volume &amp; Periode</div>
+            <div style="margin-bottom:12px">
+              <div style="display:flex;gap:8px">
+                <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px;cursor:pointer;font-size:12.5px;font-weight:600">
+                  <input type="radio" name="target-tipe" value="harian" checked onchange="onTargetTipeChange()"> Harian
+                </label>
+                <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px;cursor:pointer;font-size:12.5px;font-weight:600">
+                  <input type="radio" name="target-tipe" value="mingguan" onchange="onTargetTipeChange()"> Mingguan
+                </label>
+                <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px;cursor:pointer;font-size:12.5px;font-weight:600">
+                  <input type="radio" name="target-tipe" value="bulanan" onchange="onTargetTipeChange()"> Bulanan
+                </label>
+              </div>
+            </div>
+            <div id="target-range-toggle-wrap" style="margin-bottom:12px;display:none">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--text-2);background:rgba(0,87,184,0.06);border:1px dashed var(--line);border-radius:var(--radius-xs);padding:9px 12px">
+                <input type="checkbox" id="target-range-mode" onchange="onTargetRangeModeChange()">
+                🔁 Isi untuk beberapa hari sekaligus (opsional) — 1 angka target langsung berlaku ke semua tanggal dalam rentang, masing-masing jadi penugasan sendiri
+              </label>
+            </div>
+            <div style="margin-bottom:12px">
+              <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px" id="target-periode-label">Tanggal *</label>
+              <input id="target-periode-harian" type="date" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
+              <input id="target-periode-mingguan" type="week" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;display:none">
+              <input id="target-periode-bulanan" type="month" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;display:none">
+              <div id="target-range-fields" style="display:none">
+                <div style="display:flex;gap:8px">
+                  <div style="flex:1">
+                    <label style="font-size:10.5px;font-weight:700;color:var(--text-3);display:block;margin-bottom:4px">Dari Tanggal *</label>
+                    <input id="target-range-mulai" type="date" onchange="updateTargetRangeInfo()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
+                  </div>
+                  <div style="flex:1">
+                    <label style="font-size:10.5px;font-weight:700;color:var(--text-3);display:block;margin-bottom:4px">Sampai Tanggal *</label>
+                    <input id="target-range-selesai" type="date" onchange="updateTargetRangeInfo()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
+                  </div>
+                </div>
+                <div id="target-range-info" style="font-size:11px;color:var(--text-3);margin-top:6px"></div>
+              </div>
+            </div>
+            <div style="margin-bottom:0">
+              <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Target Volume * <span style="font-weight:400;color:var(--text-3);text-transform:none">(cth: 12 gardu)</span></label>
+              <input id="target-volume" type="number" min="0" placeholder="0" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;font-family:var(--mono);outline:none">
+              <div id="target-volume-hint" style="font-size:11px;color:var(--text-3);margin-top:4px;display:none">Angka ini akan diterapkan ke setiap tanggal dalam rentang (bukan dijumlah/dibagi).</div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0 12px">
             <div>
               <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Titik Koordinat Awal <span style="font-weight:400;color:var(--text-3)">(opsional)</span></label>
               <input id="tiket-koordinat-awal" type="text" placeholder="cth: -2.5916, 140.6719" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;font-family:var(--mono);outline:none;transition:border-color 0.18s" onfocus="this.style.borderColor='var(--pln-blue-light)'" onblur="this.style.borderColor='var(--line)'">
@@ -1692,127 +1725,18 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
               <thead>
                 <tr>
                   <th>Nomor Penugasan</th>
-                  <th>Prioritas</th>
                   <th>Jenis Pekerjaan</th>
                   <th>Lokasi / Aset</th>
                   <th>ULP</th>
                   <th>Ditugaskan</th>
-                  <th>Target</th>
+                  <th>Target &amp; Periode</th>
                   <th>Status</th>
                   <th>Dibuat</th>
                   <th>Aksi</th>
                 </tr>
               </thead>
               <tbody id="tiketBody">
-                <tr><td colspan="10" class="empty">Belum ada penugasan. Buat penugasan baru di atas.</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══ TARGET KERJA REGU (digabung ke Kelola Penugasan Pekerjaan) ══ -->
-      <div class="fb-header" style="margin-top:22px;border-top:1px dashed var(--line);padding-top:18px">
-        <div>
-          <div class="card-title" style="font-size:16px">🎯 Target Kerja Regu</div>
-          <div style="font-size:12px;color:var(--text-secondary);margin-top:3px">Target volume per Regu, per periode (Harian/Mingguan/Bulanan) — dipakai untuk hitung % capaian di Beranda &amp; Rekap</div>
-        </div>
-        <button class="topbar-btn-yellow" onclick="bukaModalTarget()" style="font-size:13px;padding:9px 18px">+ Tambah Target</button>
-      </div>
-
-      <!-- Modal Tambah/Edit Target -->
-      <div id="modal-target" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(10,20,36,0.55);align-items:center;justify-content:center;">
-        <div style="background:var(--surface);border-radius:var(--radius-lg);padding:28px;width:100%;max-width:440px;box-shadow:var(--shadow-lg);margin:16px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-            <div id="target-modal-title" style="font-family:var(--font-display);font-size:16px;font-weight:800">Tambah Target</div>
-            <button onclick="tutupModalTarget()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-3);padding:4px">✕</button>
-          </div>
-
-          <div style="margin-bottom:12px">
-            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Unit Kerja *</label>
-            <select id="target-ulp" onchange="onTargetUlpChange()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
-              <option value="">— Pilih Unit Kerja —</option>
-            </select>
-          </div>
-          <div style="margin-bottom:12px">
-            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Regu / Tim *</label>
-            <select id="target-regu" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
-              <option value="">— Pilih Unit Kerja dulu —</option>
-            </select>
-          </div>
-          <div style="margin-bottom:12px">
-            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Tipe Periode *</label>
-            <div style="display:flex;gap:8px">
-              <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px;cursor:pointer;font-size:12.5px;font-weight:600">
-                <input type="radio" name="target-tipe" value="harian" checked onchange="onTargetTipeChange()"> Harian
-              </label>
-              <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px;cursor:pointer;font-size:12.5px;font-weight:600">
-                <input type="radio" name="target-tipe" value="mingguan" onchange="onTargetTipeChange()"> Mingguan
-              </label>
-              <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px;cursor:pointer;font-size:12.5px;font-weight:600">
-                <input type="radio" name="target-tipe" value="bulanan" onchange="onTargetTipeChange()"> Bulanan
-              </label>
-            </div>
-          </div>
-          <div id="target-range-toggle-wrap" style="margin-bottom:12px;display:none">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--text-2);background:rgba(0,87,184,0.06);border:1px dashed var(--line);border-radius:var(--radius-xs);padding:9px 12px">
-              <input type="checkbox" id="target-range-mode" onchange="onTargetRangeModeChange()">
-              🔁 Isi untuk beberapa hari sekaligus (opsional) — 1 angka target langsung berlaku ke semua tanggal dalam rentang
-            </label>
-          </div>
-          <div style="margin-bottom:12px">
-            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px" id="target-periode-label">Tanggal *</label>
-            <input id="target-periode-harian" type="date" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
-            <input id="target-periode-mingguan" type="week" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;display:none">
-            <input id="target-periode-bulanan" type="month" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;display:none">
-            <div id="target-range-fields" style="display:none">
-              <div style="display:flex;gap:8px">
-                <div style="flex:1">
-                  <label style="font-size:10.5px;font-weight:700;color:var(--text-3);display:block;margin-bottom:4px">Dari Tanggal *</label>
-                  <input id="target-range-mulai" type="date" onchange="updateTargetRangeInfo()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
-                </div>
-                <div style="flex:1">
-                  <label style="font-size:10.5px;font-weight:700;color:var(--text-3);display:block;margin-bottom:4px">Sampai Tanggal *</label>
-                  <input id="target-range-selesai" type="date" onchange="updateTargetRangeInfo()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
-                </div>
-              </div>
-              <div id="target-range-info" style="font-size:11px;color:var(--text-3);margin-top:6px"></div>
-            </div>
-          </div>
-          <div style="margin-bottom:12px">
-            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Target Volume *</label>
-            <input id="target-volume" type="number" min="0" placeholder="cth: 50" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;font-family:var(--mono);outline:none">
-            <div id="target-volume-hint" style="font-size:11px;color:var(--text-3);margin-top:4px;display:none">Angka ini akan diterapkan ke setiap tanggal dalam rentang (bukan dijumlah/dibagi).</div>
-          </div>
-          <div id="target-err" style="display:none;background:var(--crit-bg);color:var(--crit);padding:9px 13px;border-radius:var(--radius-xs);font-size:12px;margin-bottom:12px;border:1px solid rgba(220,53,69,0.2)"></div>
-          <div style="display:flex;gap:10px">
-            <button onclick="tutupModalTarget()" style="flex:1;padding:11px;border:1px solid var(--line);border-radius:var(--radius-xs);background:none;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-2)">Batal</button>
-            <button onclick="simpanTarget()" style="flex:2;padding:11px;border:none;border-radius:var(--radius-xs);background:linear-gradient(135deg,var(--pln-yellow),var(--pln-yellow-deep));color:var(--ink-900);font-size:13px;font-weight:800;cursor:pointer;box-shadow:var(--shadow-glow-yellow)">✓ Simpan Target</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="card" style="margin-top:14px;">
-        <div class="card-header">
-          <div class="card-title">Daftar Target</div>
-          <span class="card-count" id="targetCount">0 target</span>
-        </div>
-        <div class="table-container" style="max-height:none;">
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Unit Kerja</th>
-                  <th>Regu / Tim</th>
-                  <th>Tipe Periode</th>
-                  <th>Periode</th>
-                  <th>Target Volume</th>
-                  <th>Dibuat Oleh</th>
-                  <th>Aksi</th>
-                </tr>
-              </thead>
-              <tbody id="targetBody">
-                <tr><td colspan="7" class="empty">Menunggu data Firebase...</td></tr>
+                <tr><td colspan="9" class="empty">Belum ada penugasan. Buat penugasan baru di atas.</td></tr>
               </tbody>
             </table>
           </div>
@@ -2545,7 +2469,7 @@ function switchView(view) {
     initFirebase().then(ok => {
       if (!ok) return;
       listenRekap();       // isi allLaporanCache (dipakai chart Realisasi vs Target & Status Laporan)
-      listenTargetKerja();  // isi targetKerjaCache
+      listenTiket();        // isi targetKerjaCache (dari node 'penugasan')
     });
   } else if (view === 'map') {
     document.getElementById('filterBar').style.display = '';
@@ -2584,7 +2508,7 @@ function switchView(view) {
   } else if (view === 'tiket') {
     document.getElementById('viewTiket').style.display = '';
     document.getElementById('nav-tiket').classList.add('active');
-    initFirebase().then(ok => { if (ok) { listenTiket(); listenTargetKerja(); } });
+    initFirebase().then(ok => { if (ok) { listenTiket(); } });
   } else if (view === 'verifikasi') {
     document.getElementById('viewVerifikasi').style.display = '';
     document.getElementById('nav-verifikasi').classList.add('active');
@@ -2809,11 +2733,12 @@ async function initFirebase() {
   if (fbApp) return true;
   try {
     const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-    const { getDatabase, ref, onValue, remove, update, query, orderByChild, startAt, endAt } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+    const { getDatabase, ref, onValue, remove, update, query, orderByChild, startAt, endAt, runTransaction } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
     fbApp = initializeApp(FB_CONFIG, 'supervisor');
     fbDb  = getDatabase(fbApp);
     window._fbRef = ref; window._fbOnValue = onValue; window._fbRemove = remove; window._fbUpdate = update;
     window._fbQuery = query; window._fbOrderByChild = orderByChild; window._fbStartAt = startAt; window._fbEndAt = endAt;
+    window._fbRunTransaction = runTransaction;
     return true;
   } catch(e) {
     console.error('Firebase init gagal:', e);
@@ -2935,6 +2860,18 @@ const ROSTER_ULP_TEAMS = {
   ]
 };
 
+// Kode singkat per ULP — dipakai untuk generate Nomor Penugasan otomatis
+// (format KODE-0001, urut per ULP via Firebase transaction, tidak pernah
+// reset/pakai ulang supaya nomor lama tetap valid untuk histori/laporan).
+const KODE_ULP = {
+  'ULP Jayapura': 'JYP',
+  'ULP Abepura':  'ABE',
+  'ULP Sentani':  'SEN',
+  'ULP Arso':     'ARS',
+  'ULP Genyem':   'GYM',
+  'ULP Sarmi':    'SRM'
+};
+
 // ══════════════════════════════════════════════════════════════
 // KELOLA TARGET (poin 2b) — target volume per Regu per periode.
 // Skema Firebase: targetKerja/{ulp}/{regu}/{periodeKey}
@@ -2945,27 +2882,7 @@ const ROSTER_ULP_TEAMS = {
 // akan saling menimpa satu sama lain di Firebase. Jadi ULP wajib jadi
 // bagian dari path supaya tiap tim di tiap ULP punya target sendiri-sendiri.
 // ══════════════════════════════════════════════════════════════
-let targetKerjaCache = []; // [{ulp, regu, periodeKey, tipePeriode, targetVolume, dibuatOleh, waktu}]
-let targetEditKey = null;  // {ulp, regu, periodeKey} kalau sedang edit, null kalau tambah baru
-
-function populateTargetUlpSelect() {
-  const sel = document.getElementById('target-ulp');
-  if (!sel || sel.options.length > 1) return; // sudah pernah diisi
-  Object.keys(ROSTER_ULP_TEAMS).forEach(ulp => {
-    const opt = document.createElement('option');
-    opt.value = ulp; opt.textContent = ulp;
-    sel.appendChild(opt);
-  });
-}
-
-window.onTargetUlpChange = function() {
-  const ulp = document.getElementById('target-ulp').value;
-  const reguSel = document.getElementById('target-regu');
-  const teams = ROSTER_ULP_TEAMS[ulp] || [];
-  reguSel.innerHTML = teams.length
-    ? '<option value="">— Pilih Regu/Tim —</option>' + teams.map(t => `<option value="${t}">${t}</option>`).join('')
-    : '<option value="">— Pilih Unit Kerja dulu —</option>';
-};
+let targetKerjaCache = []; // [{ulp, regu, periodeKey, tipePeriode, targetVolume, dibuatOleh, waktu}] — dibangun dari node 'penugasan' (lihat listenTiket)
 
 window.onTargetTipeChange = function() {
   const tipe = document.querySelector('input[name="target-tipe"]:checked').value;
@@ -2975,10 +2892,11 @@ window.onTargetTipeChange = function() {
   });
   label.textContent = tipe === 'harian' ? 'Tanggal *' : tipe === 'mingguan' ? 'Minggu *' : 'Bulan *';
 
-  // Toggle "isi beberapa hari sekaligus" cuma relevan untuk tipe Harian
-  // (Mingguan/Bulanan sudah otomatis mewakili satu rentang periode sendiri).
+  // Toggle "isi beberapa hari sekaligus" cuma relevan untuk tipe Harian & saat BUAT baru
+  // (Mingguan/Bulanan sudah otomatis mewakili satu rentang periode sendiri; saat edit
+  // penugasan yang sudah ada, mode rentang tidak relevan karena cuma 1 penugasan itu).
   const toggleWrap = document.getElementById('target-range-toggle-wrap');
-  const isEdit = !!targetEditKey;
+  const isEdit = !!currentEditTiketId;
   if (tipe === 'harian' && !isEdit) {
     toggleWrap.style.display = 'block';
   } else {
@@ -2992,7 +2910,7 @@ window.onTargetTipeChange = function() {
 // Opsional — default tetap input 1 tanggal seperti semula. Kalau dicentang,
 // field tanggal tunggal disembunyikan dan diganti rentang Dari–Sampai;
 // 1 angka Target Volume yang diisi akan disalin ke SETIAP tanggal dalam
-// rentang itu sebagai target harian tersendiri (bukan dibagi/dijumlah).
+// rentang itu sebagai penugasan harian tersendiri (bukan dibagi/dijumlah).
 window.onTargetRangeModeChange = function() {
   const tipe = document.querySelector('input[name="target-tipe"]:checked').value;
   const rangeOn = tipe === 'harian' && document.getElementById('target-range-mode').checked;
@@ -3035,180 +2953,19 @@ window.updateTargetRangeInfo = function() {
     infoEl.style.color = 'var(--crit)';
     return;
   }
-  infoEl.textContent = `✓ Target akan dibuat untuk ${jumlah} hari (${fmtTglRangeID(mulai)} – ${fmtTglRangeID(selesai)}), masing-masing dengan angka yang sama.`;
+  infoEl.textContent = `✓ Akan dibuat ${jumlah} penugasan terpisah (${fmtTglRangeID(mulai)} – ${fmtTglRangeID(selesai)}), masing-masing dengan Target Volume yang sama.`;
   infoEl.style.color = 'var(--text-3)';
-};
-
-window.bukaModalTarget = function(ulp, regu, periodeKey) {
-  populateTargetUlpSelect();
-  document.getElementById('target-err').style.display = 'none';
-  const isEdit = !!(ulp && regu && periodeKey);
-  targetEditKey = isEdit ? { ulp, regu, periodeKey } : null;
-  document.getElementById('target-modal-title').textContent = isEdit ? 'Edit Target' : 'Tambah Target';
-
-  if (isEdit) {
-    const entry = targetKerjaCache.find(t => t.ulp === ulp && t.regu === regu && t.periodeKey === periodeKey);
-    document.getElementById('target-ulp').value = ulp;
-    onTargetUlpChange();
-    document.getElementById('target-regu').value = regu;
-    document.querySelector(`input[name="target-tipe"][value="${entry.tipePeriode}"]`).checked = true;
-    // Mode rentang hanya untuk tambah target baru, bukan edit satu entry — reset dulu sebelum onTargetTipeChange()
-    document.getElementById('target-range-mode').checked = false;
-    onTargetTipeChange();
-    document.getElementById('target-periode-' + entry.tipePeriode).value = periodeKey;
-    document.getElementById('target-volume').value = entry.targetVolume;
-    // Unit Kerja & Regu tidak boleh diubah saat edit (itu bagian dari kunci Firebase) — kunci dropdown-nya.
-    document.getElementById('target-ulp').disabled = true;
-    document.getElementById('target-regu').disabled = true;
-  } else {
-    document.getElementById('target-ulp').value = '';
-    document.getElementById('target-ulp').disabled = false;
-    document.getElementById('target-regu').innerHTML = '<option value="">— Pilih Unit Kerja dulu —</option>';
-    document.getElementById('target-regu').disabled = false;
-    document.querySelector('input[name="target-tipe"][value="harian"]').checked = true;
-    document.getElementById('target-range-mode').checked = false;
-    document.getElementById('target-range-mulai').value = '';
-    document.getElementById('target-range-selesai').value = '';
-    document.getElementById('target-range-info').textContent = '';
-    onTargetTipeChange();
-    document.getElementById('target-periode-harian').value = '';
-    document.getElementById('target-periode-mingguan').value = '';
-    document.getElementById('target-periode-bulanan').value = '';
-    document.getElementById('target-volume').value = '';
-  }
-  document.getElementById('modal-target').style.display = 'flex';
-};
-
-window.tutupModalTarget = function() {
-  document.getElementById('modal-target').style.display = 'none';
-};
-
-window.simpanTarget = async function() {
-  const errEl = document.getElementById('target-err');
-  errEl.style.display = 'none';
-
-  const ulp  = document.getElementById('target-ulp').value;
-  const regu = document.getElementById('target-regu').value;
-  const tipePeriode = document.querySelector('input[name="target-tipe"]:checked').value;
-  const targetVolume = document.getElementById('target-volume').value;
-  const rangeOn = tipePeriode === 'harian' && !targetEditKey && document.getElementById('target-range-mode').checked;
-
-  if (!ulp || !regu) { errEl.textContent = 'Unit Kerja dan Regu/Tim wajib dipilih.'; errEl.style.display = 'block'; return; }
-  if (targetVolume === '' || +targetVolume < 0) { errEl.textContent = 'Target Volume wajib diisi (angka ≥ 0).'; errEl.style.display = 'block'; return; }
-  if (!(await initFirebase())) { errEl.textContent = 'Firebase belum terhubung.'; errEl.style.display = 'block'; return; }
-
-  // ── Mode rentang (opsional): 1 angka Target Volume ditulis ke banyak
-  // tanggal Harian sekaligus. Tetap memakai skema data yang sama persis
-  // (targetKerja/{ulp}/{regu}/{tanggal}) — cuma dibuat banyak sekali kirim,
-  // bukan skema baru — supaya perhitungan capaian di poin 4c/5 tidak berubah.
-  if (rangeOn) {
-    const mulai = document.getElementById('target-range-mulai').value;
-    const selesai = document.getElementById('target-range-selesai').value;
-    if (!mulai || !selesai) { errEl.textContent = 'Tanggal Dari dan Sampai wajib diisi.'; errEl.style.display = 'block'; return; }
-    if (selesai < mulai) { errEl.textContent = 'Tanggal Sampai tidak boleh sebelum Tanggal Dari.'; errEl.style.display = 'block'; return; }
-    const tanggalList = daftarTanggalRange(mulai, selesai);
-    if (tanggalList.length > TARGET_RANGE_MAKS_HARI) {
-      errEl.textContent = `Rentang ${tanggalList.length} hari melebihi batas maksimal ${TARGET_RANGE_MAKS_HARI} hari sekali isi.`;
-      errEl.style.display = 'block';
-      return;
-    }
-    try {
-      const waktu = Date.now();
-      await Promise.all(tanggalList.map(periodeKey =>
-        window._fbSet(window._fbRef(fbDb, `targetKerja/${ulp}/${regu}/${periodeKey}`), {
-          ulp, regu, periodeKey, tipePeriode: 'harian',
-          targetVolume: +targetVolume,
-          dibuatOleh: 'Supervisor',
-          waktu
-        })
-      ));
-      showToast(`Target berhasil disimpan untuk ${tanggalList.length} hari (${fmtTglRangeID(mulai)} – ${fmtTglRangeID(selesai)}).`, 'ok');
-      tutupModalTarget();
-    } catch (e) {
-      errEl.textContent = 'Gagal menyimpan: ' + e.message;
-      errEl.style.display = 'block';
-    }
-    return;
-  }
-
-  // ── Mode normal: 1 tanggal/minggu/bulan seperti semula ──
-  const periodeKey = document.getElementById('target-periode-' + tipePeriode).value;
-  if (!periodeKey) { errEl.textContent = 'Periode wajib diisi.'; errEl.style.display = 'block'; return; }
-
-  try {
-    const path = `targetKerja/${ulp}/${regu}/${periodeKey}`;
-    await window._fbSet(window._fbRef(fbDb, path), {
-      ulp, regu, periodeKey, tipePeriode,
-      targetVolume: +targetVolume,
-      dibuatOleh: 'Supervisor',
-      waktu: Date.now()
-    });
-    // Kalau sedang edit dan periode/tipe-nya diganti (bukan overwrite di key yang sama),
-    // hapus entry lama supaya tidak ada 2 target nyangkut untuk regu yang sama.
-    if (targetEditKey && (targetEditKey.periodeKey !== periodeKey)) {
-      await window._fbSet(window._fbRef(fbDb, `targetKerja/${targetEditKey.ulp}/${targetEditKey.regu}/${targetEditKey.periodeKey}`), null);
-    }
-    showToast('Target berhasil disimpan.', 'ok');
-    tutupModalTarget();
-  } catch (e) {
-    errEl.textContent = 'Gagal menyimpan: ' + e.message;
-    errEl.style.display = 'block';
-  }
-};
-
-window.hapusTarget = async function(ulp, regu, periodeKey) {
-  if (!(await confirmDialog(`Hapus target "${regu}" (${ulp}) periode ${periodeKey}?`, { title: 'Hapus Target' }))) return;
-  try {
-    await window._fbSet(window._fbRef(fbDb, `targetKerja/${ulp}/${regu}/${periodeKey}`), null);
-    showToast('Target dihapus.', 'ok');
-  } catch (e) {
-    showToast('Gagal menghapus: ' + e.message, 'err');
-  }
 };
 
 const TIPE_PERIODE_LABEL = { harian: 'Harian', mingguan: 'Mingguan', bulanan: 'Bulanan' };
 
-function renderTargetTable() {
-  const tbody = document.getElementById('targetBody');
-  document.getElementById('targetCount').textContent = targetKerjaCache.length + ' target';
-  if (targetKerjaCache.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty">Belum ada target diatur</td></tr>';
-    return;
-  }
-  const sorted = targetKerjaCache.slice().sort((a,b) => (b.waktu||0) - (a.waktu||0));
-  tbody.innerHTML = sorted.map(t => `
-    <tr>
-      <td style="font-size:12px">${t.ulp}</td>
-      <td style="font-weight:600;font-size:12px">${t.regu}</td>
-      <td style="font-size:12px">${TIPE_PERIODE_LABEL[t.tipePeriode] || t.tipePeriode}</td>
-      <td style="font-family:var(--mono);font-size:11px">${t.periodeKey}</td>
-      <td style="font-family:var(--mono);font-weight:700">${t.targetVolume}</td>
-      <td style="font-size:11px;color:var(--text-2)">${t.dibuatOleh || '—'}</td>
-      <td>
-        <button onclick="bukaModalTarget('${t.ulp}','${t.regu}','${t.periodeKey}')" style="background:none;border:none;cursor:pointer;font-size:14px;padding:4px" title="Edit">✏️</button>
-        <button onclick="hapusTarget('${t.ulp}','${t.regu}','${t.periodeKey}')" style="background:none;border:none;cursor:pointer;font-size:14px;padding:4px" title="Hapus">🗑️</button>
-      </td>
-    </tr>
-  `).join('');
-}
-
-function listenTargetKerja() {
-  if (fbListeners.targetKerja) { renderTargetTable(); refreshBerandaCharts(); return; }
-  const r = window._fbRef(fbDb, 'targetKerja');
-  fbListeners.targetKerja = window._fbOnValue(r, snap => {
-    const data = snap.val() || {};
-    const flat = [];
-    Object.entries(data).forEach(([ulp, byRegu]) => {
-      Object.entries(byRegu || {}).forEach(([regu, byPeriode]) => {
-        Object.entries(byPeriode || {}).forEach(([periodeKey, v]) => {
-          flat.push({ ulp, regu, periodeKey, ...v });
-        });
-      });
-    });
-    targetKerjaCache = flat;
-    renderTargetTable();
-    refreshBerandaCharts();
-  });
+// Format ringkas "Target & Periode" untuk kolom tabel Daftar Penugasan Aktif.
+function fmtTargetPeriode(t) {
+  if (t.targetVolume == null || t.targetVolume === '') return '<span style="color:var(--text-3)">—</span>';
+  const tipeLabel = TIPE_PERIODE_LABEL[t.tipePeriode] || t.tipePeriode || '—';
+  let periodeTxt = t.periodeKey || '—';
+  if (t.tipePeriode === 'harian' && t.periodeKey) periodeTxt = fmtTglRangeID(t.periodeKey);
+  return `<b style="font-family:var(--mono)">${t.targetVolume}</b> <span style="color:var(--text-3)">· ${tipeLabel} · ${periodeTxt}</span>`;
 }
 
 // ── Perhitungan % capaian (poin 2c) ─────────────────────────────
@@ -4617,11 +4374,15 @@ window.bukaModalTiket = function(id, data) {
   currentEditTiketId = id || null;
   populateTiketUlpSelect();
 
-  document.getElementById('tiket-nomor').value    = data?.nomor    || '';
-  document.getElementById('tiket-prioritas').value= data?.prioritas|| 'P1';
+  // Nomor Penugasan: hanya ditampilkan (read-only). Saat buat baru, nomor
+  // benar-benar di-generate atomik lewat Firebase transaction pas Simpan
+  // (lihat simpanTiket / generateNomorPenugasan) — bukan diketik siapa pun.
+  const nomorPreview = document.getElementById('tiket-nomor-preview');
+  nomorPreview.textContent = data?.nomor || 'Dibuat otomatis saat disimpan';
+  nomorPreview.style.color = data?.nomor ? 'var(--text-1)' : 'var(--text-3)';
+
   document.getElementById('tiket-jenis').value    = data?.jenis    || '';
   document.getElementById('tiket-lokasi').value   = data?.lokasi   || '';
-  document.getElementById('tiket-target').value   = data?.target   || '';
   document.getElementById('tiket-koordinat-awal').value  = data?.koordinatAwal  || '';
   document.getElementById('tiket-koordinat-akhir').value = data?.koordinatAkhir || '';
   document.getElementById('tiket-err').style.display = 'none';
@@ -4634,6 +4395,26 @@ window.bukaModalTiket = function(id, data) {
     reguSel.value = currentAssignRegu;
   }
   updateAssignedChip();
+
+  // ── Target Volume & Periode (digabung dari fitur Target Kerja Regu) ──
+  const isEdit = !!(data && data.tipePeriode);
+  document.getElementById('target-range-mode').checked = false;
+  document.getElementById('target-range-mulai').value = '';
+  document.getElementById('target-range-selesai').value = '';
+  document.getElementById('target-range-info').textContent = '';
+  if (isEdit) {
+    document.querySelector(`input[name="target-tipe"][value="${data.tipePeriode}"]`).checked = true;
+    onTargetTipeChange();
+    document.getElementById('target-periode-' + data.tipePeriode).value = data.periodeKey || '';
+    document.getElementById('target-volume').value = data.targetVolume ?? '';
+  } else {
+    document.querySelector('input[name="target-tipe"][value="harian"]').checked = true;
+    onTargetTipeChange();
+    document.getElementById('target-periode-harian').value = '';
+    document.getElementById('target-periode-mingguan').value = '';
+    document.getElementById('target-periode-bulanan').value = '';
+    document.getElementById('target-volume').value = '';
+  }
 
   document.getElementById('modal-tiket').style.display = 'flex';
   renderTimAktif();
@@ -4655,20 +4436,31 @@ function koordinatValidOrEmpty(raw) {
   return parts.length === 2 && !parts.some(isNaN);
 }
 
+// Generate Nomor Penugasan otomatis & atomik: KODE_ULP-0001, urut per ULP,
+// tidak pernah reset. Pakai Firebase transaction supaya aman walau 2
+// supervisor menyimpan penugasan di ULP yang sama pada saat bersamaan.
+async function generateNomorPenugasan(ulp) {
+  const kode = KODE_ULP[ulp] || 'GEN';
+  const counterRef = window._fbRef(fbDb, 'penugasanCounter/' + kode);
+  const result = await window._fbRunTransaction(counterRef, curr => (curr || 0) + 1);
+  const seq = result.snapshot.val();
+  return kode + '-' + String(seq).padStart(4, '0');
+}
+
 window.simpanTiket = async function() {
-  const nomor          = document.getElementById('tiket-nomor').value.trim();
-  const prioritas      = document.getElementById('tiket-prioritas').value;
   const jenis          = document.getElementById('tiket-jenis').value.trim();
   const lokasi         = document.getElementById('tiket-lokasi').value.trim();
   const ulp            = document.getElementById('tiket-ulp').value;
   const regu           = document.getElementById('tiket-regu').value;
   const koordinatAwal  = document.getElementById('tiket-koordinat-awal').value.trim();
   const koordinatAkhir = document.getElementById('tiket-koordinat-akhir').value.trim();
-  const target         = document.getElementById('tiket-target').value.trim();
+  const tipePeriode    = document.querySelector('input[name="target-tipe"]:checked').value;
+  const targetVolume   = document.getElementById('target-volume').value;
+  const rangeOn        = tipePeriode === 'harian' && !currentEditTiketId && document.getElementById('target-range-mode').checked;
   const errEl          = document.getElementById('tiket-err');
 
-  if (!nomor || !jenis) {
-    errEl.textContent = 'Nomor Penugasan dan Jenis Pekerjaan wajib diisi.';
+  if (!jenis) {
+    errEl.textContent = 'Jenis Pekerjaan wajib diisi.';
     errEl.style.display = 'block';
     return;
   }
@@ -4682,23 +4474,82 @@ window.simpanTiket = async function() {
     errEl.style.display = 'block';
     return;
   }
+  if (targetVolume === '' || +targetVolume < 0) {
+    errEl.textContent = 'Target Volume wajib diisi (angka ≥ 0).';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (!(await initFirebase())) { errEl.textContent = 'Firebase belum terhubung.'; errEl.style.display = 'block'; return; }
   errEl.style.display = 'none';
 
-  if (!fbDb) { showToast('Firebase belum terhubung.', 'err'); return; }
-  const id = currentEditTiketId || ('tiket_' + nomor.replace(/[^a-zA-Z0-9]/g,'_') + '_' + Date.now().toString(36));
-  const payload = {
-    nomor, prioritas, jenis, lokasi, ulp,
+  const baseFields = {
+    jenis, lokasi, ulp,
     koordinatAwal: koordinatAwal || null,
     koordinatAkhir: koordinatAkhir || null,
-    target: target || null,
-    waktu: Date.now(),
+    assignedRegu: regu,
     statusTiket: 'Aktif',
-    assignedRegu: regu
+    dibuatOleh: 'Supervisor'
   };
+
+  // ── Mode rentang (opsional, hanya saat BUAT BARU + tipe Harian): 1 angka
+  // Target Volume ditulis jadi beberapa Penugasan terpisah sekaligus, masing-
+  // masing dapat Nomor Penugasan sendiri. ──
+  if (rangeOn) {
+    const mulai = document.getElementById('target-range-mulai').value;
+    const selesai = document.getElementById('target-range-selesai').value;
+    if (!mulai || !selesai) { errEl.textContent = 'Tanggal Dari dan Sampai wajib diisi.'; errEl.style.display = 'block'; return; }
+    if (selesai < mulai) { errEl.textContent = 'Tanggal Sampai tidak boleh sebelum Tanggal Dari.'; errEl.style.display = 'block'; return; }
+    const tanggalList = daftarTanggalRange(mulai, selesai);
+    if (tanggalList.length > TARGET_RANGE_MAKS_HARI) {
+      errEl.textContent = `Rentang ${tanggalList.length} hari melebihi batas maksimal ${TARGET_RANGE_MAKS_HARI} hari sekali isi.`;
+      errEl.style.display = 'block';
+      return;
+    }
+    try {
+      const waktu = Date.now();
+      await Promise.all(tanggalList.map(async periodeKey => {
+        const nomor = await generateNomorPenugasan(ulp);
+        const id = 'penugasan_' + nomor.replace(/[^a-zA-Z0-9]/g,'_') + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6);
+        return window._fbSet(window._fbRef(fbDb, 'penugasan/' + id), {
+          ...baseFields, nomor,
+          tipePeriode: 'harian', periodeKey,
+          targetVolume: +targetVolume,
+          waktu
+        });
+      }));
+      showToast(`${tanggalList.length} penugasan berhasil dibuat untuk ${regu} (${fmtTglRangeID(mulai)} – ${fmtTglRangeID(selesai)}).`, 'ok');
+      tutupModalTiket();
+    } catch (e) {
+      errEl.textContent = 'Gagal menyimpan: ' + e.message;
+      errEl.style.display = 'block';
+    }
+    return;
+  }
+
+  // ── Mode normal: 1 penugasan, 1 periode ──
+  const periodeKey = document.getElementById('target-periode-' + tipePeriode).value;
+  if (!periodeKey) { errEl.textContent = 'Periode Target wajib diisi.'; errEl.style.display = 'block'; return; }
+
   try {
-    await window._fbSet(window._fbRef(fbDb, 'tiket/' + id), payload);
+    if (currentEditTiketId) {
+      // Edit: nomor & id tetap, cuma update field-fieldnya.
+      await window._fbUpdate(window._fbRef(fbDb, 'penugasan/' + currentEditTiketId), {
+        ...baseFields, tipePeriode, periodeKey,
+        targetVolume: +targetVolume
+      });
+      showToast('Penugasan berhasil diperbarui.', 'ok');
+    } else {
+      // Baru: generate Nomor Penugasan otomatis, lalu simpan.
+      const nomor = await generateNomorPenugasan(ulp);
+      const id = 'penugasan_' + nomor.replace(/[^a-zA-Z0-9]/g,'_') + '_' + Date.now().toString(36);
+      await window._fbSet(window._fbRef(fbDb, 'penugasan/' + id), {
+        ...baseFields, nomor, tipePeriode, periodeKey,
+        targetVolume: +targetVolume,
+        waktu: Date.now()
+      });
+      showToast('Penugasan ' + nomor + ' disimpan → ditugaskan ke ' + regu + '.', 'ok');
+    }
     tutupModalTiket();
-    showToast('Penugasan ' + nomor + ' disimpan → ditugaskan ke ' + regu + '.', 'ok');
   } catch(e) {
     errEl.textContent = 'Gagal menyimpan: ' + e.message;
     errEl.style.display = 'block';
@@ -4708,7 +4559,7 @@ window.simpanTiket = async function() {
 window.hapusTiket = async function(id) {
   if (!isAdminMode) return;
   if (!(await confirmDialog('Hapus penugasan ini?', { title: 'Hapus Penugasan' }))) return;
-  try { await window._fbRemove(window._fbRef(fbDb, 'tiket/' + id)); showToast('Penugasan dihapus.', 'ok'); }
+  try { await window._fbRemove(window._fbRef(fbDb, 'penugasan/' + id)); showToast('Penugasan dihapus.', 'ok'); }
   catch(e) { showToast('Gagal menghapus: ' + e.message, 'err'); }
 };
 
@@ -4717,25 +4568,22 @@ function renderTiketTable(entries) {
   document.getElementById('tiketCount').textContent = entries.length + ' penugasan';
   const tbody = document.getElementById('tiketBody');
   if (entries.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="10" class="empty">Belum ada penugasan. Buat penugasan baru di atas.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="empty">Belum ada penugasan. Buat penugasan baru di atas.</td></tr>';
     return;
   }
-  const prioritasColor = { P0: 'badge-red', P1: 'badge-amber', P2: 'badge-blue' };
   tbody.innerHTML = entries.sort((a,b)=>(b[1].waktu||0)-(a[1].waktu||0)).map(([id, t]) => {
     const waktu = t.waktu ? new Date(t.waktu).toLocaleDateString('id-ID') : '—';
-    const pClass = prioritasColor[t.prioritas] || 'badge-gray';
     const statusCls = t.statusTiket === 'Selesai' ? 'badge-green' : 'badge-blue';
     const editBtn = `<button onclick="bukaModalTiket('${id}',${JSON.stringify(t).replace(/'/g,"\\'")})" style="background:var(--info-bg);color:var(--info);border:none;border-radius:var(--radius-xs);padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;margin-right:4px">Edit</button>`;
     const tutupBtn = t.statusTiket !== 'Selesai' ? `<button onclick="tutupTiketManual('${id}')" style="background:var(--ok-bg);color:var(--ok);border:none;border-radius:var(--radius-xs);padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;margin-right:4px" title="Tandai penugasan ini selesai secara manual">✓ Tutup</button>` : '';
     const delBtn = isAdminMode ? `<button class="btn-del" onclick="hapusTiket('${id}')">🗑</button>` : '';
     return `<tr>
       <td style="font-family:var(--mono);font-size:12px;font-weight:700">${t.nomor||'—'}</td>
-      <td><span class="badge ${pClass}"><span class="badge-dot"></span>${t.prioritas||'—'}</span></td>
       <td style="font-weight:600">${t.jenis||'—'}</td>
       <td style="font-size:12px;color:var(--text-2)">${t.lokasi||'—'}${(t.koordinatAwal||t.koordinatAkhir) ? `<div style="font-family:var(--mono);font-size:10px;color:var(--text-3);margin-top:2px">📍 ${t.koordinatAwal||'—'} → ${t.koordinatAkhir||'—'}</div>` : ''}</td>
       <td>${t.ulp||'—'}</td>
       <td style="font-size:12px">${t.assignedRegu ? `📌 ${t.assignedRegu}` : '<span style="color:var(--text-3)">Belum ditugaskan</span>'}</td>
-      <td style="font-family:var(--mono);font-size:11px">${t.target||'—'}</td>
+      <td style="font-size:12px">${fmtTargetPeriode(t)}</td>
       <td><span class="badge ${statusCls}"><span class="badge-dot"></span>${t.statusTiket||'Aktif'}</span></td>
       <td style="font-size:11px;color:var(--text-3)">${waktu}</td>
       <td>${editBtn}${tutupBtn}${delBtn}</td>
@@ -4743,12 +4591,24 @@ function renderTiketTable(entries) {
   }).join('');
 }
 
+// Bangun tabel Penugasan DAN targetKerjaCache (dipakai hitung % capaian di
+// Beranda/Rekap/Progres) dari SATU node Firebase 'penugasan' yang sama —
+// itu titik gabungnya, bukan dua node/listener terpisah seperti sebelumnya.
 function listenTiket() {
-  if (fbListeners.tiket) return;
-  const r = window._fbRef(fbDb, 'tiket');
+  if (fbListeners.tiket) { renderTargetChart(); return; }
+  const r = window._fbRef(fbDb, 'penugasan');
   fbListeners.tiket = window._fbOnValue(r, snap => {
     const data = snap.val() || {};
-    renderTiketTable(Object.entries(data));
+    const entries = Object.entries(data);
+    renderTiketTable(entries);
+    targetKerjaCache = entries
+      .filter(([, t]) => t.tipePeriode && t.periodeKey && t.targetVolume != null)
+      .map(([, t]) => ({
+        ulp: t.ulp, regu: t.assignedRegu, periodeKey: t.periodeKey,
+        tipePeriode: t.tipePeriode, targetVolume: t.targetVolume,
+        dibuatOleh: t.dibuatOleh, waktu: t.waktu
+      }));
+    refreshBerandaCharts();
   });
 }
 
@@ -4836,12 +4696,12 @@ window.submitVerifikasi = async function() {
     const nomorTiket = currentVerifLaporan?.nomorTiket;
     if (hasil === 'Terverifikasi' && nomorTiket) {
       try {
-        const tiketSnap = await get(window._fbRef(fbDb, 'tiket'));
+        const tiketSnap = await get(window._fbRef(fbDb, 'penugasan'));
         const tiketData = tiketSnap.val() || {};
         const found = Object.entries(tiketData).find(([,t]) => (t.nomor||'').toUpperCase() === nomorTiket.toUpperCase());
         if (found) {
           const [tiketId] = found;
-          await update(window._fbRef(fbDb, 'tiket/' + tiketId), {
+          await update(window._fbRef(fbDb, 'penugasan/' + tiketId), {
             statusTiket: 'Selesai',
             selesaiOtomatisPada: Date.now(),
             selesaiOtomatisDari: currentVerifId
@@ -4865,7 +4725,7 @@ window.tutupTiketManual = async function(tiketId) {
   if (!(await confirmDialog('Tutup penugasan ini? Status akan diubah menjadi "Selesai".', { title: 'Tutup Penugasan', danger: false }))) return;
   try {
     const { update } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
-    await update(window._fbRef(fbDb, 'tiket/' + tiketId), { statusTiket: 'Selesai', selesaiOtomatisPada: Date.now(), selesaiOtomatisDari: 'manual-supervisor' });
+    await update(window._fbRef(fbDb, 'penugasan/' + tiketId), { statusTiket: 'Selesai', selesaiOtomatisPada: Date.now(), selesaiOtomatisDari: 'manual-supervisor' });
     showToast('Penugasan ditutup.', 'ok');
   } catch(e) { showToast('Gagal menutup penugasan: ' + e.message, 'err'); }
 };

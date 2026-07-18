@@ -1056,12 +1056,12 @@ body {
     </div>
     <div class="field">
       <label>Nomor Penugasan <span style="font-size:10px;color:var(--text-muted);font-weight:400">(opsional)</span></label>
-      <div style="display:flex;gap:8px;align-items:center">
-        <input type="text" id="lapor-tiket" placeholder="cth: P1-2025-0042" style="font-family:'SF Mono','Fira Code',monospace;text-transform:uppercase;flex:1" oninput="this.value=this.value.toUpperCase()" onblur="cariTiket()">
-        <button type="button" onclick="cariTiket()" style="background:var(--pln-blue);color:#fff;border:none;border-radius:10px;padding:12px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">🔍 Cari</button>
-      </div>
+      <select id="lapor-tiket-select" onchange="onLaporTiketSelectChange()" style="width:100%">
+        <option value="">— Tanpa Penugasan (laporan bebas) —</option>
+      </select>
       <div id="tiket-info-box" style="display:none;margin-top:8px;background:var(--surface2);border:1px solid var(--border-str);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.8;color:var(--text)"></div>
     </div>
+
     <div class="field"><label>Rincian Pekerjaan</label><input type="text" id="lapor-rincian" placeholder="cth: Pemasangan Cover Anti Hewan"></div>
     <div class="field"><label>Audit Material</label><input type="text" id="lapor-material" placeholder="cth: Cover Anti Hewan, Cable Tie"></div>
     <div class="field">
@@ -3149,7 +3149,7 @@ let laporStream = null;
 let laporFotoSementara = null;
 
 window.bukaModalLapor = function() {
-  document.getElementById('lapor-tiket').value = '';
+  populateLaporTiketSelect('');
   document.getElementById('tiket-info-box').style.display = 'none';
   document.getElementById('lapor-rincian').value = '';
   document.getElementById('lapor-material').value = '';
@@ -3165,16 +3165,16 @@ window.tutupModalLapor = function() {
   document.getElementById('modal-lapor').classList.remove('active');
 };
 
-// Buka form Lapor dengan Nomor Tiket sudah terisi — dipakai dari banner
-// "Perlu Direvisi" (#4) dan card "Tugas Ditugaskan" (#5), supaya petugas
-// tidak perlu ketik ulang nomor tiket secara manual.
+// Buka form Lapor dengan Nomor Penugasan sudah terpilih di dropdown — dipakai
+// dari banner "Perlu Direvisi" (#4) dan card "Tugas Ditugaskan" (#5), supaya
+// petugas tidak perlu cari-cari sendiri, tinggal klik tombolnya.
 // revisiAsalId diisi kalau ini alur "Lapor Ulang" dari revisi, supaya laporan
 // lama otomatis ditandai "sudah ditindaklanjuti" setelah submit berhasil.
 window.bukaModalLaporUntuk = function(nomorTiket, revisiAsalId) {
   bukaModalLapor();
   if (nomorTiket) {
-    document.getElementById('lapor-tiket').value = nomorTiket;
-    cariTiket();
+    populateLaporTiketSelect(nomorTiket);
+    onLaporTiketSelectChange();
   }
   window._revisiAsalId = revisiAsalId || null;
 };
@@ -3204,25 +3204,23 @@ window.listenRevisiDanTugas = function() {
     `).join('');
   });
 
-  onValue(ref(db, 'tiket'), snap => {
+  onValue(ref(db, 'penugasan'), snap => {
     const data = snap.val() || {};
     const tugasSaya = Object.entries(data).filter(([, t]) =>
       t.assignedRegu === currentUser.regu && t.statusTiket !== 'Selesai'
     );
+    window._tugasAktifCache = tugasSaya;
+    populateLaporTiketSelect(); // jaga dropdown tetap sinkron kalau modal Lapor sedang terbuka
     const card = document.getElementById('tugas-ditugaskan-card');
     const list = document.getElementById('tugas-ditugaskan-list');
     if (tugasSaya.length === 0) { card.style.display = 'none'; return; }
     card.style.display = 'block';
-    const prioColor = { P0: '#C0293C', P1: '#D97B0A', P2: 'var(--pln-blue)' };
-    list.innerHTML = tugasSaya.sort((a,b) => (a[1].prioritas||'').localeCompare(b[1].prioritas||'')).map(([id, t]) => `
+    list.innerHTML = tugasSaya.sort((a,b) => (b[1].waktu||0) - (a[1].waktu||0)).map(([id, t]) => `
       <div style="background:var(--surface2);border:1px solid var(--border-str);border-radius:12px;padding:10px 12px">
-        <div style="display:flex;align-items:center;gap:6px">
-          <span style="background:${prioColor[t.prioritas]||'#888'};color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px">${t.prioritas||'—'}</span>
-          <span style="font-family:'SF Mono','Fira Code',monospace;font-size:11px;color:var(--text-muted)">${t.nomor||''}</span>
-        </div>
+        <div style="font-family:'SF Mono','Fira Code',monospace;font-size:11px;color:var(--text-muted)">${t.nomor||''}</div>
         <div style="font-size:12.5px;font-weight:700;color:var(--text);margin-top:5px">${t.jenis || '—'}</div>
         <div style="font-size:11px;color:var(--text-sec);margin-top:2px">${t.lokasi || '—'}</div>
-        ${t.target ? `<div style="font-size:11px;color:var(--text-sec);margin-top:2px">🎯 Target: <b>${t.target}</b></div>` : ''}
+        ${t.targetVolume != null ? `<div style="font-size:11px;color:var(--text-sec);margin-top:2px">🎯 Target: <b>${t.targetVolume}</b>${t.periodeKey ? ' · ' + t.periodeKey : ''}</div>` : ''}
         ${(t.koordinatAwal || t.koordinatAkhir) ? `<div style="font-size:10.5px;color:var(--text-muted);margin-top:2px;font-family:'SF Mono','Fira Code',monospace">📍 ${t.koordinatAwal||'—'} → ${t.koordinatAkhir||'—'}</div>` : ''}
         <button type="button" onclick="bukaModalLaporUntuk('${t.nomor||''}')" style="margin-top:8px;background:var(--pln-blue);color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;width:100%">📋 Kerjakan Tugas Ini</button>
       </div>
@@ -3231,31 +3229,36 @@ window.listenRevisiDanTugas = function() {
 };
 
 
-window.cariTiket = async function() {
-  const nomor = document.getElementById('lapor-tiket').value.trim().toUpperCase();
+// Isi ulang dropdown Nomor Penugasan dari daftar tugas aktif regu ini
+// (window._tugasAktifCache, diisi listenRevisiDanTugas). selectedNomor
+// (opsional) dipakai untuk langsung memilih salah satu opsi setelahnya —
+// dipakai saat buka form lewat tombol "Kerjakan Tugas Ini"/"Lapor Ulang".
+window.populateLaporTiketSelect = function(selectedNomor) {
+  const sel = document.getElementById('lapor-tiket-select');
+  if (!sel) return;
+  const current = selectedNomor !== undefined ? selectedNomor : sel.value;
+  const list = (window._tugasAktifCache || []).map(([, t]) => t);
+  sel.innerHTML = '<option value="">— Tanpa Penugasan (laporan bebas) —</option>' +
+    list.map(t => `<option value="${t.nomor}">${t.nomor} — ${t.jenis}${t.targetVolume != null ? ' (Target ' + t.targetVolume + ')' : ''}</option>`).join('');
+  if (current && list.some(t => t.nomor === current)) sel.value = current;
+};
+
+// Dipanggil saat petugas ganti pilihan di dropdown Nomor Penugasan —
+// menampilkan detail penugasan itu & auto-isi Rincian Pekerjaan kalau kosong.
+window.onLaporTiketSelectChange = function() {
+  const nomor = document.getElementById('lapor-tiket-select').value;
   const infoBox = document.getElementById('tiket-info-box');
   if (!nomor) { infoBox.style.display = 'none'; return; }
-  if (!db) { infoBox.textContent = '⚠️ Firebase belum terhubung.'; infoBox.style.display = 'block'; return; }
-  infoBox.innerHTML = '🔍 Mencari penugasan <b>' + nomor + '</b>...';
-  infoBox.style.display = 'block';
-  try {
-    const snap = await get(ref(db, 'tiket'));
-    const data = snap.val() || {};
-    const found = Object.values(data).find(t => (t.nomor || '').toUpperCase() === nomor);
-    if (!found) {
-      infoBox.innerHTML = '❌ Penugasan <b>' + nomor + '</b> tidak ditemukan.';
-    } else {
-      let extra = '';
-      if (found.target) extra += '<div>🎯 Target: <b>' + found.target + '</b></div>';
-      if (found.koordinatAwal || found.koordinatAkhir) {
-        extra += '<div>📍 Rute: ' + (found.koordinatAwal || '—') + ' → ' + (found.koordinatAkhir || '—') + '</div>';
-      }
-      infoBox.innerHTML = '✅ <b>' + (found.jenis || '—') + '</b> · ' + (found.ulp || '—') + extra;
-      if (found.jenis && !document.getElementById('lapor-rincian').value) document.getElementById('lapor-rincian').value = found.jenis;
-    }
-  } catch (e) {
-    infoBox.textContent = '⚠️ Error: ' + e.message;
+  const found = (window._tugasAktifCache || []).map(([, t]) => t).find(t => t.nomor === nomor);
+  if (!found) { infoBox.style.display = 'none'; return; }
+  let extra = '';
+  if (found.targetVolume != null) extra += '<div>🎯 Target: <b>' + found.targetVolume + '</b>' + (found.periodeKey ? ' · ' + found.periodeKey : '') + '</div>';
+  if (found.koordinatAwal || found.koordinatAkhir) {
+    extra += '<div>📍 Rute: ' + (found.koordinatAwal || '—') + ' → ' + (found.koordinatAkhir || '—') + '</div>';
   }
+  infoBox.innerHTML = '✅ <b>' + (found.jenis || '—') + '</b> · ' + (found.ulp || '—') + extra;
+  infoBox.style.display = 'block';
+  if (found.jenis && !document.getElementById('lapor-rincian').value) document.getElementById('lapor-rincian').value = found.jenis;
 };
 
 function resetSlotFoto(target) {
@@ -3382,7 +3385,7 @@ window.submitLaporan = async function() {
   const material  = document.getElementById('lapor-material').value.trim();
   const realisasiEl = document.getElementById('lapor-realisasi');
   const realisasi = realisasiEl.value;
-  const nomorTiket = (document.getElementById('lapor-tiket')?.value || '').trim().toUpperCase() || null;
+  const nomorTiket = document.getElementById('lapor-tiket-select')?.value || null;
 
   if (!rincian) { errEl.textContent = 'Rincian pekerjaan wajib diisi.'; errEl.style.display = 'block'; return; }
   // Realisasi wajib diisi (boleh 0), target sudah tidak diisi petugas —
