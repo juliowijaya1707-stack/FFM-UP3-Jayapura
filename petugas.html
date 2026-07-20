@@ -427,8 +427,8 @@ body {
 .profile-name { font-size: 16px; font-weight: 800; color: #fff; letter-spacing: -0.3px; }
 .profile-sub  { font-size: 11.5px; color: rgba(255,255,255,0.6); margin-top: 2px; }
 
-/* ── PHOTO PAIR ── */
-.photo-pair { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+/* ── PHOTO TRIO (Sebelum / Progres / Sesudah) ── */
+.photo-pair { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:12px; }
 .photo-slot {
   background:var(--surface2); border:2px dashed rgba(0,61,130,0.18);
   border-radius:var(--radius-sm); aspect-ratio:1;
@@ -438,13 +438,26 @@ body {
 .photo-slot:hover { border-color:var(--pln-blue); }
 .photo-slot img { width:100%; height:100%; object-fit:cover; position:absolute; inset:0; }
 .photo-slot .slot-label {
-  font-size:10px; font-weight:700; color:var(--text-sec);
+  font-size:9px; font-weight:700; color:var(--text-sec);
   position:relative; z-index:1;
-  background:rgba(255,255,255,0.85); padding:2px 8px; border-radius:4px;
+  background:rgba(255,255,255,0.85); padding:2px 6px; border-radius:4px;
+  text-align:center;
 }
 .photo-slot.filled { border-color:var(--green); border-style:solid; }
-.photo-slot.filled .slot-label { position:absolute; bottom:6px; color:var(--green); }
-.photo-slot .slot-icon { font-size:22px; color:var(--text-muted); position:relative; z-index:1; }
+.photo-slot.filled .slot-label { position:absolute; bottom:5px; color:var(--green); }
+.photo-slot .slot-icon { font-size:20px; color:var(--text-muted); position:relative; z-index:1; }
+
+/* ── ANGLE GUIDE OVERLAY (bantu petugas ambil foto dengan angle sama) ── */
+.angle-guide-img {
+  position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+  opacity:0.38; pointer-events:none; z-index:2; mix-blend-mode:normal;
+}
+.angle-guide-badge {
+  position:absolute; top:8px; left:8px; z-index:3;
+  background:rgba(217,123,10,0.92); color:#fff; font-size:10.5px; font-weight:700;
+  padding:5px 10px; border-radius:99px; display:flex; align-items:center; gap:5px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.25);
+}
 
 /* ── TASK ITEMS ── */
 .task-item {
@@ -1069,17 +1082,21 @@ body {
       <input type="number" id="lapor-realisasi" placeholder="0" inputmode="numeric" required>
       <div style="font-size:10px;color:var(--text-muted);margin-top:4px">Wajib diisi (boleh 0). Target ditentukan supervisor dari dashboard, tidak perlu diisi di sini.</div>
     </div>
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--pln-blue);margin-bottom:6px">Foto Before / After</div>
-    <div style="font-size:10.5px;color:var(--text-muted);margin-bottom:10px;line-height:1.5">Ambil foto langsung dengan kamera HP. Foto yang sudah diambil otomatis tersimpan walau aplikasi ditutup, jadi tidak hilang saat lanjut kerja sebelum ambil foto After.</div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--pln-blue);margin-bottom:6px">Foto Sebelum / Progres / Sesudah</div>
+    <div style="font-size:10.5px;color:var(--text-muted);margin-bottom:10px;line-height:1.5">Ambil 3 foto langsung dengan kamera HP dari <b>angle (sudut) yang sama</b> supaya perubahan kondisi terlihat jelas. Saat ambil foto Progres &amp; Sesudah, aplikasi menampilkan bayangan transparan dari foto Sebelum sebagai panduan angle. Foto otomatis tersimpan walau aplikasi ditutup.</div>
     <div style="display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--green);font-weight:600;margin-bottom:10px;background:var(--green-dim);border:1px solid var(--green-border);border-radius:8px;padding:7px 10px">🔒 Setiap foto otomatis diberi watermark waktu &amp; koordinat GPS langsung di gambar — bukan cuma metadata.</div>
     <div class="photo-pair">
       <div class="photo-slot" id="slot-before" onclick="bukaKameraLapor('before')">
         <span class="slot-icon">📷</span>
-        <span class="slot-label">Sebelum (Before)</span>
+        <span class="slot-label">Sebelum</span>
+      </div>
+      <div class="photo-slot" id="slot-progres" onclick="bukaKameraLapor('progres')">
+        <span class="slot-icon">📷</span>
+        <span class="slot-label">Progres</span>
       </div>
       <div class="photo-slot" id="slot-after" onclick="bukaKameraLapor('after')">
         <span class="slot-icon">📷</span>
-        <span class="slot-label">Sesudah (After)</span>
+        <span class="slot-label">Sesudah</span>
       </div>
     </div>
     <div class="error-box" id="lapor-err" style="margin-bottom:12px"></div>
@@ -1257,6 +1274,8 @@ body {
     </div>
     <div class="camera-box" id="lapor-camera-box">
       <video id="lapor-video" playsinline autoplay muted style="display:none"></video>
+      <img id="lapor-angle-guide" class="angle-guide-img" style="display:none">
+      <div class="angle-guide-badge" id="lapor-angle-badge" style="display:none">👻 Samakan angle dgn bayangan foto</div>
       <img id="lapor-photo-preview" style="display:none">
       <div class="cam-badge" id="lapor-gps-badge" style="display:block;background:rgba(0,61,130,0.75)">📍 GPS terkunci · <span id="lapor-time-badge">--:--</span></div>
     </div>
@@ -1976,8 +1995,8 @@ async function finalizeLogout() {
   absenPerjalananDone = false;
   resetAbsensiTerakhir();
   clearSession(); // shift resmi selesai — hapus sesi tersimpan supaya TIDAK auto-login lagi saat app dibuka berikutnya
-  clearLaporDraft(); // buang draft foto Before/After laporan lama (kalau ada) — supaya TIDAK muncul lagi nyangkut di shift berikutnya
-  laporFotoBefore = null; laporFotoAfter = null;
+  clearLaporDraft(); // buang draft foto Sebelum/Progres/Sesudah laporan lama (kalau ada) — supaya TIDAK muncul lagi nyangkut di shift berikutnya
+  laporFoto = { before: null, progres: null, after: null };
   document.getElementById('send-count').textContent = '0';
   document.getElementById('bottom-nav').style.display = 'none';
   // reset form login supaya shift berikutnya mulai dari kosong lagi
@@ -3143,7 +3162,9 @@ window.submitAbsenCepat = async function() {
 
 // ════════════════════════════════════════════════════════
 let laporTugasList = [];
-let laporFotoBefore = null, laporFotoAfter = null;
+let laporFoto = { before: null, progres: null, after: null };
+const LAPOR_FASE_ORDER = ['before', 'progres', 'after'];
+const LAPOR_FASE_LABEL = { before: 'Sebelum', progres: 'Progres', after: 'Sesudah' };
 let laporKameraTarget = null;
 let laporStream = null;
 let laporFotoSementara = null;
@@ -3154,9 +3175,9 @@ window.bukaModalLapor = function() {
   document.getElementById('lapor-rincian').value = '';
   document.getElementById('lapor-material').value = '';
   document.getElementById('lapor-realisasi').value = '';
-  laporFotoBefore = null; laporFotoAfter = null;
-  resetSlotFoto('before'); resetSlotFoto('after');
-  restoreLaporDraft(); // pulihkan foto Before/After yang tersimpan sebelumnya, kalau ada
+  laporFoto = { before: null, progres: null, after: null };
+  LAPOR_FASE_ORDER.forEach(resetSlotFoto);
+  restoreLaporDraft(); // pulihkan foto Sebelum/Progres/Sesudah yang tersimpan sebelumnya, kalau ada
   document.getElementById('lapor-err').style.display = 'none';
   document.getElementById('modal-lapor').classList.add('active');
 };
@@ -3264,21 +3285,45 @@ window.onLaporTiketSelectChange = function() {
 function resetSlotFoto(target) {
   const slot = document.getElementById('slot-' + target);
   slot.classList.remove('filled');
-  slot.innerHTML = '<span class="slot-icon">📷</span><span class="slot-label">' + (target === 'before' ? 'Sebelum (Before)' : 'Sesudah (After)') + '</span>';
+  slot.innerHTML = '<span class="slot-icon">📷</span><span class="slot-label">' + LAPOR_FASE_LABEL[target] + '</span>';
+}
+
+// Menentukan foto fase sebelumnya yang dipakai sebagai "panduan angle" (bayangan
+// transparan) supaya petugas mengambil foto Progres & Sesudah dari sudut yang
+// sama persis dengan foto Sebelum — supaya hasilnya bisa dibandingkan apple-to-apple
+// saat diverifikasi supervisor.
+function fotoAcuanAngle(target) {
+  if (target === 'progres') return laporFoto.before || null;
+  if (target === 'after')   return laporFoto.progres || laporFoto.before || null;
+  return null; // 'before' adalah foto pertama, tidak ada acuan
 }
 
 window.bukaKameraLapor = async function(target) {
   laporKameraTarget = target;
-  document.getElementById('kamera-lapor-title').textContent = target === 'before' ? 'Foto Kondisi Sebelum' : 'Foto Kondisi Sesudah';
+  const titleMap = { before: 'Foto Kondisi Sebelum', progres: 'Foto Kondisi Progres', after: 'Foto Kondisi Sesudah' };
+  document.getElementById('kamera-lapor-title').textContent = titleMap[target];
   document.getElementById('lapor-time-badge').textContent = new Date().toLocaleTimeString('id-ID');
   laporFotoSementara = null;
 
   const video = document.getElementById('lapor-video');
   const img   = document.getElementById('lapor-photo-preview');
+  const guideImg   = document.getElementById('lapor-angle-guide');
+  const guideBadge = document.getElementById('lapor-angle-badge');
   video.style.display = 'block'; img.style.display = 'none';
   document.getElementById('lapor-btn-shoot').style.display = 'block';
   document.getElementById('lapor-btn-retake').style.display = 'none';
   document.getElementById('lapor-btn-pakai').style.display = 'none';
+
+  // Tampilkan bayangan foto fase sebelumnya sebagai panduan angle (kalau ada)
+  const acuan = fotoAcuanAngle(target);
+  if (acuan) {
+    guideImg.src = acuan;
+    guideImg.style.display = 'block';
+    guideBadge.style.display = 'flex';
+  } else {
+    guideImg.style.display = 'none';
+    guideBadge.style.display = 'none';
+  }
 
   document.getElementById('modal-kamera-lapor').classList.add('active');
 
@@ -3317,6 +3362,8 @@ window.ambilFotoLapor = function() {
   document.getElementById('lapor-photo-preview').src = laporFotoSementara;
   document.getElementById('lapor-photo-preview').style.display = 'block';
   video.style.display = 'none';
+  document.getElementById('lapor-angle-guide').style.display = 'none';
+  document.getElementById('lapor-angle-badge').style.display = 'none';
   if (laporStream) { laporStream.getTracks().forEach(t => t.stop()); laporStream = null; }
 
   document.getElementById('lapor-btn-shoot').style.display = 'none';
@@ -3330,29 +3377,28 @@ window.ulangFotoLapor = function() {
 };
 
 window.pakaiFotoLapor = function() {
-  if (laporKameraTarget === 'before') laporFotoBefore = laporFotoSementara;
-  else laporFotoAfter = laporFotoSementara;
+  laporFoto[laporKameraTarget] = laporFotoSementara;
 
   const slot = document.getElementById('slot-' + laporKameraTarget);
   slot.classList.add('filled');
   slot.innerHTML = '<img src="' + laporFotoSementara + '"><span class="slot-label">' +
-    (laporKameraTarget === 'before' ? 'Sebelum ✓' : 'Sesudah ✓') + '</span>';
+    LAPOR_FASE_LABEL[laporKameraTarget] + ' ✓</span>';
 
   document.getElementById('modal-kamera-lapor').classList.remove('active');
   saveLaporDraft();
 };
 
-// Foto Before/After WAJIB diambil langsung dengan kamera (bukan pilih dari
-// galeri) supaya watermark waktu & GPS terjamin sesuai kondisi nyata di
+// Foto Sebelum/Progres/Sesudah WAJIB diambil langsung dengan kamera (bukan pilih
+// dari galeri) supaya watermark waktu & GPS terjamin sesuai kondisi nyata di
 // lapangan saat itu, dan tidak bisa disusupi foto lama/dari HP lain.
 
-// ── Draft foto laporan (before/after) — simpan ke localStorage supaya TIDAK
-// hilang walau aplikasi/HP ditutup di antara ambil foto Before dan After
-// (mis. petugas ambil Before, lalu kerja berjam-jam, baru sempat ambil After) ──
+// ── Draft foto laporan (before/progres/after) — simpan ke localStorage supaya
+// TIDAK hilang walau aplikasi/HP ditutup di antara ambil tiap fase foto
+// (mis. petugas ambil Sebelum, lalu kerja berjam-jam, baru sempat ambil Progres/Sesudah) ──
 const LAPOR_DRAFT_KEY = 'ffm_lapor_draft_v1';
 function saveLaporDraft() {
   try {
-    localStorage.setItem(LAPOR_DRAFT_KEY, JSON.stringify({ before: laporFotoBefore, after: laporFotoAfter, ts: Date.now() }));
+    localStorage.setItem(LAPOR_DRAFT_KEY, JSON.stringify({ ...laporFoto, ts: Date.now() }));
   } catch (e) { /* storage penuh, abaikan */ }
 }
 function clearLaporDraft() {
@@ -3362,19 +3408,17 @@ function restoreLaporDraft() {
   let draft = null;
   try { draft = JSON.parse(localStorage.getItem(LAPOR_DRAFT_KEY) || 'null'); } catch (e) {}
   if (!draft) return;
-  if (draft.before) {
-    laporFotoBefore = draft.before;
-    const slot = document.getElementById('slot-before');
-    slot.classList.add('filled');
-    slot.innerHTML = '<img src="' + draft.before + '"><span class="slot-label">Sebelum ✓</span>';
-  }
-  if (draft.after) {
-    laporFotoAfter = draft.after;
-    const slot = document.getElementById('slot-after');
-    slot.classList.add('filled');
-    slot.innerHTML = '<img src="' + draft.after + '"><span class="slot-label">Sesudah ✓</span>';
-  }
-  if (draft.before || draft.after) addLog('Foto laporan tersimpan sebelumnya berhasil dipulihkan', 'info');
+  let adaYangDipulihkan = false;
+  LAPOR_FASE_ORDER.forEach(fase => {
+    if (draft[fase]) {
+      laporFoto[fase] = draft[fase];
+      adaYangDipulihkan = true;
+      const slot = document.getElementById('slot-' + fase);
+      slot.classList.add('filled');
+      slot.innerHTML = '<img src="' + draft[fase] + '"><span class="slot-label">' + LAPOR_FASE_LABEL[fase] + ' ✓</span>';
+    }
+  });
+  if (adaYangDipulihkan) addLog('Foto laporan tersimpan sebelumnya berhasil dipulihkan', 'info');
 }
 
 window.submitLaporan = async function() {
@@ -3391,7 +3435,11 @@ window.submitLaporan = async function() {
   // Realisasi wajib diisi (boleh 0), target sudah tidak diisi petugas —
   // ditentukan supervisor lewat menu Kelola Penugasan Pekerjaan (bagian Target Kerja Regu) di dashboard.
   if (realisasi === '') { errEl.textContent = 'Realisasi Volume wajib diisi (boleh 0).'; errEl.style.display = 'block'; realisasiEl.focus(); return; }
-  if (!laporFotoBefore || !laporFotoAfter) { errEl.textContent = 'Foto Before dan After wajib diambil keduanya.'; errEl.style.display = 'block'; return; }
+  if (!laporFoto.before || !laporFoto.progres || !laporFoto.after) {
+    errEl.textContent = 'Foto Sebelum, Progres, dan Sesudah wajib diambil ketiganya (angle harus sama).';
+    errEl.style.display = 'block';
+    return;
+  }
   errEl.style.display = 'none';
 
   const waktu  = Date.now();
@@ -3400,16 +3448,17 @@ window.submitLaporan = async function() {
   btn.disabled = true;
   progEl.style.display = 'block';
 
-  let fotoBeforeResult = null, fotoAfterResult = null;
+  let fotoResult = { before: null, progres: null, after: null };
   try {
-    progEl.textContent = 'Mengunggah foto before ke cloud...';
-    btn.innerHTML = '<span>⏳</span> Memproses...';
     const namaSlug    = slugifyForCloudinary(currentUser ? currentUser.regu : uid);
     const rincianSlug = slugifyForCloudinary(rincian);
     const publicIdHint = namaSlug + '_' + rincianSlug + '_' + waktu;
-    fotoBeforeResult = await uploadFotoAman(laporFotoBefore, 'ffm/laporan-before', publicIdHint, { quality: 0.6 });
-    progEl.textContent = 'Mengunggah foto after ke cloud...';
-    fotoAfterResult  = await uploadFotoAman(laporFotoAfter, 'ffm/laporan-after', publicIdHint, { quality: 0.6 });
+    const progressLabel = { before: 'sebelum', progres: 'progres', after: 'sesudah' };
+    for (const fase of LAPOR_FASE_ORDER) {
+      progEl.textContent = 'Mengunggah foto ' + progressLabel[fase] + ' ke cloud...';
+      btn.innerHTML = '<span>⏳</span> Memproses...';
+      fotoResult[fase] = await uploadFotoAman(laporFoto[fase], 'ffm/laporan-' + fase, publicIdHint, { quality: 0.6 });
+    }
   } catch (e) {
     addLog('Gagal memproses foto laporan: ' + e.message, 'err');
     errEl.textContent = 'Gagal memproses foto. Coba lagi.';
@@ -3431,8 +3480,9 @@ window.submitLaporan = async function() {
     lng: lastPos ? lastPos.coords.longitude : null,
     waktu,
     status: 'Selesai diverifikasi oleh Supervisor',
-    fotoBeforeUrl: fotoBeforeResult.fotoUrl || null, fotoBeforeBase64: fotoBeforeResult.fotoBase64 || null,
-    fotoAfterUrl:  fotoAfterResult.fotoUrl  || null, fotoAfterBase64:  fotoAfterResult.fotoBase64  || null
+    fotoBeforeUrl:  fotoResult.before.fotoUrl  || null, fotoBeforeBase64:  fotoResult.before.fotoBase64  || null,
+    fotoProgresUrl: fotoResult.progres.fotoUrl || null, fotoProgresBase64: fotoResult.progres.fotoBase64 || null,
+    fotoAfterUrl:   fotoResult.after.fotoUrl   || null, fotoAfterBase64:   fotoResult.after.fotoBase64   || null
   };
 
   let laporTersinkron = false;
@@ -3459,8 +3509,9 @@ window.submitLaporan = async function() {
   btn.disabled = false;
   btn.innerHTML = origLabel;
 
-  laporan.fotoBefore = fotoBeforeResult.fotoUrl || fotoBeforeResult.fotoBase64;
-  laporan.fotoAfter  = fotoAfterResult.fotoUrl  || fotoAfterResult.fotoBase64;
+  laporan.fotoBefore  = fotoResult.before.fotoUrl  || fotoResult.before.fotoBase64;
+  laporan.fotoProgres = fotoResult.progres.fotoUrl || fotoResult.progres.fotoBase64;
+  laporan.fotoAfter   = fotoResult.after.fotoUrl   || fotoResult.after.fotoBase64;
   laporTugasList.unshift(laporan);
   clearLaporDraft();
   updateProgres();
@@ -3472,7 +3523,7 @@ window.submitLaporan = async function() {
   // laporannya benar-benar masuk. Sekarang selalu tampil, baik tersinkron
   // maupun (untuk sementara) tersimpan offline.
   showKonfirmasiBesar(laporTersinkron, 'Laporan Terkirim',
-    'Laporan & foto before/after sudah tersimpan di server.',
+    'Laporan & foto sebelum/progres/sesudah sudah tersimpan di server.',
     'Laporan tersimpan di HP — akan otomatis terkirim saat sinyal kembali.');
 };
 
@@ -3497,12 +3548,14 @@ function renderTaskList() {
   }
   list.innerHTML = laporTugasList.map(t => {
     const jam    = new Date(t.waktu).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
-    const before = t.fotoBefore || t.fotoBeforeBase64 || t.fotoBeforeUrl || '';
-    const after  = t.fotoAfter  || t.fotoAfterBase64  || t.fotoAfterUrl  || '';
-    const thumbs = (before && after)
+    const before  = t.fotoBefore  || t.fotoBeforeBase64  || t.fotoBeforeUrl  || '';
+    const progres = t.fotoProgres || t.fotoProgresBase64 || t.fotoProgresUrl || '';
+    const after   = t.fotoAfter   || t.fotoAfterBase64   || t.fotoAfterUrl   || '';
+    const thumbs = (before || progres || after)
       ? '<div style="display:flex;gap:6px;margin-top:8px">' +
-          '<img src="' + before + '" style="width:50%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:1px solid var(--border)">' +
-          '<img src="' + after  + '" style="width:50%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:1px solid var(--border)">' +
+          [before, progres, after].filter(Boolean).map(src =>
+            '<img src="' + src + '" style="width:' + (100/[before,progres,after].filter(Boolean).length) + '%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:1px solid var(--border)">'
+          ).join('') +
         '</div>'
       : '';
     return '<div class="task-item">' +
