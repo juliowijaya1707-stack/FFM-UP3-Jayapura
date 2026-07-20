@@ -785,28 +785,28 @@ body {
   <div class="card">
     <div class="card-title">Penempatan</div>
     <div class="field">
-      <label>Regu / Tim</label>
-      <!-- FIX: dropdown nama regu baku (bukan ketik bebas) supaya tidak ada
-           variasi ejaan ("Tim ROW" vs "row1" vs "ROW") yang bikin dashboard
-           pecah jadi banyak entitas berbeda padahal maksudnya regu yang sama.
-           Opsi "Lainnya" tetap disediakan sebagai cadangan kalau nama regu
-           belum ada di daftar, supaya petugas tidak pernah terblokir login.
-           Daftar tim di bawah diisi otomatis dari ROSTER_ULP_TEAMS (lihat
-           script) — begitu Tim dipilih, dropdown Unit Kerja di bawah ikut
-           menyesuaikan (lihat toggleReguManual()). -->
-      <select id="in-regu-select" onchange="toggleReguManual()">
-        <option value="">— Pilih regu/tim —</option>
+      <label>Unit Kerja</label>
+      <!-- FIX: Unit Kerja dipilih LEBIH DULU. Daftar ULP diisi otomatis dari
+           ROSTER_ULP_TEAMS (lihat script). Opsi "Lainnya" disediakan sebagai
+           cadangan kalau ULP belum ada di daftar, supaya petugas tidak
+           pernah terblokir login. Begitu Unit Kerja dipilih, dropdown
+           Regu/Tim di bawah otomatis difilter hanya menampilkan tim milik
+           unit kerja itu (lihat onUlpChange()). -->
+      <select id="in-ulp" onchange="onUlpChange()">
+        <option value="">— Pilih unit kerja —</option>
         <option value="__lainnya__">➕ Lainnya (ketik manual)</option>
       </select>
-      <input type="text" id="in-regu-manual" placeholder="Ketik nama regu/tim..." autocapitalize="words" style="display:none;margin-top:8px">
+      <input type="text" id="in-ulp-manual" placeholder="Ketik nama unit kerja..." autocapitalize="words" style="display:none;margin-top:8px">
     </div>
     <div class="field">
-      <label>Unit Kerja</label>
-      <!-- Opsi diisi/dibatasi otomatis mengikuti Tim yang dipilih di atas
-           (tim yang namanya sudah menyebut kota otomatis mengunci ke 1 ULP;
-           tim generik yang ada di semua ULP tetap harus dipilih manual). -->
-      <select id="in-ulp"></select>
-      <div id="in-ulp-hint" style="display:none;font-size:11px;color:var(--text-3);margin-top:6px"></div>
+      <label>Regu / Tim</label>
+      <!-- Opsi diisi/dibatasi otomatis mengikuti Unit Kerja yang dipilih di
+           atas — dropdown ini terkunci/kosong sampai Unit Kerja dipilih. -->
+      <select id="in-regu-select" onchange="toggleReguManual()" disabled>
+        <option value="">— Pilih unit kerja dulu —</option>
+      </select>
+      <input type="text" id="in-regu-manual" placeholder="Ketik nama regu/tim..." autocapitalize="words" style="display:none;margin-top:8px">
+      <div id="in-regu-hint" style="display:none;font-size:11px;color:var(--text-3);margin-top:6px"></div>
     </div>
   </div>
 
@@ -1908,7 +1908,9 @@ const ROSTER_ULP_TEAMS = {
   ]
 };
 
-// Reverse map: nama Tim -> daftar ULP tempat tim itu ada.
+// Reverse map: nama Tim -> daftar ULP tempat tim itu ada. Masih dipakai
+// untuk opsi "Lainnya" (Unit Kerja belum ada di daftar) supaya semua nama
+// tim tetap tersedia sebagai pilihan bebas.
 const TEAM_TO_ULPS = {};
 Object.entries(ROSTER_ULP_TEAMS).forEach(([ulp, teams]) => {
   teams.forEach(team => {
@@ -1917,7 +1919,7 @@ Object.entries(ROSTER_ULP_TEAMS).forEach(([ulp, teams]) => {
   });
 });
 const ALL_TEAM_NAMES = Object.keys(TEAM_TO_ULPS).sort((a, b) => a.localeCompare(b));
-const ULP_ALL_OPTIONS = ['UP3 Jayapura', ...Object.keys(ROSTER_ULP_TEAMS)];
+const ULP_LIST = Object.keys(ROSTER_ULP_TEAMS);
 
 // ══════════════════════════════════════════════════════════════
 // RENCANA PEKERJAAN — daftar master dropdown Jenis & Rincian Pekerjaan.
@@ -1996,55 +1998,76 @@ function populateLaporPekerjaanDropdowns() {
   }
 }
 
-function populateReguDropdown() {
-  const sel = document.getElementById('in-regu-select');
+// Isi dropdown Unit Kerja dengan daftar ULP dari roster (opsi "Lainnya"
+// sudah ada langsung di HTML, jadi cukup sisipkan opsi ULP sebelum opsi itu).
+function populateUlpDropdown() {
+  const sel = document.getElementById('in-ulp');
   const lainnyaOpt = sel.querySelector('option[value="__lainnya__"]');
-  ALL_TEAM_NAMES.forEach(team => {
+  ULP_LIST.forEach(ulp => {
     const opt = document.createElement('option');
-    opt.value = team;
-    opt.textContent = team;
+    opt.value = ulp;
+    opt.textContent = ulp;
     sel.insertBefore(opt, lainnyaOpt);
   });
 }
 
-function populateUlpDropdown(ulpList) {
-  const sel = document.getElementById('in-ulp');
-  const current = sel.value;
-  sel.innerHTML = '<option value="">— Pilih unit kerja —</option>' +
-    ulpList.map(u => `<option value="${u}">${u}</option>`).join('');
-  if (ulpList.includes(current)) sel.value = current;
+// Isi ulang dropdown Regu/Tim dengan daftar tim yang valid untuk sebuah
+// daftar nama tim tertentu (dipanggil ulang tiap kali Unit Kerja berubah).
+function populateReguOptions(teamList) {
+  const sel = document.getElementById('in-regu-select');
+  sel.innerHTML = '<option value="">— Pilih regu/tim —</option>' +
+    teamList.map(t => `<option value="${t}">${t}</option>`).join('') +
+    '<option value="__lainnya__">➕ Lainnya (ketik manual)</option>';
 }
 
-window.toggleReguManual = function() {
-  const sel    = document.getElementById('in-regu-select');
-  const manual = document.getElementById('in-regu-manual');
-  const ulpSel = document.getElementById('in-ulp');
-  const hint   = document.getElementById('in-ulp-hint');
-  const isLainnya = sel.value === '__lainnya__';
-  manual.style.display = isLainnya ? 'block' : 'none';
-  if (isLainnya) manual.focus();
+// Dipanggil begitu petugas memilih/mengganti Unit Kerja: dropdown Regu/Tim
+// difilter ulang supaya hanya menampilkan tim yang benar-benar ada di unit
+// kerja itu (sesuai roster ROSTER_ULP_TEAMS / gambar daftar tim per ULP).
+window.onUlpChange = function() {
+  const ulpSel     = document.getElementById('in-ulp');
+  const ulpManual  = document.getElementById('in-ulp-manual');
+  const reguSel    = document.getElementById('in-regu-select');
+  const reguManual = document.getElementById('in-regu-manual');
+  const hint       = document.getElementById('in-regu-hint');
 
-  if (isLainnya || !sel.value) {
-    // Tim manual/belum dipilih -> Unit Kerja bebas, semua opsi tersedia.
-    populateUlpDropdown(ULP_ALL_OPTIONS);
-    ulpSel.disabled = false;
+  const isLainnya = ulpSel.value === '__lainnya__';
+  ulpManual.style.display = isLainnya ? 'block' : 'none';
+  if (isLainnya) ulpManual.focus();
+
+  // Reset pilihan Regu/Tim tiap kali Unit Kerja berganti, supaya tidak ada
+  // tim dari ULP lama yang kebawa/kepilih untuk ULP baru.
+  reguManual.value = '';
+  reguManual.style.display = 'none';
+
+  if (!ulpSel.value) {
+    reguSel.innerHTML = '<option value="">— Pilih unit kerja dulu —</option>';
+    reguSel.disabled = true;
     hint.style.display = 'none';
     return;
   }
 
-  const validUlps = TEAM_TO_ULPS[sel.value] || ULP_ALL_OPTIONS;
-  populateUlpDropdown(validUlps);
-
-  if (validUlps.length === 1) {
-    ulpSel.value = validUlps[0];
-    ulpSel.disabled = true;
-    hint.textContent = 'Unit kerja otomatis terisi sesuai tim yang dipilih.';
+  if (isLainnya) {
+    // Unit Kerja belum ada di daftar -> semua nama tim tersedia sebagai
+    // pilihan bebas (plus opsi ketik manual).
+    populateReguOptions(ALL_TEAM_NAMES);
+    reguSel.disabled = false;
+    hint.textContent = 'Unit kerja belum ada di daftar — pilih tim yang paling sesuai atau ketik manual.';
     hint.style.display = 'block';
-  } else {
-    ulpSel.disabled = false;
-    hint.textContent = 'Tim ini ada di beberapa unit kerja — pilih salah satu.';
-    hint.style.display = 'block';
+    return;
   }
+
+  const teams = ROSTER_ULP_TEAMS[ulpSel.value] || [];
+  populateReguOptions(teams);
+  reguSel.disabled = false;
+  hint.style.display = 'none';
+};
+
+window.toggleReguManual = function() {
+  const sel    = document.getElementById('in-regu-select');
+  const manual = document.getElementById('in-regu-manual');
+  const isLainnya = sel.value === '__lainnya__';
+  manual.style.display = isLainnya ? 'block' : 'none';
+  if (isLainnya) manual.focus();
 };
 
 function getReguTerpilih() {
@@ -2053,14 +2076,25 @@ function getReguTerpilih() {
   return sel.value;
 }
 
+function getUlpTerpilih() {
+  const sel = document.getElementById('in-ulp');
+  if (sel.value === '__lainnya__') return document.getElementById('in-ulp-manual').value.trim();
+  return sel.value;
+}
+
 window.doLogin = function() {
+  const ulp      = getUlpTerpilih();
   const regu     = getReguTerpilih();
   const anggota  = document.getElementById('in-anggota').value.trim();
-  const ulp      = document.getElementById('in-ulp').value;
   const errEl    = document.getElementById('login-err');
 
+  if (!ulp) {
+    errEl.textContent = 'Unit Kerja wajib dipilih.';
+    errEl.style.display = 'block';
+    return;
+  }
   if (!regu) {
-    errEl.textContent = 'Nama Regu / Tim wajib diisi.';
+    errEl.textContent = 'Nama Regu / Tim wajib dipilih.';
     errEl.style.display = 'block';
     return;
   }
@@ -2068,11 +2102,6 @@ window.doLogin = function() {
     errEl.textContent = 'Nama Anggota Regu Hari Ini wajib diisi.';
     errEl.style.display = 'block';
     document.getElementById('in-anggota').focus();
-    return;
-  }
-  if (!ulp) {
-    errEl.textContent = 'Unit Kerja wajib dipilih.';
-    errEl.style.display = 'block';
     return;
   }
   errEl.style.display = 'none';
@@ -2195,12 +2224,14 @@ async function finalizeLogout() {
   document.getElementById('bottom-nav').style.display = 'none';
   // reset form login supaya shift berikutnya mulai dari kosong lagi
   document.getElementById('in-anggota').value = '';
-  document.getElementById('in-regu-select').value = '';
+  document.getElementById('in-ulp').value = '';
+  document.getElementById('in-ulp-manual').value = '';
+  document.getElementById('in-ulp-manual').style.display = 'none';
+  document.getElementById('in-regu-select').innerHTML = '<option value="">— Pilih unit kerja dulu —</option>';
+  document.getElementById('in-regu-select').disabled = true;
   document.getElementById('in-regu-manual').value = '';
   document.getElementById('in-regu-manual').style.display = 'none';
-  document.getElementById('in-ulp').disabled = false;
-  document.getElementById('in-ulp-hint').style.display = 'none';
-  populateUlpDropdown(ULP_ALL_OPTIONS);
+  document.getElementById('in-regu-hint').style.display = 'none';
   showScreen('login');
   addLog('Logout — tracking dihentikan', 'info');
 }
@@ -3851,9 +3882,8 @@ async function restoreSessionIfAny() {
   listenRevisiDanTugas();
   return true;
 }
-populateReguDropdown();
+populateUlpDropdown();
 populateLaporPekerjaanDropdowns();
-populateUlpDropdown(ULP_ALL_OPTIONS);
 restoreSessionIfAny();
 
 // ══════════════════════════════════════════════════════════════
