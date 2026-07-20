@@ -961,9 +961,6 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
       <a class="nav-item" id="nav-rekap" href="#" title="Rekap Laporan" onclick="switchView('rekap');return false;">
         <span class="nav-icon">📊</span> <span class="nav-label">Rekap Laporan</span>
       </a>
-      <a class="nav-item" id="nav-progres" href="#" title="Progres Program" onclick="switchView('progres');return false;">
-        <span class="nav-icon">📈</span> <span class="nav-label">Progres Program</span>
-      </a>
     </div>
     <div class="nav-group">
       <div class="nav-group-label">Supervisor</div>
@@ -1078,7 +1075,7 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
         </div>
         <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-top:12px" class="target-chart-grid">
           <div>
-            <div style="font-size:12px;font-weight:700;color:var(--text-2);margin-bottom:6px">Realisasi vs Target per Regu</div>
+            <div style="font-size:12px;font-weight:700;color:var(--text-2);margin-bottom:6px">Realisasi vs Target per ULP</div>
             <div class="chart-wrap" style="height:280px"><canvas id="chartTargetRealisasi"></canvas></div>
             <div id="targetChartEmptyNote" style="display:none;font-size:11.5px;color:var(--text-muted);text-align:center;margin-top:10px"></div>
           </div>
@@ -1607,71 +1604,6 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
       </div>
     </div>
 
-    <!-- ══ PROGRES PROGRAM VIEW ══ -->
-    <div id="viewProgres" style="display:none;" class="firebase-view">
-      <div class="fb-header">
-        <div>
-          <div class="card-title" style="font-size:16px">📈 Progres Program Preventif</div>
-          <div style="font-size:12px;color:var(--text-secondary);margin-top:3px">Akumulasi realisasi dari laporan terverifikasi · per program & per ULP</div>
-        </div>
-        <button class="topbar-btn" onclick="bukaModalProgresTarget()" style="font-size:12px;padding:8px 16px">⚙ Atur Target Program</button>
-      </div>
-
-      <!-- Modal Atur Target Program -->
-      <div id="modal-progres-target" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(10,20,36,0.55);align-items:center;justify-content:center;">
-        <div style="background:var(--surface);border-radius:var(--radius-lg);padding:28px;width:100%;max-width:500px;box-shadow:var(--shadow-lg);margin:16px;max-height:90vh;overflow-y:auto">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-            <div style="font-family:var(--font-display);font-size:16px;font-weight:800">Atur Program & Target</div>
-            <button onclick="tutupModalProgresTarget()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-3)">✕</button>
-          </div>
-          <div style="font-size:12px;color:var(--text-2);margin-bottom:14px">Tambah program preventif beserta target totalnya. Realisasi dihitung otomatis dari laporan terverifikasi.</div>
-          <div id="progres-target-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
-          <button onclick="tambahBarisProgramTarget()" style="width:100%;padding:10px;border:1.5px dashed var(--line-strong);border-radius:var(--radius-xs);background:none;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-2)">+ Tambah Program</button>
-          <div style="display:flex;gap:10px;margin-top:16px">
-            <button onclick="tutupModalProgresTarget()" style="flex:1;padding:11px;border:1px solid var(--line);border-radius:var(--radius-xs);background:none;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-2)">Batal</button>
-            <button onclick="simpanProgresTarget()" style="flex:2;padding:11px;border:none;border-radius:var(--radius-xs);background:linear-gradient(135deg,var(--pln-yellow),var(--pln-yellow-deep));color:var(--ink-900);font-size:13px;font-weight:800;cursor:pointer">✓ Simpan</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Progress Bars per Program -->
-      <div class="card" style="margin-top:16px">
-        <div class="card-header">
-          <div class="card-title">Progres per Program</div>
-          <span class="card-count" id="progres-program-count">—</span>
-        </div>
-        <div id="progres-program-list" style="padding:18px;display:flex;flex-direction:column;gap:18px">
-          <div style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px">Belum ada program. Klik "Atur Target Program" untuk menambahkan.</div>
-        </div>
-      </div>
-
-      <!-- Progress Bars per ULP -->
-      <div class="card" style="margin-top:18px">
-        <div class="card-header">
-          <div class="card-title">Progres per ULP</div>
-          <span class="card-count" id="progres-ulp-count">—</span>
-        </div>
-        <div id="progres-ulp-list" style="padding:18px;display:flex;flex-direction:column;gap:16px">
-          <div style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px">Menunggu data laporan...</div>
-        </div>
-      </div>
-
-      <!-- Tabel rekap per Tim/Regu -->
-      <div class="card" style="margin-top:18px">
-        <div class="card-header">
-          <div class="card-title">Kinerja per Tim / Regu</div>
-        </div>
-        <div class="table-container">
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Tim / Regu</th><th>ULP</th><th>Jumlah Laporan</th><th>Total Realisasi</th></tr></thead>
-              <tbody id="progres-tim-body"><tr><td colspan="4" class="empty">Menunggu data...</td></tr></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- ══ PENUGASAN VIEW (gabungan Penugasan Pekerjaan + Target Kerja Regu) ══ -->
     <div id="viewTiket" style="display:none;" class="firebase-view">
       <div class="fb-header">
@@ -1821,6 +1753,35 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
               <tbody id="tiketBody">
                 <tr><td colspan="9" class="empty">Belum ada penugasan. Buat penugasan baru di atas.</td></tr>
               </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progres & Realisasi (gabungan dari eks-halaman Progres Program) -->
+      <div class="card" style="margin-top:18px;">
+        <div class="card-header" style="flex-wrap:wrap;gap:10px">
+          <div>
+            <div class="card-title">Progres &amp; Realisasi</div>
+            <div style="font-size:11.5px;color:var(--text-3);margin-top:2px">Realisasi laporan terverifikasi dibanding target yang diatur di atas</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="tab-btn active" id="tiket-progres-tab-harian" onclick="setTiketProgresPeriode('harian',this)">Hari Ini</button>
+            <button class="tab-btn" id="tiket-progres-tab-mingguan" onclick="setTiketProgresPeriode('mingguan',this)">Minggu Ini</button>
+            <button class="tab-btn" id="tiket-progres-tab-bulanan" onclick="setTiketProgresPeriode('bulanan',this)">Bulan Ini</button>
+          </div>
+        </div>
+        <div style="padding:18px 18px 4px">
+          <div style="font-size:12px;font-weight:700;color:var(--text-2);margin-bottom:12px">Progres per ULP</div>
+          <div id="tiket-progres-ulp-list" style="display:flex;flex-direction:column;gap:14px">
+            <div style="text-align:center;color:var(--text-muted);padding:16px;font-size:13px">Menunggu data...</div>
+          </div>
+        </div>
+        <div class="table-container" style="margin-top:8px">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Tim / Regu</th><th>ULP</th><th>Laporan</th><th>Target</th><th>Realisasi</th><th>%</th></tr></thead>
+              <tbody id="tiket-progres-tim-body"><tr><td colspan="6" class="empty">Menunggu data...</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -2539,11 +2500,11 @@ window.onPageSizeChange = function() {
 };
 
 function switchView(view) {
-  const allViews = ['viewBeranda','viewMap','viewTable','viewPetugas','viewAbsensi','viewLogAbsensi','viewLaporan','viewTiket','viewVerifikasi','viewRekap','viewProgres','viewAkun'];
+  const allViews = ['viewBeranda','viewMap','viewTable','viewPetugas','viewAbsensi','viewLogAbsensi','viewLaporan','viewTiket','viewVerifikasi','viewRekap','viewAkun'];
   allViews.forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
   document.getElementById('filterBar').style.display = 'none';
 
-  const allNavIds = ['nav-beranda','nav-map','nav-table','nav-petugas','nav-absensi','nav-log-absensi','nav-laporan','nav-tiket','nav-verifikasi','nav-rekap','nav-progres','nav-akun'];
+  const allNavIds = ['nav-beranda','nav-map','nav-table','nav-petugas','nav-absensi','nav-log-absensi','nav-laporan','nav-tiket','nav-verifikasi','nav-rekap','nav-akun'];
   allNavIds.forEach(id => { const el = document.getElementById(id); if(el) el.classList.remove('active'); });
 
   if (view === 'beranda') {
@@ -2591,14 +2552,10 @@ function switchView(view) {
     document.getElementById('viewRekap').style.display = '';
     document.getElementById('nav-rekap').classList.add('active');
     initFirebase().then(ok => { if (ok) listenRekap(); });
-  } else if (view === 'progres') {
-    document.getElementById('viewProgres').style.display = '';
-    document.getElementById('nav-progres').classList.add('active');
-    initFirebase().then(ok => { if (ok) { listenProgresData(); listenProgresTarget(); } });
   } else if (view === 'tiket') {
     document.getElementById('viewTiket').style.display = '';
     document.getElementById('nav-tiket').classList.add('active');
-    initFirebase().then(ok => { if (ok) { listenTiket(); } });
+    initFirebase().then(ok => { if (ok) { listenTiket(); listenRekap(); } });
   } else if (view === 'verifikasi') {
     document.getElementById('viewVerifikasi').style.display = '';
     document.getElementById('nav-verifikasi').classList.add('active');
@@ -3112,7 +3069,7 @@ function hitungCapaian(ulp, regu, tipePeriode, periodeKey, laporanEntries) {
   return { realisasi, target: target.targetVolume, pct, belumDiatur: false };
 }
 
-// ── Grafik Beranda: Realisasi vs Target per Regu + Status Laporan (poin 3) ──
+// ── Grafik Beranda: Realisasi vs Target per ULP + Status Laporan (poin 3) ──
 function getISOWeekKey(date) {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   const dayNum = d.getUTCDay() || 7;
@@ -3155,7 +3112,9 @@ function renderTargetChart() {
   const periodeKey = getCurrentPeriodeKey(tipePeriode);
   const { start, end } = getPeriodeRange(tipePeriode, periodeKey);
 
-  // Kumpulkan semua pasangan (ULP, Regu) yang punya target ATAU laporan pada periode ini.
+  // Kumpulkan semua pasangan (ULP, Regu) yang punya target ATAU laporan pada periode ini,
+  // lalu jumlahkan per ULP (Beranda tampil per ULP, detail per Tim/Regu ada di
+  // menu "Kelola Penugasan Pekerjaan" bagian Progres & Realisasi).
   const pairs = new Map();
   targetKerjaCache.forEach(t => {
     if (t.tipePeriode === tipePeriode && t.periodeKey === periodeKey) pairs.set(t.ulp + '|||' + t.regu, { ulp: t.ulp, regu: t.regu });
@@ -3173,11 +3132,15 @@ function renderTargetChart() {
   }
   emptyNote.style.display = 'none';
 
-  const rows = Array.from(pairs.values())
-    .map(({ ulp, regu }) => {
-      const c = hitungCapaian(ulp, regu, tipePeriode, periodeKey, allLaporanCache);
-      return { label: regu + ' — ' + ulp.replace('ULP ', ''), target: c.belumDiatur ? 0 : c.target, realisasi: c.realisasi, belumDiatur: c.belumDiatur };
-    })
+  const byUlp = {};
+  Array.from(pairs.values()).forEach(({ ulp, regu }) => {
+    const c = hitungCapaian(ulp, regu, tipePeriode, periodeKey, allLaporanCache);
+    if (!byUlp[ulp]) byUlp[ulp] = { target: 0, realisasi: 0, adaTarget: false };
+    byUlp[ulp].realisasi += c.realisasi;
+    if (!c.belumDiatur) { byUlp[ulp].target += c.target; byUlp[ulp].adaTarget = true; }
+  });
+  const rows = Object.entries(byUlp)
+    .map(([ulp, d]) => ({ label: ulp, target: d.target, realisasi: d.realisasi, belumDiatur: !d.adaTarget }))
     .sort((a, b) => b.realisasi - a.realisasi);
 
   if (chartTargetRealisasi) chartTargetRealisasi.destroy();
@@ -5028,7 +4991,83 @@ function listenTiket() {
         dibuatOleh: t.dibuatOleh, waktu: t.waktu
       }));
     refreshBerandaCharts();
+    renderTiketProgres();
   });
+}
+
+// ── Progres per ULP & per Tim/Regu (dalam Kelola Penugasan Pekerjaan) ──
+let tiketProgresPeriode = 'harian';
+window.setTiketProgresPeriode = function(tipe, btn) {
+  tiketProgresPeriode = tipe;
+  document.querySelectorAll('#viewTiket .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTiketProgres();
+};
+
+function renderTiketProgres() {
+  const ulpList = document.getElementById('tiket-progres-ulp-list');
+  const timBody = document.getElementById('tiket-progres-tim-body');
+  if (!ulpList || !timBody) return;
+
+  const tipePeriode = tiketProgresPeriode;
+  const periodeKey = getCurrentPeriodeKey(tipePeriode);
+  const { start, end } = getPeriodeRange(tipePeriode, periodeKey);
+  const filtered = (allLaporanCache || []).filter(([, l]) => l.waktu && l.waktu >= start && l.waktu < end);
+
+  // Kumpulkan semua pasangan (ULP, Regu) yang punya target ATAU laporan pada periode ini.
+  const pairs = new Map();
+  targetKerjaCache.forEach(t => {
+    if (t.tipePeriode === tipePeriode && t.periodeKey === periodeKey) pairs.set(t.ulp + '|||' + t.regu, { ulp: t.ulp, regu: t.regu });
+  });
+  filtered.forEach(([, l]) => { if (l.ulp && l.regu) pairs.set(l.ulp + '|||' + l.regu, { ulp: l.ulp, regu: l.regu }); });
+
+  // ── Tabel per Tim/Regu ──
+  const timEntries = Array.from(pairs.values())
+    .map(({ ulp, regu }) => ({
+      ulp, regu,
+      count: filtered.filter(([, l]) => l.ulp === ulp && l.regu === regu).length,
+      ...hitungCapaian(ulp, regu, tipePeriode, periodeKey, filtered)
+    }))
+    .sort((a, b) => b.realisasi - a.realisasi);
+
+  timBody.innerHTML = timEntries.length === 0
+    ? '<tr><td colspan="6" class="empty">Belum ada target maupun laporan untuk periode ini</td></tr>'
+    : timEntries.map(d => {
+        const pctColor = d.belumDiatur ? 'var(--text-3)' : (d.pct >= 100 ? 'var(--ok)' : d.pct >= 70 ? 'var(--warn)' : 'var(--crit)');
+        return `<tr>
+          <td style="font-weight:600">${d.regu}</td>
+          <td style="font-size:12px;color:var(--text-2)">${d.ulp}</td>
+          <td style="font-family:var(--mono)">${d.count}</td>
+          <td style="font-family:var(--mono)">${d.belumDiatur ? '—' : d.target}</td>
+          <td style="font-family:var(--mono);font-weight:700">${d.realisasi||'—'}</td>
+          <td style="font-weight:800;color:${pctColor}">${d.belumDiatur ? 'Belum ada target' : d.pct+'%'}</td>
+        </tr>`;
+      }).join('');
+
+  // ── Progres per ULP (target & realisasi dijumlah dari semua tim di ULP itu) ──
+  const byUlp = {};
+  timEntries.forEach(d => {
+    if (!byUlp[d.ulp]) byUlp[d.ulp] = { target: 0, realisasi: 0, adaTarget: false };
+    byUlp[d.ulp].realisasi += d.realisasi;
+    if (!d.belumDiatur) { byUlp[d.ulp].target += d.target; byUlp[d.ulp].adaTarget = true; }
+  });
+  const ulpEntries = Object.entries(byUlp).sort((a, b) => b[1].realisasi - a[1].realisasi);
+
+  ulpList.innerHTML = ulpEntries.length === 0
+    ? '<div style="text-align:center;color:var(--text-muted);padding:16px;font-size:13px">Belum ada target maupun laporan untuk periode ini</div>'
+    : ulpEntries.map(([ulp, d]) => {
+        const pct = d.target > 0 ? Math.min(100, Math.round(d.realisasi / d.target * 100)) : 0;
+        const barColor = !d.adaTarget ? 'var(--text-3)' : pct >= 100 ? 'var(--ok)' : pct >= 70 ? '#22c55e' : pct >= 40 ? 'var(--warn)' : 'var(--crit)';
+        return `<div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
+            <div style="font-size:13px;font-weight:700">${ulp}</div>
+            <div style="font-size:12px;color:var(--text-3);font-family:var(--mono)">${d.adaTarget ? `${d.realisasi}/${d.target} &nbsp;<b style="color:${barColor}">(${pct}%)</b>` : `${d.realisasi} realisasi · target belum diatur`}</div>
+          </div>
+          <div style="background:var(--surface-3);border-radius:99px;height:9px;overflow:hidden">
+            <div style="height:100%;width:${d.adaTarget ? pct : 0}%;background:${barColor};border-radius:99px;transition:width 0.6s cubic-bezier(0.22,1,0.36,1)"></div>
+          </div>
+        </div>`;
+      }).join('');
 }
 
 // ══════════════════════════════════════
@@ -5419,6 +5458,7 @@ function renderRekap(entries) {
       }).join('');
 
   refreshBerandaCharts();
+  renderTiketProgres();
 }
 
 function listenRekap() {
@@ -5583,166 +5623,6 @@ window.exportRekapPDF = function() {
   }
 };
 
-// ══════════════════════════════════════
-// PROGRES PROGRAM
-// ══════════════════════════════════════
-let progresTargetData = [];  // [{nama, target, satuan}]
-let progresLaporanAll = [];
-
-function listenProgresData() {
-  if (fbListeners.progresLaporan) return;
-  const r = window._fbRef(fbDb, 'laporan');
-  fbListeners.progresLaporan = window._fbOnValue(r, snap => {
-    const data = snap.val() || {};
-    progresLaporanAll = Object.values(data).filter(l => l.statusVerifikasi === 'Terverifikasi');
-    renderProgres();
-  });
-}
-
-function listenProgresTarget() {
-  if (fbListeners.progresTarget) return;
-  const r = window._fbRef(fbDb, 'progresTarget');
-  fbListeners.progresTarget = window._fbOnValue(r, snap => {
-    progresTargetData = snap.val() ? Object.entries(snap.val()).map(([id,v])=>({id,...v})) : [];
-    renderProgres();
-    renderProgresTargetModal();
-  });
-}
-
-function renderProgres() {
-  // ── Per Program (dari progresTargetData) ──
-  const programList = document.getElementById('progres-program-list');
-  if (progresTargetData.length === 0) {
-    programList.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px">Belum ada program. Klik "Atur Target Program" untuk menambahkan.</div>';
-    document.getElementById('progres-program-count').textContent = '0 program';
-  } else {
-    document.getElementById('progres-program-count').textContent = progresTargetData.length + ' program';
-    programList.innerHTML = progresTargetData.map(prog => {
-      // hitung realisasi dari laporan terverifikasi yang cocok dengan nama program
-      const realisasi = progresLaporanAll
-        .filter(l => (l.rincian||'').toLowerCase().includes((prog.nama||'').toLowerCase()) || (l.nomorTiket||'') === (prog.tiket||''))
-        .reduce((s,l) => s + +(l.realisasi||0), 0);
-      const target = +(prog.target||0);
-      const pct = target > 0 ? Math.min(100, Math.round(realisasi / target * 100)) : 0;
-      const barColor = pct >= 100 ? 'var(--ok)' : pct >= 70 ? '#22c55e' : pct >= 40 ? 'var(--warn)' : 'var(--crit)';
-      return `<div>
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px">
-          <div style="font-size:13px;font-weight:700;color:var(--text-1)">${prog.nama||'—'}</div>
-          <div style="font-size:12px;color:var(--text-3);font-family:var(--mono)">${realisasi}/${target} ${prog.satuan||'unit'} &nbsp;<b style="color:${barColor}">(${pct}%)</b></div>
-        </div>
-        <div style="background:var(--surface-3);border-radius:99px;height:10px;overflow:hidden">
-          <div style="height:100%;width:${pct}%;background:${barColor};border-radius:99px;transition:width 0.6s cubic-bezier(0.22,1,0.36,1)"></div>
-        </div>
-      </div>`;
-    }).join('');
-  }
-
-  // ── Per ULP ──
-  const byUlp = {};
-  progresLaporanAll.forEach(l => {
-    const k = l.ulp || '—';
-    if (!byUlp[k]) byUlp[k] = { realisasi:0, count:0 };
-    byUlp[k].realisasi += +(l.realisasi||0);
-    byUlp[k].count++;
-  });
-  const ulpList = document.getElementById('progres-ulp-list');
-  const ulpEntries = Object.entries(byUlp).sort((a,b)=>b[1].realisasi-a[1].realisasi);
-  document.getElementById('progres-ulp-count').textContent = ulpEntries.length + ' ULP';
-  if (ulpEntries.length === 0) {
-    ulpList.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:13px">Belum ada laporan terverifikasi</div>';
-  } else {
-    const maxReal = Math.max(...ulpEntries.map(([,d])=>d.realisasi),1);
-    ulpList.innerHTML = ulpEntries.map(([ulp,d]) => {
-      const pct = Math.round(d.realisasi / maxReal * 100);
-      return `<div>
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">
-          <div style="font-size:13px;font-weight:700">${ulp}</div>
-          <div style="font-size:12px;color:var(--text-3)">${d.count} laporan · <b style="color:var(--ok)">${d.realisasi} realisasi</b></div>
-        </div>
-        <div style="background:var(--surface-3);border-radius:99px;height:9px;overflow:hidden">
-          <div style="height:100%;width:${pct}%;background:var(--pln-blue-light);border-radius:99px;transition:width 0.6s cubic-bezier(0.22,1,0.36,1)"></div>
-        </div>
-      </div>`;
-    }).join('');
-  }
-
-  // ── Per Tim/Regu ── (dikelompokkan per ULP+Regu — nama Tim generik seperti
-  // "Tim PDKB SL 1" bisa sama persis di 6 ULP berbeda, jadi kalau cuma
-  // dikelompokkan per nama regu, datanya akan tertukar/tergabung salah.
-  // Target/% tidak ditampilkan di sini karena ini rekap SEPANJANG MASA
-  // (tanpa filter periode), sedangkan target sekarang per-periode — lihat
-  // menu "Kelola Penugasan Pekerjaan" (bagian Target Kerja Regu) & Rekap Laporan (yang punya filter Hari/Minggu/Bulan)
-  // untuk lihat % capaian.
-  const byTim = {};
-  progresLaporanAll.forEach(l => {
-    const k = (l.ulp||'—') + '|||' + (l.regu||'—');
-    if (!byTim[k]) byTim[k] = { ulp: l.ulp||'—', regu: l.regu||'—', count:0, realisasi:0 };
-    byTim[k].count++;
-    byTim[k].realisasi += +(l.realisasi||0);
-  });
-  const timEntries = Object.values(byTim).sort((a,b)=>b.realisasi-a.realisasi);
-  document.getElementById('progres-tim-body').innerHTML = timEntries.length === 0
-    ? '<tr><td colspan="4" class="empty">Belum ada data</td></tr>'
-    : timEntries.map(d => `<tr>
-          <td style="font-weight:700">${d.regu}</td>
-          <td style="font-size:12px;color:var(--text-2)">${d.ulp}</td>
-          <td style="font-family:var(--mono)">${d.count}</td>
-          <td style="font-family:var(--mono);font-weight:700;color:var(--ok)">${d.realisasi||'—'}</td>
-        </tr>`).join('');
-}
-
-// ── Modal Atur Target Program ──
-window.bukaModalProgresTarget = function() {
-  renderProgresTargetModal();
-  document.getElementById('modal-progres-target').style.display = 'flex';
-};
-window.tutupModalProgresTarget = function() {
-  document.getElementById('modal-progres-target').style.display = 'none';
-};
-
-function renderProgresTargetModal() {
-  const list = document.getElementById('progres-target-list');
-  const rows = progresTargetData.length > 0 ? progresTargetData : [{ nama:'', target:'', satuan:'unit' }];
-  list.innerHTML = rows.map((p, i) => `
-    <div style="display:grid;grid-template-columns:3fr 1.5fr 1.5fr auto;gap:8px;align-items:center" data-idx="${i}">
-      <input type="text" class="pt-nama" value="${p.nama||''}" placeholder="Nama program (cth: Cover Anti Hewan)" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 10px;font-size:12px;outline:none">
-      <input type="number" class="pt-target" value="${p.target||''}" placeholder="Target" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 10px;font-size:12px;outline:none">
-      <input type="text" class="pt-satuan" value="${p.satuan||'unit'}" placeholder="unit/km/titik" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 10px;font-size:12px;outline:none">
-      <button onclick="this.closest('[data-idx]').remove()" style="background:var(--crit-bg);color:var(--crit);border:none;border-radius:var(--radius-xs);width:32px;height:32px;cursor:pointer;font-size:14px;flex-shrink:0">✕</button>
-    </div>
-  `).join('');
-}
-
-window.tambahBarisProgramTarget = function() {
-  const list = document.getElementById('progres-target-list');
-  const row = document.createElement('div');
-  row.setAttribute('data-idx', Date.now());
-  row.style.cssText = 'display:grid;grid-template-columns:3fr 1.5fr 1.5fr auto;gap:8px;align-items:center';
-  row.innerHTML = `
-    <input type="text" class="pt-nama" placeholder="Nama program" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 10px;font-size:12px;outline:none">
-    <input type="number" class="pt-target" placeholder="Target" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 10px;font-size:12px;outline:none">
-    <input type="text" class="pt-satuan" placeholder="unit/km" value="unit" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 10px;font-size:12px;outline:none">
-    <button onclick="this.closest('[data-idx]').remove()" style="background:var(--crit-bg);color:var(--crit);border:none;border-radius:var(--radius-xs);width:32px;height:32px;cursor:pointer;font-size:14px">✕</button>
-  `;
-  list.appendChild(row);
-};
-
-window.simpanProgresTarget = async function() {
-  if (!fbDb) { showToast('Firebase belum terhubung.', 'err'); return; }
-  const rows = document.querySelectorAll('#progres-target-list [data-idx]');
-  const payload = {};
-  rows.forEach((row, i) => {
-    const nama   = row.querySelector('.pt-nama')?.value.trim();
-    const target = row.querySelector('.pt-target')?.value.trim();
-    const satuan = row.querySelector('.pt-satuan')?.value.trim() || 'unit';
-    if (nama) payload['prog_' + i] = { nama, target: target||'0', satuan };
-  });
-  try {
-    await window._fbSet(window._fbRef(fbDb, 'progresTarget'), payload);
-    tutupModalProgresTarget();
-    showToast('Target program disimpan.', 'ok');
-  } catch(e) { showToast('Gagal menyimpan: ' + e.message, 'err'); }
-};
 </script>
 <!-- FOTO FULLSCREEN MODAL -->
 <div id="foto-modal" onclick="this.style.display='none'" style="
