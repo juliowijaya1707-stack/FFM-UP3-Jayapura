@@ -1075,7 +1075,16 @@ body {
       <div id="tiket-info-box" style="display:none;margin-top:8px;background:var(--surface2);border:1px solid var(--border-str);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.8;color:var(--text)"></div>
     </div>
 
-    <div class="field"><label>Rincian Pekerjaan</label><input type="text" id="lapor-rincian" placeholder="cth: Pemasangan Cover Anti Hewan"></div>
+    <div class="field"><label>Jenis Pekerjaan</label>
+      <select id="lapor-jenis-pekerjaan" style="width:100%">
+        <option value="">— Pilih —</option>
+      </select>
+    </div>
+    <div class="field"><label>Rincian Pekerjaan <span style="color:var(--red)">*</span></label>
+      <select id="lapor-rincian" style="width:100%">
+        <option value="">— Pilih Rincian Pekerjaan —</option>
+      </select>
+    </div>
     <div class="field"><label>Audit Material</label><input type="text" id="lapor-material" placeholder="cth: Cover Anti Hewan, Cable Tie"></div>
     <div class="field">
       <label>Realisasi Volume <span style="color:var(--red)">*</span></label>
@@ -1909,6 +1918,83 @@ Object.entries(ROSTER_ULP_TEAMS).forEach(([ulp, teams]) => {
 });
 const ALL_TEAM_NAMES = Object.keys(TEAM_TO_ULPS).sort((a, b) => a.localeCompare(b));
 const ULP_ALL_OPTIONS = ['UP3 Jayapura', ...Object.keys(ROSTER_ULP_TEAMS)];
+
+// ══════════════════════════════════════════════════════════════
+// RENCANA PEKERJAAN — daftar master dropdown Jenis & Rincian Pekerjaan.
+// HARUS SAMA PERSIS dengan RP_JENIS_PEKERJAAN_LIST & RP_RINCIAN_GROUPS di
+// index.html (dashboard supervisor), supaya istilah yang dipilih petugas di
+// sini konsisten dengan yang dipakai supervisor saat membuat Rencana
+// Pekerjaan (RKM) — kalau daftar di dashboard diubah, salin ulang ke sini juga.
+// ══════════════════════════════════════════════════════════════
+const RP_JENIS_PEKERJAAN_LIST = [
+  'Sempurna Proteksi', 'Sempurna Material', 'Sempurna Pembebanan',
+  'Sempurna Inspeksi', 'Sempurna Konstruksi', 'Sempurna ROW'
+];
+
+const RP_RINCIAN_GROUPS = {
+  'Umum / Bangunan / JTM Dasar': [
+    'Perbaikan Andongan', 'Perbaikan Andongan (JTR)', 'Inspeksi Kubikel', 'Pemeliharaan Kubikel',
+    'Pembersihan Halaman Bangunan', 'Pengecatan Bangunan', 'SLO PHBTM', 'Inspeksi Tier 1 JTM',
+    'Inspeksi Tier 2 JTM', 'Pengukuran Tahanan Isolasi JTM/SKTM', 'Rabas Pohon', 'Pembersihan Terminasi',
+    'Tebang Pohon', 'Pemasangan Westpex', 'Pemasangan Cover Isolator Tarik', 'Pemasangan Cover Isolator Tumpu',
+    'Pemasangan Cover LA', 'Pemasangan Cover FCO Bawah', 'Pemasangan Cover FCO Atas', 'Pemasangan IJUK',
+    'Pembersihan Corong', 'Pembersihan Jaring Layang-layang', 'Sisip Tiang', 'Perbaikan Konstruksi Schoor',
+    'Perbaikan Tiang Miring', 'Penggantian Traves', 'Penggantian Tiang Keropos/Rusak TM',
+    'Pemasangan Pondasi Tiang', 'Pemasangan Top Ties', 'Konsul Phasa S', 'Perubahan Konstruksi Segitiga',
+    'Pengecatan Tiang', 'Perbaikan Sambungan SUTM'
+  ],
+  'Switching / Proteksi / Kubikel': [
+    'Perbaikan Kawat Rantas', 'Penggantian Isolator Tarik', 'Penggantian Isolator Tumpu',
+    'Penggantian Pin Insulator menjadi Pin Post', 'Pemasangan LA Jaringan', 'Pemasangan Fault Indikator',
+    'Penggantian Baterai LBS Motorized', 'Penggantian LBS', 'Penggantian Baterai Recloser', 'Penggantian FCO',
+    'Pemeliharaan LBS', 'Pemeliharaan Recloser', 'Pemasangan Cover LBS', 'Pemasangan Cover Recloser',
+    'Relokasi LBS', 'Relokasi Recloser', 'Pemasangan DS', 'Penggantian Rectifier Rusak',
+    'Penggantian Relay Rusak (Peremajaan)', 'Integrasi Keypoint ke SCADA', 'Assesment Keypoint',
+    'Pemeliharaan berbasis PDKB', 'SLO JTM', 'Perbaikan Tiang (las tiang/dll)', 'Pemasangan Klem H'
+  ],
+  'Gardu & Trafo': [
+    'Inspeksi Tier 1', 'Inspeksi Tier 2', 'Pengukuran Beban', 'Penyeimbangan Beban', 'Manajemen/Mutasi Trafo',
+    'Menaikkan Tap Changer Trafo Distribusi', 'Penggantian PHBTR Rusak', 'Penggantian Dudukan PHBTR',
+    'Pembersihan Halaman Gardu Distribusi', 'Pengecatan Gardu', 'Penggantian In / Out Gardu',
+    'Penggantian Tiang Keropos/Rusak Gardu', 'Perbaikan LA Gardu', 'Perbaikan Grounding Gardu',
+    'Penyesuaian Rating (Fuse Link)', 'Pemasangan Cover LA & Bushing Gardu', 'Penyesuaian tegangan drop',
+    'Downrating trafo', 'Uprating Trafo', 'Pemasangan Cover Cut Out Gardu', 'SLO Gardu Distribusi',
+    'Pengecekan Pintu PHBTR', 'Pengecekan trafo rembes', 'Manuver beban gardu', 'Rehabilitasi Gardu',
+    'Pengisian Minyak trafo pada Trafo'
+  ],
+  'Jaringan JTR': [
+    'Inspeksi (JTR)', 'Perampalan Pohon (JTR)', 'Joinisasi/Perbaikan Sambungan (JTR)',
+    'Penggantian Aksesoris Tarikan (JTR)', 'Perbaikan Tiang Miring (JTR)', 'Pemasangan Grounding (JTR)',
+    'Pemasangan Schoor (JTR)', 'Pengecatan Tiang (JTR)', 'Pemasangan Kumis (JTR)',
+    'Penggantian Tiang Keropos/Rusak (JTR)', 'Penggantian Kabel Incoming/Outgoing (JTR)',
+    'Penggantian Pipa Incoming/Outgoing (JTR)', 'Penarikan Kabel JTR', 'Rekonektorisasi JTR', 'SLO JTR',
+    'Pemasangan Kabel JTR', 'Pembongkaran Kabel JTR', 'Pembongkaran tiang JTR', 'Perbaikan SR Deret',
+    'Penggantian Tap Konektor Menjadi Konektor Press', 'Pemasangan Service Wedge Clamp'
+  ],
+  'Pembangunan / Uprating': [
+    'Pembangunan Konstruksi Tiang JTM', 'Uprating SUTM', 'Uprating MVTIC', 'Uprating SKTM',
+    'Pembangunan Gardu Sisip', 'Pembangunan Gardu portal', 'Pembangunan Gardu Hubung',
+    'Pembangunan Konstruksi Tiang JTR', 'Uprating SUTR', 'Pembangunan LBS Threeway', 'Pembangunan Recloser'
+  ]
+};
+
+// Isi dropdown Jenis & Rincian Pekerjaan di form Laporan sekali saja (dipanggil saat app siap).
+function populateLaporPekerjaanDropdowns() {
+  const jenisSel = document.getElementById('lapor-jenis-pekerjaan');
+  if (jenisSel && !jenisSel.dataset.filled) {
+    jenisSel.innerHTML = '<option value="">— Pilih —</option>' +
+      RP_JENIS_PEKERJAAN_LIST.map(v => `<option value="${v}">${v}</option>`).join('');
+    jenisSel.dataset.filled = '1';
+  }
+  const rincianSel = document.getElementById('lapor-rincian');
+  if (rincianSel && !rincianSel.dataset.filled) {
+    rincianSel.innerHTML = '<option value="">— Pilih Rincian Pekerjaan —</option>' +
+      Object.entries(RP_RINCIAN_GROUPS).map(([grup, items]) =>
+        `<optgroup label="${grup}">${items.map(v => `<option value="${v}">${v}</option>`).join('')}</optgroup>`
+      ).join('');
+    rincianSel.dataset.filled = '1';
+  }
+}
 
 function populateReguDropdown() {
   const sel = document.getElementById('in-regu-select');
@@ -3280,8 +3366,10 @@ let laporStream = null;
 let laporFotoSementara = null;
 
 window.bukaModalLapor = function() {
+  populateLaporPekerjaanDropdowns();
   populateLaporTiketSelect('');
   document.getElementById('tiket-info-box').style.display = 'none';
+  document.getElementById('lapor-jenis-pekerjaan').value = '';
   document.getElementById('lapor-rincian').value = '';
   document.getElementById('lapor-material').value = '';
   document.getElementById('lapor-realisasi').value = '';
@@ -3389,7 +3477,24 @@ window.onLaporTiketSelectChange = function() {
   }
   infoBox.innerHTML = '✅ <b>' + (found.jenis || '—') + '</b> · ' + (found.ulp || '—') + extra;
   infoBox.style.display = 'block';
-  if (found.jenis && !document.getElementById('lapor-rincian').value) document.getElementById('lapor-rincian').value = found.jenis;
+
+  // Auto-isi Jenis & Rincian Pekerjaan dari data penugasan (RKM), kalau ada dan
+  // field-nya masih kosong — supaya petugas tidak perlu pilih ulang secara manual.
+  const jenisSel   = document.getElementById('lapor-jenis-pekerjaan');
+  const rincianSel = document.getElementById('lapor-rincian');
+  if (!jenisSel.value) {
+    if (found.rpJenisPekerjaan && [...jenisSel.options].some(o => o.value === found.rpJenisPekerjaan)) {
+      jenisSel.value = found.rpJenisPekerjaan;
+    }
+  }
+  if (!rincianSel.value) {
+    if (found.rpRincian && [...rincianSel.options].some(o => o.value === found.rpRincian)) {
+      rincianSel.value = found.rpRincian;
+    } else if (found.jenis && [...rincianSel.options].some(o => o.value === found.jenis)) {
+      // Fallback: judul penugasan bebas ternyata persis sama dengan salah satu opsi Rincian Pekerjaan
+      rincianSel.value = found.jenis;
+    }
+  }
 };
 
 function resetSlotFoto(target) {
@@ -3535,13 +3640,14 @@ window.submitLaporan = async function() {
   const errEl  = document.getElementById('lapor-err');
   const progEl = document.getElementById('lapor-progress');
   const btn    = document.getElementById('lapor-btn-submit');
+  const jenisPekerjaan = document.getElementById('lapor-jenis-pekerjaan').value;
   const rincian   = document.getElementById('lapor-rincian').value.trim();
   const material  = document.getElementById('lapor-material').value.trim();
   const realisasiEl = document.getElementById('lapor-realisasi');
   const realisasi = realisasiEl.value;
   const nomorTiket = document.getElementById('lapor-tiket-select')?.value || null;
 
-  if (!rincian) { errEl.textContent = 'Rincian pekerjaan wajib diisi.'; errEl.style.display = 'block'; return; }
+  if (!rincian) { errEl.textContent = 'Rincian pekerjaan wajib dipilih.'; errEl.style.display = 'block'; return; }
   // Realisasi wajib diisi (boleh 0), target sudah tidak diisi petugas —
   // ditentukan supervisor lewat menu Kelola Penugasan Pekerjaan (bagian Target Kerja Regu) di dashboard.
   if (realisasi === '') { errEl.textContent = 'Realisasi Volume wajib diisi (boleh 0).'; errEl.style.display = 'block'; realisasiEl.focus(); return; }
@@ -3583,6 +3689,7 @@ window.submitLaporan = async function() {
     regu: currentUser ? currentUser.regu : '—',
     ulp:  currentUser ? currentUser.ulp  : '—',
     anggotaHadir: currentUser ? (currentUser.anggotaHadir || '') : '',
+    jenisPekerjaan: jenisPekerjaan || null,
     rincian, material,
     realisasi: realisasi || '0',
     nomorTiket: nomorTiket || null,
@@ -3745,6 +3852,7 @@ async function restoreSessionIfAny() {
   return true;
 }
 populateReguDropdown();
+populateLaporPekerjaanDropdowns();
 populateUlpDropdown(ULP_ALL_OPTIONS);
 restoreSessionIfAny();
 
