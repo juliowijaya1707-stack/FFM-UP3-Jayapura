@@ -5795,6 +5795,19 @@ async function hvSiapkanGambar(src) {
   }
 }
 
+// Ambil ukuran asli (lebar x tinggi) sebuah foto dari dataURL-nya — dipakai
+// supaya penempatan foto di PDF menjaga rasio asli (contain), tidak digepengkan
+// paksa ke kotak persegi seperti sebelumnya.
+function hvUkuranGambar(dataUrl) {
+  return new Promise((resolve) => {
+    if (!dataUrl) { resolve(null); return; }
+    const img = new Image();
+    img.onload  = () => resolve({ w: img.naturalWidth || img.width || 1, h: img.naturalHeight || img.height || 1 });
+    img.onerror = () => resolve(null);
+    img.src = dataUrl;
+  });
+}
+
 function hvStatusWarnaRGB(sv) {
   if (sv === 'Terverifikasi') return [26, 140, 60];
   if (sv === 'Ditolak')       return [220, 53, 69];
@@ -5858,7 +5871,10 @@ window.exportHasilVerifikasiPDF = async function() {
   progEl.textContent = `Menyiapkan ${entries.length} laporan & mengunduh foto...`;
 
   try {
-    // Pre-fetch semua foto dulu (async) sebelum menggambar PDF, supaya addImage bisa sinkron.
+    // Pre-fetch semua foto + ukuran ASLI-nya dulu (async), sebelum menggambar PDF.
+    // Ukuran asli dipakai supaya foto ditempatkan menjaga rasio (contain), TIDAK
+    // digepengkan paksa ke kotak persegi seperti versi sebelumnya — ini juga yang
+    // bikin watermark waktu/GPS/alamat di foto ikut terdistorsi & terlihat terpotong.
     const gambarCache = {};
     let doneCount = 0;
     for (const [, l] of entries) {
@@ -5867,8 +5883,12 @@ window.exportHasilVerifikasiPDF = async function() {
         ['progres', l.fotoProgresUrl || l.fotoProgresBase64],
         ['after', l.fotoAfterUrl || l.fotoAfterBase64]
       ];
-      for (const [fase, src] of keys) {
-        if (src && !gambarCache[src]) gambarCache[src] = await hvSiapkanGambar(src);
+      for (const [, src] of keys) {
+        if (src && !(src in gambarCache)) {
+          const dataUrl = await hvSiapkanGambar(src);
+          const dim = dataUrl ? await hvUkuranGambar(dataUrl) : null;
+          gambarCache[src] = dataUrl ? { dataUrl, w: dim ? dim.w : 1, h: dim ? dim.h : 1 } : null;
+        }
       }
       doneCount++;
       progEl.textContent = `Mengunduh foto laporan ${doneCount} dari ${entries.length}...`;
@@ -5881,118 +5901,168 @@ window.exportHasilVerifikasiPDF = async function() {
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
     const marginX = 36;
-    let y = 40;
+    const footerY = pageH - 24;
+    let y = 44;
+    let halaman = 1;
+
+    function gambarFooter() {
+      doc.setDrawColor(225);
+      doc.setLineWidth(0.75);
+      doc.line(marginX, footerY - 12, pageW - marginX, footerY - 12);
+      doc.setFont(undefined, 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(140);
+      doc.text('NUMBAY — Network Utility Maintanance & Business Analytics for Yard Operations', marginX, footerY);
+      doc.text('Halaman ' + halaman, pageW - marginX, footerY, { align: 'right' });
+    }
 
     function judulHalaman() {
+      doc.setFont(undefined, 'bold');
       doc.setFontSize(13);
       doc.setTextColor(20);
-      doc.text('Hasil Verifikasi Laporan — FFM PLN UP3 Jayapura', marginX, y);
-      y += 16;
+      doc.text('Hasil Verifikasi Laporan — NUMBAY', marginX, y);
+      doc.setFont(undefined, 'normal');
+      y += 15;
       doc.setFontSize(8.5);
       doc.setTextColor(110);
       doc.text('Dicetak: ' + new Date().toLocaleString('id-ID') + '  ·  Total: ' + entries.length + ' laporan', marginX, y);
-      y += 18;
-      doc.setDrawColor(220);
+      y += 14;
+      doc.setDrawColor(0, 61, 130);
+      doc.setLineWidth(1.4);
       doc.line(marginX, y, pageW - marginX, y);
-      y += 18;
+      doc.setLineWidth(1);
+      y += 20;
     }
     judulHalaman();
 
-    const fotoW = (pageW - marginX * 2 - 16) / 3; // 3 foto sejajar, jarak 8pt antar foto
-    const fotoH = fotoW; // persegi
+    const contentW  = pageW - marginX * 2;
+    const padCard   = 12;             // padding kiri/kanan/bawah di dalam kartu
+    const fotoGap   = 10;
+    const fotoW     = (contentW - padCard * 2 - fotoGap * 2) / 3; // 3 foto sejajar
+    const fotoH     = Math.round(fotoW * 0.88);                   // sedikit landscape, muat rapi utk foto potret/lanskap
 
-    entries.forEach(([, l], idx) => {
-      // Perkirakan tinggi blok laporan ini; kalau tidak cukup di halaman, pindah halaman baru.
-      const perkiraanTinggi = 100 + fotoH + 20;
-      if (y + perkiraanTinggi > pageH - 36) {
+    entries.forEach(([, l]) => {
+      doc.setFontSize(9);
+      const infoLines    = doc.splitTextToSize(`Pekerjaan: ${l.rincian || '—'}  |  Material: ${l.material || '—'}  |  Realisasi: ${l.realisasi || '—'}`, contentW - padCard * 2);
+      const catatanLines = l.verifCatatan ? doc.splitTextToSize(`Catatan: ${l.verifCatatan}`, contentW - padCard * 2) : [];
+
+      // Hitung tinggi kartu ini SEBELUM digambar (dengan buffer aman), supaya
+      // background & border kartu presisi dan supaya cek pindah-halaman akurat.
+      let tinggiKartu = 24;                      // padding atas + baris status/no.penugasan
+      tinggiKartu += 20;                         // jarak ke baris regu · ULP
+      tinggiKartu += 14;                         // baris regu · ULP
+      tinggiKartu += infoLines.length * 11 + 4;
+      tinggiKartu += 12;                         // waktu laporan
+      tinggiKartu += 12;                         // diverifikasi oleh
+      if (catatanLines.length) tinggiKartu += catatanLines.length * 11 + 2;
+      tinggiKartu += 10;                         // jarak ke blok foto
+      tinggiKartu += fotoH + 16;                 // foto + label
+      tinggiKartu += 18;                         // padding bawah (dengan buffer aman)
+
+      if (y + tinggiKartu > footerY - 20) {
+        gambarFooter();
         doc.addPage();
-        y = 40;
+        halaman++;
+        y = 44;
         judulHalaman();
       }
+
+      const cardTop  = y;
+      const padCardX = marginX + padCard;
+
+      // Kartu latar rapi: fill lembut + border tipis + sudut membulat
+      doc.setFillColor(250, 251, 252);
+      doc.setDrawColor(226, 230, 235);
+      doc.setLineWidth(0.75);
+      doc.roundedRect(marginX, cardTop, contentW, tinggiKartu, 7, 7, 'FD');
+
+      let cy = cardTop + 24;
 
       const sv = l.statusVerifikasi;
       const [r, g, b] = hvStatusWarnaRGB(sv);
       const label = sv === 'Terverifikasi' ? 'TERVERIFIKASI' : sv === 'Ditolak' ? 'DITOLAK' : 'PERLU REVISI';
 
-      // Kotak status berwarna
       doc.setFillColor(r, g, b);
-      doc.roundedRect(marginX, y, 96, 18, 3, 3, 'F');
+      doc.roundedRect(padCardX, cy - 12.5, 96, 18, 3, 3, 'F');
       doc.setTextColor(255);
       doc.setFontSize(8.5);
       doc.setFont(undefined, 'bold');
-      doc.text(label, marginX + 48, y + 12.5, { align: 'center' });
+      doc.text(label, padCardX + 48, cy - 12.5 + 12.5, { align: 'center' });
 
-      // No penugasan
       if (l.nomorTiket) {
         doc.setTextColor(0, 71, 133);
         doc.setFontSize(9);
-        doc.text(l.nomorTiket, marginX + 106, y + 13);
+        doc.text(l.nomorTiket, padCardX + 106, cy - 12.5 + 13);
       }
       doc.setFont(undefined, 'normal');
-      y += 26;
+      cy += 20;
 
       doc.setFontSize(10.5);
       doc.setTextColor(20);
       doc.setFont(undefined, 'bold');
-      doc.text(`${l.regu || '—'}  ·  ${l.ulp || '—'}`, marginX, y);
+      doc.text(`${l.regu || '—'}  ·  ${l.ulp || '—'}`, padCardX, cy);
       doc.setFont(undefined, 'normal');
-      y += 14;
+      cy += 14;
 
       doc.setFontSize(9);
       doc.setTextColor(70);
-      const infoLines = doc.splitTextToSize(`Pekerjaan: ${l.rincian || '—'}  |  Material: ${l.material || '—'}  |  Realisasi: ${l.realisasi || '—'}`, pageW - marginX * 2);
-      doc.text(infoLines, marginX, y);
-      y += infoLines.length * 11 + 4;
+      doc.text(infoLines, padCardX, cy);
+      cy += infoLines.length * 11 + 4;
 
       doc.setTextColor(110);
-      doc.text(`Waktu Laporan: ${fmtWaktuFull(l.waktu)}`, marginX, y);
-      y += 12;
-      doc.text(`Diverifikasi oleh: ${l.verifOleh || 'Supervisor'}  ·  ${l.verifWaktu ? fmtWaktuFull(l.verifWaktu) : '—'}`, marginX, y);
-      y += 12;
-      if (l.verifCatatan) {
+      doc.text(`Waktu Laporan: ${fmtWaktuFull(l.waktu)}`, padCardX, cy);
+      cy += 12;
+      doc.text(`Diverifikasi oleh: ${l.verifOleh || 'Supervisor'}  ·  ${l.verifWaktu ? fmtWaktuFull(l.verifWaktu) : '—'}`, padCardX, cy);
+      cy += 12;
+      if (catatanLines.length) {
         doc.setTextColor(70);
-        const catatanLines = doc.splitTextToSize(`Catatan: ${l.verifCatatan}`, pageW - marginX * 2);
-        doc.text(catatanLines, marginX, y);
-        y += catatanLines.length * 11 + 2;
+        doc.text(catatanLines, padCardX, cy);
+        cy += catatanLines.length * 11 + 2;
       }
-      y += 6;
+      cy += 10;
 
-      // Foto trio: Sebelum / Progres / Sesudah
+      // Foto trio: Sebelum / Progres / Sesudah — rasio asli dijaga (contain),
+      // dilatarbelakangi kotak abu-abu supaya foto non-persegi tetap rapi tanpa gepeng.
       const fotoTrio = [
         ['SEBELUM', l.fotoBeforeUrl || l.fotoBeforeBase64],
         ['PROGRES', l.fotoProgresUrl || l.fotoProgresBase64],
         ['SESUDAH', l.fotoAfterUrl || l.fotoAfterBase64]
       ];
       fotoTrio.forEach(([lbl, src], i) => {
-        const x = marginX + i * (fotoW + 8);
-        const dataUrl = src ? gambarCache[src] : null;
-        if (dataUrl) {
+        const x = padCardX + i * (fotoW + fotoGap);
+        const cache = src ? gambarCache[src] : null;
+
+        doc.setFillColor(238, 240, 243);
+        doc.rect(x, cy, fotoW, fotoH, 'F');
+
+        if (cache && cache.dataUrl) {
           try {
-            const fmt = dataUrl.includes('image/png') ? 'PNG' : 'JPEG';
-            doc.addImage(dataUrl, fmt, x, y, fotoW, fotoH, undefined, 'FAST');
-          } catch (e) {
-            doc.setFillColor(240); doc.rect(x, y, fotoW, fotoH, 'F');
-          }
+            const skala = Math.min(fotoW / cache.w, fotoH / cache.h);
+            const gw = cache.w * skala, gh = cache.h * skala;
+            const gx = x + (fotoW - gw) / 2, gy = cy + (fotoH - gh) / 2;
+            const fmt = cache.dataUrl.includes('image/png') ? 'PNG' : 'JPEG';
+            doc.addImage(cache.dataUrl, fmt, gx, gy, gw, gh, undefined, 'FAST');
+          } catch (e) { /* biarkan kotak placeholder abu-abu tetap tampil */ }
         } else {
-          doc.setFillColor(240);
-          doc.rect(x, y, fotoW, fotoH, 'F');
           doc.setTextColor(160);
           doc.setFontSize(8);
-          doc.text('Tidak ada foto', x + fotoW / 2, y + fotoH / 2, { align: 'center' });
+          doc.text('Tidak ada foto', x + fotoW / 2, cy + fotoH / 2, { align: 'center' });
         }
-        doc.setDrawColor(200);
-        doc.rect(x, y, fotoW, fotoH);
-        doc.setFillColor(255,255,255);
+
+        doc.setDrawColor(210);
+        doc.setLineWidth(0.75);
+        doc.rect(x, cy, fotoW, fotoH);
         doc.setTextColor(90);
         doc.setFontSize(7.5);
-        doc.text(lbl, x + fotoW / 2, y + fotoH + 10, { align: 'center' });
+        doc.setFont(undefined, 'bold');
+        doc.text(lbl, x + fotoW / 2, cy + fotoH + 10, { align: 'center' });
+        doc.setFont(undefined, 'normal');
       });
-      y += fotoH + 20;
 
-      doc.setDrawColor(230);
-      doc.line(marginX, y, pageW - marginX, y);
-      y += 18;
+      y = cardTop + tinggiKartu + 14; // jarak antar kartu laporan
     });
+
+    gambarFooter();
 
     doc.save(`Hasil_Verifikasi_NUMBAY_${fmtFileStamp()}.pdf`);
     progEl.style.display = 'none';

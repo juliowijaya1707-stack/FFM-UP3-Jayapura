@@ -1434,6 +1434,10 @@ let manualStatus  = 'Standby';   // status terakhir yang dipilih petugas sendiri
 let sendTimer = null;
 let tugasSelesai = 0;
 let lastPos = null;
+let lastAddress = null;         // { lines: [...], lat, lng } — hasil reverse-geocoding titik GPS terakhir
+let addressFetchInFlight = false;
+let addressFetchedAt = 0;
+let addressFetchedCoord = null; // {lat,lng} terakhir yang berhasil di-reverse-geocode
 let absenAktifBekerjaDone = false; // reset tiap login — absen selfie "Aktif Bekerja" cukup sekali per shift
 let absenPerjalananDone = false;   // reset tiap login — absen selfie "Perjalanan" cukup sekali per shift
 let absensiTerakhirList = []; // riwayat kartu "Absensi Terakhir" hari ini — disimpan supaya bisa dipulihkan kalau app ditutup/di-kill
@@ -1624,17 +1628,50 @@ function drawWatermark(canvas) {
       : 'GPS tidak tersedia';
     const timeLine = new Date().toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'medium' });
     const who = currentUser ? (currentUser.regu + (currentUser.anggotaHadir ? ' · ' + currentUser.anggotaHadir : '')) : '';
-    const lines = who ? [timeLine, gpsLine, who] : [timeLine, gpsLine];
 
+    // Alamat lengkap (hasil reverse-geocoding titik GPS terakhir), kalau sudah siap —
+    // ditaruh di antara baris GPS dan baris nama tim, sama seperti contoh di lapangan.
+    const alamatLines = (lastAddress && Array.isArray(lastAddress.lines)) ? lastAddress.lines : [];
+
+    const rawLines = [timeLine, gpsLine, ...alamatLines];
+    if (who) rawLines.push(who);
+
+    // ── Word-wrap tiap baris terhadap lebar foto, supaya teks (terutama daftar
+    // nama tim yang bisa panjang) TIDAK PERNAH terpotong di tepi gambar. ──
     const fontSize = Math.max(11, Math.round(w * 0.032));
-    const lineH    = Math.round(fontSize * 1.4);
-    const padX     = Math.round(w * 0.025);
-    const barH     = lineH * lines.length + Math.round(fontSize * 0.8);
+    const padX = Math.round(w * 0.025);
+    const maxTextWidth = w - padX * 2;
+    ctx.font = fontSize + 'px monospace, "Courier New"';
+
+    function wrapLine(text) {
+      const words = String(text).split(' ');
+      const out = [];
+      let cur = '';
+      for (const word of words) {
+        const test = cur ? cur + ' ' + word : word;
+        if (cur && ctx.measureText(test).width > maxTextWidth) {
+          out.push(cur);
+          cur = word;
+        } else {
+          cur = test;
+        }
+      }
+      if (cur) out.push(cur);
+      return out.length ? out : [''];
+    }
+
+    let lines = [];
+    rawLines.forEach(l => { lines = lines.concat(wrapLine(l)); });
+
+    const lineH = Math.round(fontSize * 1.35);
+    // Bar dibatasi maksimum ~62% tinggi foto supaya wajah/objek tetap kelihatan
+    // walau baris teksnya banyak (alamat panjang + banyak nama anggota tim).
+    const barH = Math.min(h * 0.62, lineH * lines.length + Math.round(fontSize * 0.9));
 
     const grad = ctx.createLinearGradient(0, h - barH, 0, h);
     grad.addColorStop(0, 'rgba(0,0,0,0)');
-    grad.addColorStop(0.4, 'rgba(0,0,0,0.55)');
-    grad.addColorStop(1, 'rgba(0,0,0,0.75)');
+    grad.addColorStop(0.35, 'rgba(0,0,0,0.55)');
+    grad.addColorStop(1, 'rgba(0,0,0,0.8)');
     ctx.fillStyle = grad;
     ctx.fillRect(0, h - barH, w, barH);
 
@@ -1647,8 +1684,79 @@ function drawWatermark(canvas) {
       ctx.fillStyle = '#FFFFFF';
       ctx.fillText(lines[i], padX, y);
       y -= lineH;
+      if (y < -lineH) break; // pengaman kalau baris kebanyakan
     }
   } catch (e) { /* watermark gagal digambar — jangan gagalkan upload foto */ }
+}
+
+// ══════════════════════════════════════
+// REVERSE GEOCODING — ubah koordinat GPS jadi alamat lengkap yang bisa
+// dibaca (Jalan .../Kelurahan/Kecamatan/Kabupaten/Provinsi), dipakai untuk
+// baris alamat di watermark foto. Pakai layanan gratis OpenStreetMap
+// Nominatim, di-throttle supaya tidak minta berulang-ulang untuk titik GPS
+// yang praktis sama (anti spam & sesuai kebijakan pemakaian wajar mereka).
+// Gagal ambil alamat TIDAK boleh mengganggu alur GPS/absen/laporan lain —
+// watermark cukup tampil tanpa baris alamat kalau memang belum siap.
+// ══════════════════════════════════════
+function jarakMeter(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1), dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+function susunAlamatDariNominatim(addr) {
+  if (!addr) return [];
+  const bersih = (s) => String(s || '').replace(/^(Kabupaten|Kota|Kecamatan|Provinsi)\s+/i, '').trim();
+  const lines = [];
+
+  const jalan = addr.road || addr.pedestrian || addr.footway;
+  if (jalan) lines.push(jalan);
+
+  const desa = addr.village || addr.suburb || addr.hamlet || addr.neighbourhood || addr.quarter;
+  if (desa) lines.push(desa);
+
+  const kec = addr.city_district || addr.subdistrict || addr.municipality || addr.town;
+  if (kec) lines.push('Kecamatan ' + bersih(kec));
+
+  const kab = addr.county || addr.regency || addr.city;
+  if (kab) {
+    const isKota = /^kota\b/i.test(kab);
+    lines.push((isKota ? 'Kota ' : 'Kabupaten ') + bersih(kab));
+  }
+
+  if (addr.state) lines.push(bersih(addr.state));
+
+  return lines;
+}
+
+async function perbaruiAlamatDariPosisi(lat, lng) {
+  if (lat == null || lng == null) return;
+  if (addressFetchInFlight) return;
+  const sekarang = Date.now();
+  // Throttle: jangan minta ulang kalau titik masih dekat (<25m) dari titik
+  // terakhir yang sudah berhasil di-reverse-geocode, atau baru saja diminta (<45 detik).
+  if (addressFetchedCoord && jarakMeter(lat, lng, addressFetchedCoord.lat, addressFetchedCoord.lng) < 25) return;
+  if (sekarang - addressFetchedAt < 45000) return;
+
+  addressFetchInFlight = true;
+  addressFetchedAt = sekarang;
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+    const res = await fetch(url, { headers: { 'Accept-Language': 'id' } });
+    if (!res.ok) return;
+    const data = await res.json();
+    const lines = susunAlamatDariNominatim(data.address);
+    if (lines.length) {
+      lastAddress = { lines, lat, lng };
+      addressFetchedCoord = { lat, lng };
+    }
+  } catch (e) {
+    // offline / gagal fetch — biarkan, watermark tetap jalan tanpa baris alamat
+  } finally {
+    addressFetchInFlight = false;
+  }
 }
 
 function compressToBase64(dataUrl, maxWidth = 800, quality = 0.65, maxBytes = 320000, watermark = true) {
@@ -2736,6 +2844,7 @@ function onPos(pos) {
   document.getElementById('gps-acc').textContent = Math.round(acc) + ' m';
   document.getElementById('gps-status').textContent = acc < 20 ? '✓ Akurasi sangat baik' : acc < 50 ? '✓ Akurasi baik' : '⚠ Akurasi rendah';
   pushLocation(pos);
+  perbaruiAlamatDariPosisi(lat, lng); // isi ulang cache alamat untuk watermark foto (throttled, tidak menunggu)
 }
 
 function onPosErr(err) {
@@ -2847,6 +2956,7 @@ function startAbsensiGPS() {
     document.getElementById('absen-gps-badge').style.display = 'block';
     document.getElementById('absen-gps-badge').textContent = 'GPS: ' + lat.toFixed(4) + ', ' + lng.toFixed(4);
     document.getElementById('absen-time').textContent = new Date().toLocaleString('id-ID');
+    perbaruiAlamatDariPosisi(lat, lng); // siapkan alamat untuk watermark selfie absen awal
     advanceStep(4);
   }, (err) => {
     document.getElementById('absen-gps-status').textContent = 'Gagal ambil GPS: ' + err.message;
