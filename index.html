@@ -1974,8 +1974,14 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
           <div class="card-title" style="font-size:16px">📁 Hasil Verifikasi Laporan</div>
           <div style="font-size:12px;color:var(--text-secondary);margin-top:3px">Arsip laporan yang sudah Terverifikasi, Perlu Revisi, maupun Ditolak — dikelompokkan per ULP &amp; jenis pekerjaan</div>
         </div>
-        <span id="hasilVerifikasiCount" class="card-count">0 laporan</span>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span id="hasilVerifikasiCount" class="card-count">0 laporan</span>
+          <button onclick="exportHasilVerifikasiPDF()" style="background:linear-gradient(135deg,#DC3545,#B02A37);color:#fff;border:none;border-radius:var(--radius-xs);padding:9px 16px;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(220,53,69,0.25)">📄 Export PDF</button>
+          <button onclick="exportHasilVerifikasiExcel()" style="background:linear-gradient(135deg,#1A8C3C,#136B2E);color:#fff;border:none;border-radius:var(--radius-xs);padding:9px 16px;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(26,140,60,0.25)">📊 Export Excel</button>
+        </div>
       </div>
+
+      <div id="hv-export-progress" style="display:none;margin-top:10px;background:var(--info-bg);color:var(--info);border-radius:var(--radius-xs);padding:9px 13px;font-size:12px;font-weight:600"></div>
 
       <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;margin-bottom:4px;align-items:flex-end">
         <div>
@@ -5700,16 +5706,11 @@ function renderHasilVerifikasiCard(id, l) {
     </div>`;
 }
 
-window.renderHasilVerifikasiGrid = function() {
-  const wrap = document.getElementById('hasilVerifikasiContent');
-  const countEl = document.getElementById('hasilVerifikasiCount');
-  if (!wrap) return;
-
+function getHasilVerifikasiFilteredEntries() {
   const fStatus = document.getElementById('hv-filter-status')?.value || '';
   const fUlp    = document.getElementById('hv-filter-ulp')?.value || '';
   const fJenis  = document.getElementById('hv-filter-jenis')?.value || '';
   const fSearch = (document.getElementById('hv-filter-search')?.value || '').toLowerCase().trim();
-  const groupBy = document.getElementById('hv-groupby')?.value || 'ulp';
 
   let entries = (hasilVerifikasiEntries || []).filter(([, l]) => !!l.statusVerifikasi);
   if (fStatus) entries = entries.filter(([, l]) => l.statusVerifikasi === fStatus);
@@ -5719,8 +5720,17 @@ window.renderHasilVerifikasiGrid = function() {
     const hay = `${l.regu||''} ${l.nomorTiket||''} ${l.rincian||''} ${l.verifCatatan||''} ${l.material||''}`.toLowerCase();
     return hay.includes(fSearch);
   });
-
   entries.sort((a,b) => (b[1].verifWaktu||b[1].waktu||0) - (a[1].verifWaktu||a[1].waktu||0));
+  return entries;
+}
+
+window.renderHasilVerifikasiGrid = function() {
+  const wrap = document.getElementById('hasilVerifikasiContent');
+  const countEl = document.getElementById('hasilVerifikasiCount');
+  if (!wrap) return;
+
+  const groupBy = document.getElementById('hv-groupby')?.value || 'ulp';
+  const entries = getHasilVerifikasiFilteredEntries();
 
   if (countEl) countEl.textContent = entries.length + ' laporan';
 
@@ -5758,6 +5768,241 @@ window.renderHasilVerifikasiGrid = function() {
     </div>
   `).join('');
 };
+
+// ══════════════════════════════════════
+// EXPORT HASIL VERIFIKASI — Excel & PDF (dengan foto Sebelum/Progres/Sesudah)
+// Dipakai supervisor buat tahu laporan mana yang Terverifikasi/Revisi/Ditolak,
+// lalu dikirim ke petugas lewat WA.
+// ══════════════════════════════════════
+
+// Ambil sumber gambar terbaik dari sebuah laporan untuk satu fase foto —
+// pakai Base64 kalau ada (langsung siap dipakai), kalau tidak coba fetch dari URL cloud.
+async function hvSiapkanGambar(src) {
+  if (!src) return null;
+  if (src.startsWith('data:')) return src; // sudah base64, langsung pakai
+  try {
+    const res = await fetch(src, { mode: 'cors' });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch (e) {
+    return null; // gagal ambil (offline/CORS) — dilewati, PDF tetap jalan tanpa foto itu
+  }
+}
+
+function hvStatusWarnaRGB(sv) {
+  if (sv === 'Terverifikasi') return [26, 140, 60];
+  if (sv === 'Ditolak')       return [220, 53, 69];
+  return [217, 123, 10]; // Perlu Revisi
+}
+
+window.exportHasilVerifikasiExcel = function() {
+  const entries = getHasilVerifikasiFilteredEntries();
+  if (!entries.length) { showToast('Tidak ada laporan Hasil Verifikasi untuk di-export (cek filter).', 'warn'); return; }
+  if (typeof XLSX === 'undefined') { showToast('Gagal memuat modul Excel. Cek koneksi internet lalu coba lagi.', 'err'); return; }
+  try {
+    const rows = entries.map(([, l], i) => ({
+      'No': i + 1,
+      'Status': laporanStatusLabel(l),
+      'Regu': l.regu || '—',
+      'ULP': l.ulp || '—',
+      'No Penugasan': l.nomorTiket || '—',
+      'Rincian Pekerjaan': l.rincian || '—',
+      'Material': l.material || '—',
+      'Realisasi': l.realisasi || '—',
+      'Waktu Laporan': fmtWaktuFull(l.waktu),
+      'Diverifikasi Oleh': l.verifOleh || 'Supervisor',
+      'Waktu Verifikasi': l.verifWaktu ? fmtWaktuFull(l.verifWaktu) : '—',
+      'Catatan Verifikasi': l.verifCatatan || '—',
+      'Link Foto Sebelum': l.fotoBeforeUrl || (l.fotoBeforeBase64 ? '(tersimpan lokal, tidak ada link)' : '—'),
+      'Link Foto Progres': l.fotoProgresUrl || (l.fotoProgresBase64 ? '(tersimpan lokal, tidak ada link)' : '—'),
+      'Link Foto Sesudah': l.fotoAfterUrl || (l.fotoAfterBase64 ? '(tersimpan lokal, tidak ada link)' : '—')
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [
+      {wch:4},{wch:14},{wch:22},{wch:12},{wch:14},{wch:32},{wch:20},
+      {wch:11},{wch:18},{wch:18},{wch:18},{wch:30},{wch:34},{wch:34},{wch:34}
+    ];
+    // Jadikan kolom link foto sebagai hyperlink yang bisa langsung diklik (kalau berupa URL)
+    rows.forEach((row, i) => {
+      ['Link Foto Sebelum', 'Link Foto Progres', 'Link Foto Sesudah'].forEach(col => {
+        const val = row[col];
+        if (val && /^https?:\/\//.test(val)) {
+          const colIdx = Object.keys(row).indexOf(col);
+          const cellRef = XLSX.utils.encode_cell({ r: i + 1, c: colIdx });
+          if (ws[cellRef]) ws[cellRef].l = { Target: val };
+        }
+      });
+    });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Hasil Verifikasi');
+    XLSX.writeFile(wb, `Hasil_Verifikasi_NUMBAY_${fmtFileStamp()}.xlsx`);
+    showToast('Export Excel berhasil. Kolom foto berisi link — klik untuk buka gambarnya.', 'ok');
+  } catch (e) {
+    showToast('Gagal export Excel: ' + e.message, 'err');
+  }
+};
+
+window.exportHasilVerifikasiPDF = async function() {
+  const entries = getHasilVerifikasiFilteredEntries();
+  if (!entries.length) { showToast('Tidak ada laporan Hasil Verifikasi untuk di-export (cek filter).', 'warn'); return; }
+  if (typeof window.jspdf === 'undefined') { showToast('Gagal memuat modul PDF. Cek koneksi internet lalu coba lagi.', 'err'); return; }
+
+  const progEl = document.getElementById('hv-export-progress');
+  progEl.style.display = 'block';
+  progEl.textContent = `Menyiapkan ${entries.length} laporan & mengunduh foto...`;
+
+  try {
+    // Pre-fetch semua foto dulu (async) sebelum menggambar PDF, supaya addImage bisa sinkron.
+    const gambarCache = {};
+    let doneCount = 0;
+    for (const [, l] of entries) {
+      const keys = [
+        ['before', l.fotoBeforeUrl || l.fotoBeforeBase64],
+        ['progres', l.fotoProgresUrl || l.fotoProgresBase64],
+        ['after', l.fotoAfterUrl || l.fotoAfterBase64]
+      ];
+      for (const [fase, src] of keys) {
+        if (src && !gambarCache[src]) gambarCache[src] = await hvSiapkanGambar(src);
+      }
+      doneCount++;
+      progEl.textContent = `Mengunduh foto laporan ${doneCount} dari ${entries.length}...`;
+    }
+
+    progEl.textContent = 'Menyusun dokumen PDF...';
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const marginX = 36;
+    let y = 40;
+
+    function judulHalaman() {
+      doc.setFontSize(13);
+      doc.setTextColor(20);
+      doc.text('Hasil Verifikasi Laporan — FFM PLN UP3 Jayapura', marginX, y);
+      y += 16;
+      doc.setFontSize(8.5);
+      doc.setTextColor(110);
+      doc.text('Dicetak: ' + new Date().toLocaleString('id-ID') + '  ·  Total: ' + entries.length + ' laporan', marginX, y);
+      y += 18;
+      doc.setDrawColor(220);
+      doc.line(marginX, y, pageW - marginX, y);
+      y += 18;
+    }
+    judulHalaman();
+
+    const fotoW = (pageW - marginX * 2 - 16) / 3; // 3 foto sejajar, jarak 8pt antar foto
+    const fotoH = fotoW; // persegi
+
+    entries.forEach(([, l], idx) => {
+      // Perkirakan tinggi blok laporan ini; kalau tidak cukup di halaman, pindah halaman baru.
+      const perkiraanTinggi = 100 + fotoH + 20;
+      if (y + perkiraanTinggi > pageH - 36) {
+        doc.addPage();
+        y = 40;
+        judulHalaman();
+      }
+
+      const sv = l.statusVerifikasi;
+      const [r, g, b] = hvStatusWarnaRGB(sv);
+      const label = sv === 'Terverifikasi' ? 'TERVERIFIKASI' : sv === 'Ditolak' ? 'DITOLAK' : 'PERLU REVISI';
+
+      // Kotak status berwarna
+      doc.setFillColor(r, g, b);
+      doc.roundedRect(marginX, y, 96, 18, 3, 3, 'F');
+      doc.setTextColor(255);
+      doc.setFontSize(8.5);
+      doc.setFont(undefined, 'bold');
+      doc.text(label, marginX + 48, y + 12.5, { align: 'center' });
+
+      // No penugasan
+      if (l.nomorTiket) {
+        doc.setTextColor(0, 71, 133);
+        doc.setFontSize(9);
+        doc.text(l.nomorTiket, marginX + 106, y + 13);
+      }
+      doc.setFont(undefined, 'normal');
+      y += 26;
+
+      doc.setFontSize(10.5);
+      doc.setTextColor(20);
+      doc.setFont(undefined, 'bold');
+      doc.text(`${l.regu || '—'}  ·  ${l.ulp || '—'}`, marginX, y);
+      doc.setFont(undefined, 'normal');
+      y += 14;
+
+      doc.setFontSize(9);
+      doc.setTextColor(70);
+      const infoLines = doc.splitTextToSize(`Pekerjaan: ${l.rincian || '—'}  |  Material: ${l.material || '—'}  |  Realisasi: ${l.realisasi || '—'}`, pageW - marginX * 2);
+      doc.text(infoLines, marginX, y);
+      y += infoLines.length * 11 + 4;
+
+      doc.setTextColor(110);
+      doc.text(`Waktu Laporan: ${fmtWaktuFull(l.waktu)}`, marginX, y);
+      y += 12;
+      doc.text(`Diverifikasi oleh: ${l.verifOleh || 'Supervisor'}  ·  ${l.verifWaktu ? fmtWaktuFull(l.verifWaktu) : '—'}`, marginX, y);
+      y += 12;
+      if (l.verifCatatan) {
+        doc.setTextColor(70);
+        const catatanLines = doc.splitTextToSize(`Catatan: ${l.verifCatatan}`, pageW - marginX * 2);
+        doc.text(catatanLines, marginX, y);
+        y += catatanLines.length * 11 + 2;
+      }
+      y += 6;
+
+      // Foto trio: Sebelum / Progres / Sesudah
+      const fotoTrio = [
+        ['SEBELUM', l.fotoBeforeUrl || l.fotoBeforeBase64],
+        ['PROGRES', l.fotoProgresUrl || l.fotoProgresBase64],
+        ['SESUDAH', l.fotoAfterUrl || l.fotoAfterBase64]
+      ];
+      fotoTrio.forEach(([lbl, src], i) => {
+        const x = marginX + i * (fotoW + 8);
+        const dataUrl = src ? gambarCache[src] : null;
+        if (dataUrl) {
+          try {
+            const fmt = dataUrl.includes('image/png') ? 'PNG' : 'JPEG';
+            doc.addImage(dataUrl, fmt, x, y, fotoW, fotoH, undefined, 'FAST');
+          } catch (e) {
+            doc.setFillColor(240); doc.rect(x, y, fotoW, fotoH, 'F');
+          }
+        } else {
+          doc.setFillColor(240);
+          doc.rect(x, y, fotoW, fotoH, 'F');
+          doc.setTextColor(160);
+          doc.setFontSize(8);
+          doc.text('Tidak ada foto', x + fotoW / 2, y + fotoH / 2, { align: 'center' });
+        }
+        doc.setDrawColor(200);
+        doc.rect(x, y, fotoW, fotoH);
+        doc.setFillColor(255,255,255);
+        doc.setTextColor(90);
+        doc.setFontSize(7.5);
+        doc.text(lbl, x + fotoW / 2, y + fotoH + 10, { align: 'center' });
+      });
+      y += fotoH + 20;
+
+      doc.setDrawColor(230);
+      doc.line(marginX, y, pageW - marginX, y);
+      y += 18;
+    });
+
+    doc.save(`Hasil_Verifikasi_NUMBAY_${fmtFileStamp()}.pdf`);
+    progEl.style.display = 'none';
+    showToast('Export PDF berhasil — siap dikirim ke petugas lewat WA.', 'ok');
+  } catch (e) {
+    progEl.style.display = 'none';
+    showToast('Gagal export PDF: ' + e.message, 'err');
+  }
+};
+
 
 // ── Sidebar collapse/expand (toolbar minimize) ──────
 const SIDEBAR_COLLAPSE_KEY = 'ffm_sidebar_collapsed';
