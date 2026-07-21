@@ -5152,6 +5152,94 @@ window.tambahGarduBaru = async function() {
   renderRpGarduDropdown();
 };
 
+// Ubah sebuah <select> biasa menjadi combobox yang bisa diketik untuk mencari
+// (select aslinya TETAP ada di DOM tapi disembunyikan, jadi seluruh kode lain
+// yang baca/tulis .value / .options pada id ini tidak perlu diubah sama sekali —
+// termasuk saat kode lain set .value secara langsung, tampilan otomatis ikut sinkron).
+function enhanceSearchableSelect(selectId) {
+  const sel = document.getElementById(selectId);
+  if (!sel || sel.dataset.searchEnhanced) return;
+  sel.dataset.searchEnhanced = '1';
+
+  const nativeDesc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+  const parent = sel.parentNode;
+  if (getComputedStyle(parent).position === 'static') parent.style.position = 'relative';
+  sel.style.display = 'none';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.autocomplete = 'off';
+  input.placeholder = 'Ketik untuk cari...';
+  input.style.cssText = 'width:100%;border:1px solid var(--line,var(--border-str,#d8dee8));border-radius:var(--radius-xs,8px);padding:9px 12px;font-size:13px;outline:none;background:var(--surface,#fff);box-sizing:border-box';
+
+  const dropdown = document.createElement('div');
+  dropdown.style.cssText = 'display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface,#fff);border:1px solid var(--line,var(--border-str,#d8dee8));border-radius:var(--radius-xs,8px);box-shadow:0 8px 24px rgba(0,0,0,0.14);max-height:240px;overflow-y:auto;z-index:80;padding:4px';
+
+  sel.insertAdjacentElement('afterend', dropdown);
+  sel.insertAdjacentElement('afterend', input);
+
+  function optionList() {
+    const out = [];
+    Array.from(sel.children).forEach(child => {
+      if (child.tagName === 'OPTGROUP') {
+        Array.from(child.children).forEach(opt => { if (opt.value) out.push({ value: opt.value, text: opt.textContent, group: child.label }); });
+      } else if (child.tagName === 'OPTION' && child.value) {
+        out.push({ value: child.value, text: child.textContent, group: null });
+      }
+    });
+    return out;
+  }
+
+  function renderDropdown(q) {
+    q = (q || '').toLowerCase().trim();
+    const items = optionList().filter(o => !q || o.text.toLowerCase().includes(q));
+    if (!items.length) {
+      dropdown.innerHTML = '<div style="padding:10px;font-size:12.5px;color:var(--text-muted);text-align:center">Tidak ditemukan</div>';
+    } else {
+      let html = '', lastGroup;
+      items.forEach(o => {
+        if (o.group !== lastGroup) {
+          html += `<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-muted);padding:6px 8px 2px">${o.group || ''}</div>`;
+          lastGroup = o.group;
+        }
+        html += `<div class="ss-opt" data-value="${String(o.value).replace(/"/g, '&quot;')}" style="padding:7px 10px;font-size:13px;border-radius:6px;cursor:pointer">${o.text}</div>`;
+      });
+      dropdown.innerHTML = html;
+    }
+    dropdown.style.display = '';
+    dropdown.querySelectorAll('.ss-opt').forEach(el => {
+      el.addEventListener('mousedown', e => {
+        e.preventDefault();
+        nativeDesc.set.call(sel, el.dataset.value);
+        refreshInput();
+        dropdown.style.display = 'none';
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      el.addEventListener('mouseenter', () => { el.style.background = 'var(--surface-2,var(--surface2,#f1f4f9))'; });
+      el.addEventListener('mouseleave', () => { el.style.background = ''; });
+    });
+  }
+
+  function refreshInput() {
+    const opt = Array.from(sel.options).find(o => o.value === sel.value);
+    input.value = (opt && sel.value) ? opt.textContent : '';
+  }
+
+  input.addEventListener('focus', () => renderDropdown(''));
+  input.addEventListener('input', () => renderDropdown(input.value));
+  input.addEventListener('blur', () => setTimeout(() => { dropdown.style.display = 'none'; refreshInput(); }, 150));
+
+  // Cegat set .value dari kode lain di file ini supaya tampilan combobox otomatis
+  // ikut sinkron tanpa perlu menyentuh setiap tempat yang men-set value tsb.
+  Object.defineProperty(sel, 'value', {
+    get() { return nativeDesc.get.call(sel); },
+    set(v) { nativeDesc.set.call(sel, v); refreshInput(); },
+    configurable: true
+  });
+
+  refreshInput();
+}
+
 // Isi semua dropdown "Detail Rencana Pekerjaan" (Kategori, Jenis, Rincian, Health Index, dst) sekali saja.
 function populateRpDropdowns() {
   const fillSimple = (id, list, withBlank) => {
@@ -5177,6 +5265,7 @@ function populateRpDropdowns() {
       ).join('');
     rincianSel.dataset.filled = '1';
   }
+  enhanceSearchableSelect('rp-rincian');
 }
 
 // Saat ULP dipilih, isi dropdown Tim/Regu sesuai roster ULP tsb.
@@ -6351,9 +6440,16 @@ function startAppAfterAuth() {
 // Kalau sesi login sudah tersimpan (localStorage, bertahan sampai Logout manual),
 // langsung masuk ke app tanpa perlu login ulang. Kalau belum, layar login (sudah
 // tampil secara default di HTML) yang menunggu submit dari doLoginSupervisor().
-if (currentAuth) {
-  showAppAfterLogin();
+//
+// SEMENTARA DINONAKTIFKAN (2026-07-21) atas permintaan — layar login masih ngebug.
+// Kode login TIDAK dihapus, hanya dilewati: langsung auto-login sebagai Superadmin
+// supaya seluruh app tetap jalan normal (scopeFilterEntries, applyAuthUI, dst tetap
+// butuh currentAuth terisi). Untuk mengaktifkan login lagi nanti, hapus blok
+// "AUTO-BYPASS" di bawah ini dan kembalikan ke `if (currentAuth) { showAppAfterLogin(); }`.
+if (!currentAuth) {
+  currentAuth = { username: 'up3 jayapura', role: 'superadmin', ulp: null, label: 'UP3 Jayapura' };
 }
+showAppAfterLogin(); // AUTO-BYPASS — lihat catatan di atas
 
 function listenVerifikasiBadge() {
   const r = window._fbRef(fbDb, 'laporan');
