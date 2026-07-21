@@ -688,6 +688,27 @@ body {
   </div>
 </div>
 
+<!-- ══════ MODAL: PROMPT INPUT DALAM APLIKASI ══════
+     Pengganti window.prompt() bawaan browser (yang munculnya sebagai
+     popup "juliowijaya1707-stack.github.io says" — terlihat seperti
+     notifikasi web, bukan bagian dari aplikasi). Dipakai untuk hal-hal
+     seperti "+ Tambah Gardu" di form Laporan supaya tampilannya konsisten
+     dengan modal lain di app ini. -->
+<div class="modal-backdrop" id="prompt-backdrop">
+  <div class="modal-sheet" style="max-width:400px">
+    <div class="modal-header"><h3 id="prompt-title">Masukkan Data</h3></div>
+    <div class="field" style="margin-bottom:14px">
+      <label id="prompt-label">Nilai</label>
+      <input type="text" id="prompt-input" autocomplete="off">
+    </div>
+    <div class="error-box" id="prompt-err" style="display:none;margin-bottom:12px"></div>
+    <div class="confirm-actions">
+      <button class="confirm-btn-cancel" id="prompt-btn-cancel">Batal</button>
+      <button class="confirm-btn-ok" id="prompt-btn-ok" style="background:var(--pln-blue)">Tambah</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══════ MODAL: ONBOARDING (SEKALI DI HP BARU) ══════
      Muncul SEKALI saja sebelum layar login pertama kali dipakai di HP
      ini (ditandai localStorage). Tujuannya: petugas paham alur pakai
@@ -1087,12 +1108,15 @@ body {
 
     <div class="field">
       <div style="display:flex;align-items:center;justify-content:space-between">
-        <label style="margin-bottom:0">Gardu</label>
+        <label style="margin-bottom:0">Gardu <span style="font-weight:400;color:var(--text-muted);font-size:10.5px">(bisa pilih lebih dari 1)</span></label>
         <button type="button" onclick="tambahGarduBaruLapor()" style="background:none;border:none;color:var(--pln-blue);font-size:11px;font-weight:700;cursor:pointer;padding:0">+ Tambah Gardu</button>
       </div>
-      <select id="lapor-gardu" style="width:100%">
-        <option value="">— Pilih Gardu —</option>
-      </select>
+      <div style="position:relative">
+        <div id="lapor-gardu-box" onclick="toggleLaporGarduDropdown()" style="width:100%;min-height:38px;border:1px solid var(--border-str);border-radius:10px;padding:6px 10px;font-size:13px;background:var(--surface2,#fff);cursor:pointer;display:flex;align-items:center;flex-wrap:wrap;gap:5px">
+          <span style="color:var(--text-muted)">— Pilih Gardu —</span>
+        </div>
+        <div id="lapor-gardu-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--border-str);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);max-height:200px;overflow-y:auto;z-index:50;padding:4px"></div>
+      </div>
     </div>
 
     <div class="field"><label>Health Index Penyulang</label>
@@ -1101,7 +1125,7 @@ body {
       </select>
     </div>
 
-    <div class="field"><label>Kategori Pekerjaan <span style="color:var(--red)">*</span></label>
+    <div class="field"><label>Kategori Pekerjaan</label>
       <select id="lapor-kategori" style="width:100%">
         <option value="">— Pilih —</option>
       </select>
@@ -1120,16 +1144,16 @@ body {
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="field">
-        <label>Vol <span style="color:var(--red)">*</span></label>
+        <label>Realisasi <span style="color:var(--red)">*</span></label>
         <input type="number" id="lapor-vol" placeholder="0" min="0" step="any" inputmode="numeric" required>
       </div>
       <div class="field">
         <label>Satuan <span style="color:var(--red)">*</span></label>
         <input type="text" id="lapor-satuan" list="lapor-satuan-list" placeholder="cth: kms, btng, titik">
-        <datalist id="lapor-satuan-list"><option value="kms"><option value="btng"><option value="titik"><option value="unit"><option value="phasa"></datalist>
+        <datalist id="lapor-satuan-list"><option value="kms"><option value="btng"><option value="titik"><option value="unit"><option value="fasa"></datalist>
       </div>
     </div>
-    <div style="font-size:10px;color:var(--text-muted);margin:-6px 0 14px">Vol &amp; Satuan realisasi wajib diisi (Vol boleh 0). Target ditentukan supervisor dari dashboard, tidak perlu diisi ulang di sini.</div>
+    <div style="font-size:10px;color:var(--text-muted);margin:-6px 0 14px">Realisasi &amp; Satuan wajib diisi (boleh 0). Target ditentukan supervisor dari dashboard, tidak perlu diisi ulang di sini.</div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="field"><label>Kolaborasi PDKB</label>
@@ -1495,6 +1519,41 @@ function confirmDialog(message, { title = 'Konfirmasi', okLabel = 'Ya, Lanjutkan
     btnCancel.onclick = () => cleanup(false);
     backdrop.onclick = (e) => { if (e.target === backdrop) cleanup(false); };
     backdrop.classList.add('active');
+  });
+}
+
+// Pengganti window.prompt() bawaan browser — modal input dalam aplikasi,
+// tampilannya konsisten dengan modal lain (bukan popup "situs berkata...").
+// Resolve dengan string hasil input (sudah di-trim), atau null kalau
+// dibatalkan.
+function promptDialog(message, { title = 'Masukkan Data', okLabel = 'Tambah', placeholder = '', defaultValue = '' } = {}) {
+  return new Promise((resolve) => {
+    const backdrop = document.getElementById('prompt-backdrop');
+    document.getElementById('prompt-title').textContent = title;
+    document.getElementById('prompt-label').textContent = message;
+    const input = document.getElementById('prompt-input');
+    input.value = defaultValue;
+    input.placeholder = placeholder;
+    const errEl = document.getElementById('prompt-err');
+    errEl.style.display = 'none';
+    const btnOk = document.getElementById('prompt-btn-ok');
+    const btnCancel = document.getElementById('prompt-btn-cancel');
+    btnOk.textContent = okLabel;
+    const cleanup = (result) => {
+      backdrop.classList.remove('active');
+      btnOk.onclick = null; btnCancel.onclick = null; input.onkeydown = null;
+      resolve(result);
+    };
+    btnOk.onclick = () => {
+      const val = input.value.trim();
+      if (!val) { errEl.textContent = 'Wajib diisi.'; errEl.style.display = 'block'; input.focus(); return; }
+      cleanup(val);
+    };
+    btnCancel.onclick = () => cleanup(null);
+    backdrop.onclick = (e) => { if (e.target === backdrop) cleanup(null); };
+    input.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); btnOk.onclick(); } };
+    backdrop.classList.add('active');
+    setTimeout(() => input.focus(), 50);
   });
 }
 
@@ -1943,32 +2002,49 @@ const ROSTER_ULP_TEAMS = {
   'ULP Jayapura': [
     'Tim Pemeliharaan PLN ND', 'Tim Inspeksi JTM Tier 1 Jayapura', 'Tim Inspeksi JTM Tier 2 Jayapura',
     'Tim Inspeksi Gardu', 'Tim ROW PT APP Jayapura', 'Tim ROW PT Lau Daling',
-    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2'
+    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2',
+    'Tim Yantek Jayapura 11', 'Tim Yantek Jayapura 12', 'Tim Yantek Jayapura 21'
   ],
   'ULP Abepura': [
     'Tim Pemeliharaan PLN ND', 'Tim Inspeksi JTM Tier 1 Abepura', 'Tim Inspeksi Gardu',
     'Tim ROW PT AKA Rifki Papua', 'Tim ROW PT Intrabes Abepura', 'Tim ROW PLN ND Abepura',
-    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2'
+    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2',
+    'Tim Yantek Abepura 11', 'Tim Yantek Abepura 12', 'Tim Yantek Abepura 13', 'Tim Yantek Abepura 21'
   ],
   'ULP Sentani': [
     'Tim Pemeliharaan PLN ND', 'Tim Inspeksi JTM Tier 1 Sentani', 'Tim Inspeksi Gardu',
     'Tim ROW PT APP Sentani', 'Tim ROW PT Dasha Gauri', 'Tim ROW PT Intrabes Sentani',
-    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2'
+    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2',
+    'Tim Yantek Sentani 11', 'Tim Yantek Sentani 12', 'Tim Yantek Sentani 21'
   ],
   'ULP Arso': [
     'Tim Pemeliharaan PLN ND', 'Tim Inspeksi JTM Tier 1 Arso', 'Tim Inspeksi Gardu',
     'Tim ROW PT APP Arso', 'Tim ROW PT Intrabes Arso', 'Tim ROW PLN ND Arso',
-    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2'
+    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2',
+    'Tim Yantek Arso 11', 'Tim Yantek Arso 21'
   ],
   'ULP Genyem': [
     'Tim Pemeliharaan PLN ND', 'Tim Inspeksi JTM Tier 1 Genyem', 'Tim Inspeksi Gardu',
     'Tim ROW PT APP Genyem', 'Tim ROW PLN ND Genyem',
-    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2'
+    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2',
+    'Tim Yantek Genyem 11', 'Tim Yantek Genyem 12'
   ],
   'ULP Sarmi': [
     'Tim Pemeliharaan PLN ND', 'Tim Inspeksi JTM Tier 1 Sarmi', 'Tim Inspeksi Gardu',
     'Tim ROW PT APP Sarmi', 'Tim ROW PLN ND Sarmi',
-    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2'
+    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2',
+    'Tim Yantek Sarmi 11', 'Tim Yantek Sarmi 12'
+  ],
+  // "PT MITRA" diperlakukan sebagai Unit Kerja tersendiri (setara ULP),
+  // dengan tiap nama PT di bawah ini berperan sebagai Regu/Tim-nya —
+  // permintaan supervisor: strukturnya sama seperti ULP+Tim di atas.
+  'PT MITRA': [
+    'PT URSULA ABADI', 'PT HARAPAN PAPUA SEJAHTERA', 'PT TIGA RIZKY JAYA',
+    'PT KALIAGA NINER PERSADA', 'PT RAJAWALI PERKASA RAYA', 'PT PLN NUSA DAYA',
+    'PT AKA RIFKI PAPUA', 'PT AKBAR PAPUA PERKASA', 'PT INTRABES SELARA',
+    'PT LAU DALING', 'PT DASHA GAURI PAPUA', 'PT PUTRA SENTANI JAYA',
+    'PT BUBUN BUSU', 'PT KASITAMMUAN AMAN SEJAHTERA', 'PT LAKAWAN',
+    'PT MATA ALLO PAPUA', 'PT PARDAME BINTANG UTARA', 'PT IRIANA KARYA UTAMA'
   ]
 };
 
@@ -2067,30 +2143,87 @@ const RP_RINCIAN_GROUPS = {
   ]
 };
 
-// Isi dropdown Gardu di form Laporan. Beda dari dropdown lain di bawah —
-// ini BOLEH diisi ulang (bukan cuma sekali) karena tombol "+ Tambah Gardu"
-// bisa nambah opsi baru kapan saja selagi modal masih terbuka.
+// ── Gardu — MULTI-SELECT (form Laporan) ──
+// Sama seperti di dashboard supervisor: satu laporan bisa mencakup lebih
+// dari 1 Gardu. Nilai tetap disimpan sebagai STRING dipisah koma (field
+// "lapGardu") supaya kode lama yang membaca teks ini tidak perlu diubah.
+let laporGarduSelected = [];
+
+function renderLaporGarduBox() {
+  const box = document.getElementById('lapor-gardu-box');
+  if (!box) return;
+  box.innerHTML = laporGarduSelected.length
+    ? laporGarduSelected.map(g => `<span style="background:var(--pln-blue,#003D82);opacity:0.9;color:#fff;border-radius:999px;padding:3px 9px;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:5px">${g}<span onclick="event.stopPropagation();hapusLaporGardu('${g.replace(/'/g,"\\'")}')" style="cursor:pointer;font-weight:800;line-height:1">×</span></span>`).join('')
+    : '<span style="color:var(--text-muted)">— Pilih Gardu —</span>';
+}
+
+function renderLaporGarduDropdown() {
+  const dd = document.getElementById('lapor-gardu-dropdown');
+  if (!dd) return;
+  const list = daftarGarduGabungan();
+  dd.innerHTML = list.length
+    ? list.map(v => `<label style="display:flex;align-items:center;gap:8px;padding:7px 8px;font-size:12.5px;cursor:pointer;border-radius:6px"><input type="checkbox" ${laporGarduSelected.includes(v)?'checked':''} onchange="toggleLaporGarduPilih('${v.replace(/'/g,"\\'")}', this.checked)">${v}</label>`).join('')
+    : '<div style="padding:8px;font-size:12px;color:var(--text-muted)">Belum ada data Gardu. Pakai "+ Tambah Gardu".</div>';
+}
+
+window.toggleLaporGarduDropdown = function() {
+  const dd = document.getElementById('lapor-gardu-dropdown');
+  if (!dd) return;
+  const isOpen = dd.style.display === 'block';
+  if (isOpen) { dd.style.display = 'none'; return; }
+  renderLaporGarduDropdown();
+  dd.style.display = 'block';
+};
+
+window.toggleLaporGarduPilih = function(nama, checked) {
+  if (checked) { if (!laporGarduSelected.includes(nama)) laporGarduSelected.push(nama); }
+  else { laporGarduSelected = laporGarduSelected.filter(g => g !== nama); }
+  renderLaporGarduBox();
+};
+
+window.hapusLaporGardu = function(nama) {
+  laporGarduSelected = laporGarduSelected.filter(g => g !== nama);
+  renderLaporGarduBox();
+  const dd = document.getElementById('lapor-gardu-dropdown');
+  if (dd && dd.style.display === 'block') renderLaporGarduDropdown();
+};
+
+document.addEventListener('click', (e) => {
+  const dd = document.getElementById('lapor-gardu-dropdown');
+  const box = document.getElementById('lapor-gardu-box');
+  if (dd && dd.style.display === 'block' && box && !dd.contains(e.target) && !box.contains(e.target)) dd.style.display = 'none';
+});
+
+// Isi ulang pilihan Gardu di form Laporan. selectedValue boleh string
+// "GarduA, GarduB" (format tersimpan / auto-isi dari penugasan) ATAU array.
+// Daftar opsinya BOLEH diisi ulang kapan saja karena tombol "+ Tambah
+// Gardu" bisa nambah opsi baru selagi modal masih terbuka.
 function populateLaporGarduSelect(selectedValue) {
-  const sel = document.getElementById('lapor-gardu');
-  if (!sel) return;
-  const current = selectedValue !== undefined ? selectedValue : sel.value;
-  sel.innerHTML = '<option value="">— Pilih Gardu —</option>' +
-    daftarGarduGabungan().map(v => `<option value="${v}">${v}</option>`).join('');
-  if (current && [...sel.options].some(o => o.value === current)) sel.value = current;
+  if (selectedValue !== undefined) {
+    if (Array.isArray(selectedValue)) laporGarduSelected = selectedValue.filter(Boolean);
+    else if (typeof selectedValue === 'string' && selectedValue.trim()) laporGarduSelected = selectedValue.split(',').map(s => s.trim()).filter(Boolean);
+    else laporGarduSelected = [];
+  }
+  renderLaporGarduBox();
+  const dd = document.getElementById('lapor-gardu-dropdown');
+  if (dd && dd.style.display === 'block') renderLaporGarduDropdown();
 }
 
 // Tombol "+ Tambah Gardu" di form Laporan — sama seperti di dashboard
-// supervisor, item baru disimpan di localStorage HP masing-masing.
-window.tambahGarduBaruLapor = function() {
-  const nama = prompt('Nama / kode Gardu baru:');
-  if (!nama || !nama.trim()) return;
+// supervisor, item baru disimpan di localStorage HP masing-masing, dan
+// langsung ikut ditambahkan ke pilihan yang sudah ada (bukan menggantikan).
+window.tambahGarduBaruLapor = async function() {
+  const nama = await promptDialog('Nama / kode Gardu baru:', { title: 'Tambah Gardu', placeholder: 'cth: GD.MARARENA-01', okLabel: 'Tambah' });
+  if (!nama) return;
   const namaBersih = nama.trim();
   const daftarLokal = getGarduTambahanLokal();
   if (!daftarGarduGabungan().includes(namaBersih)) {
     daftarLokal.push(namaBersih);
     localStorage.setItem(RP_GARDU_LOCAL_KEY, JSON.stringify(daftarLokal));
   }
-  populateLaporGarduSelect(namaBersih);
+  if (!laporGarduSelected.includes(namaBersih)) laporGarduSelected.push(namaBersih);
+  renderLaporGarduBox();
+  renderLaporGarduDropdown();
 };
 
 // Isi dropdown Jenis & Rincian Pekerjaan (dan field RKM lain yang sama
@@ -3679,7 +3812,7 @@ window.onLaporTiketSelectChange = function() {
   };
   fillIfEmpty('lapor-penyulang', found.rpPenyulang);
   fillIfEmpty('lapor-section', found.rpSection);
-  if (found.rpGardu) populateLaporGarduSelect(document.getElementById('lapor-gardu').value || found.rpGardu);
+  if (found.rpGardu && laporGarduSelected.length === 0) populateLaporGarduSelect(found.rpGardu);
   fillSelectIfEmpty('lapor-health-index', found.rpHealthIndex);
   fillSelectIfEmpty('lapor-kategori', found.rpKategori);
   // Vol sengaja TIDAK di-auto-isi dari target — ini realisasi aktual yang
@@ -3838,7 +3971,7 @@ window.submitLaporan = async function() {
   const rincian   = document.getElementById('lapor-rincian').value.trim();
   const penyulang = document.getElementById('lapor-penyulang').value.trim();
   const section   = document.getElementById('lapor-section').value.trim();
-  const gardu     = document.getElementById('lapor-gardu').value;
+  const gardu     = laporGarduSelected.length ? laporGarduSelected.join(', ') : '';
   const healthIndex = document.getElementById('lapor-health-index').value;
   const kategori  = document.getElementById('lapor-kategori').value;
   const volEl = document.getElementById('lapor-vol');
@@ -3852,11 +3985,17 @@ window.submitLaporan = async function() {
   const pic             = document.getElementById('lapor-pic').value.trim();
   const keterangan      = document.getElementById('lapor-keterangan').value.trim();
   const nomorTiket = document.getElementById('lapor-tiket-select')?.value || null;
+  // Target TIDAK diisi manual oleh petugas — diambil otomatis dari Rencana
+  // Pekerjaan (rpVol/targetVolume) yang sudah diisi supervisor saat membuat
+  // penugasan, supaya ikut terbawa ke layar Verifikasi Laporan di dashboard.
+  const tugasTerkait = nomorTiket
+    ? (window._tugasAktifCache || []).map(([, t]) => t).find(t => t.nomor === nomorTiket)
+    : null;
 
   if (!rincian) { errEl.textContent = 'Rincian pekerjaan wajib dipilih.'; errEl.style.display = 'block'; return; }
   // Vol & Satuan wajib diisi (Vol boleh 0), target sudah tidak diisi petugas —
   // ditentukan supervisor lewat menu Kelola Penugasan Pekerjaan (bagian Target Kerja Regu) di dashboard.
-  if (vol === '' || +vol < 0) { errEl.textContent = 'Vol wajib diisi (angka ≥ 0).'; errEl.style.display = 'block'; volEl.focus(); return; }
+  if (vol === '' || +vol < 0) { errEl.textContent = 'Realisasi wajib diisi (angka ≥ 0).'; errEl.style.display = 'block'; volEl.focus(); return; }
   if (!satuan) { errEl.textContent = 'Satuan wajib diisi.'; errEl.style.display = 'block'; satuanEl.focus(); return; }
   if (!laporFoto.before || !laporFoto.progres || !laporFoto.after) {
     errEl.textContent = 'Foto Sebelum, Progres, dan Sesudah wajib diambil ketiganya (angle harus sama).';
@@ -3903,6 +4042,12 @@ window.submitLaporan = async function() {
     // material sudah tidak diisi lagi dari sisi petugas (field dihapus).
     realisasi: vol || '0',
     realisasiSatuan: satuan || null,
+    // target di sini SELALU berasal dari Rencana Pekerjaan yang dibuat
+    // supervisor (rpVol/targetVolume), bukan input manual petugas — supaya
+    // saat supervisor membuka Verifikasi Laporan, kolom Target sudah terisi
+    // otomatis sesuai rencana kerja, tanpa perlu diketik ulang.
+    target: (tugasTerkait && tugasTerkait.targetVolume != null) ? tugasTerkait.targetVolume : null,
+    targetSatuan: tugasTerkait ? (tugasTerkait.rpSatuan || null) : null,
     material: null,
     lapPenyulang: penyulang || null,
     lapSection: section || null,

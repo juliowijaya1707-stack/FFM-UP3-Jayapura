@@ -1950,6 +1950,38 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
         <span id="verifikasiCount" class="card-count">0 menunggu</span>
       </div>
 
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;margin-bottom:4px;align-items:flex-end">
+        <div>
+          <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">ULP</label>
+          <select id="verif-filter-ulp" onchange="renderVerifikasiGrid()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:150px">
+            <option value="">Semua ULP</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Regu</label>
+          <select id="verif-filter-regu" onchange="renderVerifikasiGrid()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:150px">
+            <option value="">Semua Regu</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Tanggal</label>
+          <input id="verif-filter-tanggal" type="date" onchange="renderVerifikasiGrid()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none">
+        </div>
+        <div>
+          <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Jenis Pekerjaan</label>
+          <select id="verif-filter-jenis" onchange="renderVerifikasiGrid()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:200px">
+            <option value="">Semua Jenis Pekerjaan</option>
+          </select>
+        </div>
+        <div style="flex:1;min-width:180px">
+          <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Cari</label>
+          <input id="verif-filter-search" type="text" placeholder="Cari regu, ULP, tiket, pekerjaan..." oninput="renderVerifikasiGrid()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none">
+        </div>
+        <div>
+          <button onclick="resetVerifikasiFilter()" style="background:none;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--text-2)">↺ Reset Filter</button>
+        </div>
+      </div>
+
       <!-- Modal Verifikasi -->
       <div id="modal-verifikasi" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(10,20,36,0.6);align-items:center;justify-content:center;">
         <div style="background:var(--surface);border-radius:var(--radius-lg);padding:28px;width:100%;max-width:560px;box-shadow:var(--shadow-lg);margin:16px;max-height:90vh;overflow-y:auto;">
@@ -5563,6 +5595,7 @@ function renderTiketProgres() {
 let currentVerifId = null;
 let currentVerifLaporan = null;
 let lastVerifEntries = null;
+let verifikasiRawEntries = [];
 
 window.bukaModalVerifikasi = function(id, laporan) {
   currentVerifId = id;
@@ -5680,9 +5713,64 @@ window.tutupTiketManual = async function(tiketId) {
   } catch(e) { showToast('Gagal menutup penugasan: ' + e.message, 'err'); }
 };
 
-function renderVerifikasiGrid(entries) {
+function getVerifikasiFilteredEntries() {
+  const fUlp     = document.getElementById('verif-filter-ulp')?.value || '';
+  const fRegu    = document.getElementById('verif-filter-regu')?.value || '';
+  const fTanggal = document.getElementById('verif-filter-tanggal')?.value || '';
+  const fJenis   = document.getElementById('verif-filter-jenis')?.value || '';
+  const fSearch  = (document.getElementById('verif-filter-search')?.value || '').toLowerCase().trim();
+
+  let entries = verifikasiRawEntries || [];
+  if (fUlp)  entries = entries.filter(([, l]) => l.ulp === fUlp);
+  if (fRegu) entries = entries.filter(([, l]) => l.regu === fRegu);
+  if (fTanggal) entries = entries.filter(([, l]) => {
+    if (!l.waktu) return false;
+    const d = new Date(l.waktu);
+    const local = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    return local === fTanggal;
+  });
+  if (fJenis) entries = entries.filter(([, l]) => l.jenisPekerjaan === fJenis);
+  if (fSearch) entries = entries.filter(([, l]) => {
+    const hay = `${l.regu || ''} ${l.ulp || ''} ${l.nomorTiket || ''} ${l.rincian || ''} ${l.jenisPekerjaan || ''} ${l.material || ''}`.toLowerCase();
+    return hay.includes(fSearch);
+  });
+  return entries;
+}
+
+function populateVerifikasiFilters(entries) {
+  const ulpSel   = document.getElementById('verif-filter-ulp');
+  const reguSel  = document.getElementById('verif-filter-regu');
+  const jenisSel = document.getElementById('verif-filter-jenis');
+  if (!ulpSel || !reguSel || !jenisSel) return;
+
+  const keepUlp = ulpSel.value, keepRegu = reguSel.value, keepJenis = jenisSel.value;
+
+  const ulpSet   = [...new Set(entries.map(([, l]) => l.ulp).filter(Boolean))].sort();
+  const reguSet  = [...new Set(entries.map(([, l]) => l.regu).filter(Boolean))].sort();
+  const jenisSet = [...new Set(entries.map(([, l]) => l.jenisPekerjaan).filter(Boolean))].sort();
+
+  ulpSel.innerHTML = '<option value="">Semua ULP</option>' + ulpSet.map(u => `<option value="${u}">${u}</option>`).join('');
+  reguSel.innerHTML = '<option value="">Semua Regu</option>' + reguSet.map(r => `<option value="${r}">${r}</option>`).join('');
+  jenisSel.innerHTML = '<option value="">Semua Jenis Pekerjaan</option>' + jenisSet.map(j => `<option value="${j.replace(/"/g, '&quot;')}">${j}</option>`).join('');
+
+  if (ulpSet.includes(keepUlp)) ulpSel.value = keepUlp;
+  if (reguSet.includes(keepRegu)) reguSel.value = keepRegu;
+  if (jenisSet.includes(keepJenis)) jenisSel.value = keepJenis;
+}
+
+window.resetVerifikasiFilter = function() {
+  document.getElementById('verif-filter-ulp').value = '';
+  document.getElementById('verif-filter-regu').value = '';
+  document.getElementById('verif-filter-tanggal').value = '';
+  document.getElementById('verif-filter-jenis').value = '';
+  document.getElementById('verif-filter-search').value = '';
+  renderVerifikasiGrid();
+};
+
+function renderVerifikasiGrid() {
+  const entries = getVerifikasiFilteredEntries();
   lastVerifEntries = entries;
-  const menunggu = entries.filter(([,l]) => !l.statusVerifikasi).length;
+  const menunggu = (verifikasiRawEntries || []).filter(([,l]) => !l.statusVerifikasi).length;
   document.getElementById('verifikasiCount').textContent = menunggu + ' menunggu';
   const badge = document.getElementById('nav-badge-verifikasi');
   if (menunggu > 0) { badge.textContent = menunggu; badge.style.display = ''; }
@@ -5690,7 +5778,10 @@ function renderVerifikasiGrid(entries) {
 
   const grid = document.getElementById('verifikasiGrid');
   if (entries.length === 0) {
-    grid.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px;font-size:13px;grid-column:1/-1">Belum ada laporan pekerjaan</div>';
+    const msg = (verifikasiRawEntries && verifikasiRawEntries.length > 0)
+      ? 'Tidak ada laporan yang cocok dengan filter ini'
+      : 'Belum ada laporan pekerjaan';
+    grid.innerHTML = `<div style="text-align:center;color:var(--text-muted);padding:40px;font-size:13px;grid-column:1/-1">${msg}</div>`;
     return;
   }
   // sort: belum diverifikasi dulu, lalu by waktu
@@ -5758,7 +5849,9 @@ function listenVerifikasi() {
   fbListeners.verifikasi = window._fbOnValue(r, snap => {
     const data = snap.val() || {};
     const entries = scopeFilterEntries(Object.entries(data)).sort((a,b) => (b[1].waktu||0)-(a[1].waktu||0));
-    renderVerifikasiGrid(entries);
+    verifikasiRawEntries = entries;
+    populateVerifikasiFilters(entries);
+    renderVerifikasiGrid();
     hasilVerifikasiEntries = entries;
     populateHasilVerifikasiFilters(entries);
     renderHasilVerifikasiGrid();
