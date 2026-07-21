@@ -176,7 +176,9 @@ body {
 .sidebar.collapsed .nav-item { justify-content: center; padding: 10px 0; gap: 0; }
 .sidebar.collapsed .nav-label { display: none; }
 .sidebar.collapsed .nav-badge { display: none; }
-.sidebar.collapsed .sidebar-footer .user-chip { justify-content: center; padding: 10px 4px; }
+.sidebar.collapsed .sidebar-footer { flex-direction: column; }
+.sidebar.collapsed .sidebar-footer .user-chip { justify-content: center; padding: 10px 4px; width: 100%; }
+.sidebar.collapsed #logout-btn { width: 100%; }
 .sidebar.collapsed .user-chip .user-text { display: none; }
 .sidebar.collapsed .user-chip .user-live { display: none; }
 .brand-mark {
@@ -887,6 +889,55 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
   #viewPetugas .grid-2-3 { height: auto; }
   #map-petugas { height: 400px !important; }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   LOGIN SCREEN — gerbang akses berjenjang (Superadmin / Admin ULP)
+   Reuse identitas visual sidebar (navy-charcoal + PLN yellow anchor)
+   supaya terasa satu kesatuan dengan app, bukan halaman terpisah.
+════════════════════════════════════════════════════════════════ */
+#login-screen {
+  position: fixed; inset: 0; z-index: 3000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  background:
+    radial-gradient(circle at 18% 8%, rgba(255,184,0,0.12), transparent 40%),
+    linear-gradient(165deg, var(--ink-900) 0%, var(--ink-800) 55%, var(--ink-700) 100%);
+}
+.login-card {
+  width: 100%; max-width: 400px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 32px 28px 28px;
+}
+.login-card-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+.login-card-brand .brand-mark { width: 44px; height: 44px; }
+.login-card-brand .lb-title { font-family: var(--font-display); font-size: 17px; font-weight: 800; color: var(--text-1); letter-spacing: -0.3px; }
+.login-card-brand .lb-sub { font-size: 12px; color: var(--text-3); margin-top: 2px; }
+.login-field { margin-bottom: 14px; }
+.login-field label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--text-2); display: block; margin-bottom: 6px;
+}
+.login-field select, .login-field input {
+  width: 100%; border: 1px solid var(--line); border-radius: var(--radius-xs);
+  padding: 10px 12px; font-size: 13.5px; outline: none; background: var(--surface);
+  transition: border-color 0.18s; font-family: var(--font);
+}
+.login-field select:focus, .login-field input:focus { border-color: var(--pln-blue-light); }
+#login-submit-btn {
+  width: 100%; padding: 12px; border: none; border-radius: var(--radius-xs);
+  background: linear-gradient(135deg, var(--pln-yellow), var(--pln-yellow-deep));
+  color: var(--ink-900); font-size: 14px; font-weight: 800; cursor: pointer;
+  box-shadow: var(--shadow-glow-yellow); margin-top: 4px;
+}
+#login-submit-btn:hover { filter: brightness(1.03); }
+#login-err {
+  display: none; background: var(--crit-bg); color: var(--crit); padding: 9px 13px;
+  border-radius: var(--radius-xs); font-size: 12px; margin-bottom: 14px;
+  border: 1px solid rgba(220,53,69,0.2);
+}
+.login-hint { font-size: 11.5px; color: var(--text-3); margin-top: 16px; text-align: center; line-height: 1.5; }
 </style>
 </head>
 <body>
@@ -914,7 +965,44 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
   </div>
 </div>
 
-<div class="app">
+<!-- ══ LOGIN SCREEN — Superadmin (UP3 Jayapura) & Admin ULP (6 ULP) ══ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-card-brand">
+      <div class="brand-mark"><img src="./icon-numbay-192.png" alt="Logo NUMBAY" onerror="this.onerror=null;this.src='data:image/svg+xml;utf8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Crect width=%27100%27 height=%27100%27 rx=%2722%27 fill=%27%230057B8%27/%3E%3Ctext x=%2750%27 y=%2763%27 font-size=%2742%27 font-family=%27Arial,sans-serif%27 fill=%27white%27 text-anchor=%27middle%27 font-weight=%27bold%27%3ENB%3C/text%3E%3C/svg%3E'"></div>
+      <div>
+        <div class="lb-title">NUMBAY</div>
+        <div class="lb-sub">Pusat Kendali UP3 Jayapura</div>
+      </div>
+    </div>
+
+    <div class="login-field">
+      <label for="login-username">Akun</label>
+      <select id="login-username">
+        <option value="">Pilih akun...</option>
+        <option value="UP3 Jayapura">Superadmin — UP3 Jayapura</option>
+        <option value="ULP Jayapura">Admin ULP — ULP Jayapura</option>
+        <option value="ULP Abepura">Admin ULP — ULP Abepura</option>
+        <option value="ULP Sentani">Admin ULP — ULP Sentani</option>
+        <option value="ULP Arso">Admin ULP — ULP Arso</option>
+        <option value="ULP Genyem">Admin ULP — ULP Genyem</option>
+        <option value="ULP Sarmi">Admin ULP — ULP Sarmi</option>
+      </select>
+    </div>
+    <div class="login-field">
+      <label for="login-password">Password</label>
+      <input id="login-password" type="password" placeholder="••••" autocomplete="current-password" onkeydown="if(event.key==='Enter') doLoginSupervisor();">
+    </div>
+
+    <div id="login-err"></div>
+
+    <button id="login-submit-btn" onclick="doLoginSupervisor()">Masuk</button>
+
+    <div class="login-hint">Superadmin dapat mengakses seluruh ULP &amp; PT MITRA.<br>Admin ULP hanya mengakses data petugas ULP-nya sendiri.</div>
+  </div>
+</div>
+
+<div class="app" style="display:none">
 
 <!-- ══════════════════════════════════════
      SIDEBAR
@@ -986,15 +1074,16 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
     </div>
   </nav>
 
-  <div class="sidebar-footer">
-    <div class="user-chip" id="user-chip" onclick="toggleAdminMode()" title="Klik untuk masuk/keluar Mode Admin">
+  <div class="sidebar-footer" style="display:flex;align-items:center;gap:6px">
+    <div class="user-chip" id="user-chip" onclick="toggleAdminMode()" title="Klik untuk masuk/keluar Mode Admin" style="flex:1;min-width:0">
       <div class="user-avatar" id="user-avatar">SP</div>
       <div class="user-text">
-        <div class="user-name">Supervisor NUMBAY</div>
+        <div class="user-name" id="user-name">Supervisor NUMBAY</div>
         <div class="user-role" id="user-role">UP3 Jayapura</div>
       </div>
       <div class="user-live"></div>
     </div>
+    <button id="logout-btn" onclick="doLogoutSupervisor()" title="Keluar (Logout)" style="flex-shrink:0;background:rgba(255,255,255,0.06);border:none;color:rgba(255,255,255,0.65);width:34px;height:34px;border-radius:9px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:background 0.15s var(--ease),color 0.15s var(--ease)" onmouseover="this.style.background='var(--crit)';this.style.color='#fff'" onmouseout="this.style.background='rgba(255,255,255,0.06)';this.style.color='rgba(255,255,255,0.65)'">⏻</button>
   </div>
 </aside>
 
@@ -1658,12 +1747,15 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
 
             <div style="margin-bottom:12px">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-                <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2)">Gardu</label>
+                <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2)">Gardu <span style="font-weight:400;color:var(--text-3);text-transform:none">(bisa pilih lebih dari 1)</span></label>
                 <button type="button" onclick="tambahGarduBaru()" style="background:none;border:none;color:var(--pln-blue-light,#0057b8);font-size:11px;font-weight:700;cursor:pointer;padding:0">+ Tambah Gardu</button>
               </div>
-              <select id="rp-gardu" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;height:38px;background:var(--surface)">
-                <option value="">— Pilih Gardu —</option>
-              </select>
+              <div style="position:relative">
+                <div id="rp-gardu-box" onclick="toggleRpGarduDropdown()" style="width:100%;min-height:38px;border:1px solid var(--line);border-radius:var(--radius-xs);padding:6px 10px;font-size:13px;background:var(--surface);cursor:pointer;display:flex;align-items:center;flex-wrap:wrap;gap:5px">
+                  <span style="color:var(--text-3)">— Pilih Gardu —</span>
+                </div>
+                <div id="rp-gardu-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--radius-xs);box-shadow:var(--shadow);max-height:200px;overflow-y:auto;z-index:50;padding:4px"></div>
+              </div>
             </div>
 
             <div style="margin-bottom:12px">
@@ -1701,14 +1793,14 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
                 <input id="rp-vol" type="number" min="0" step="any" placeholder="0" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;font-family:var(--mono);outline:none">
               </div>
               <div>
-                <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Satuan</label>
+                <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Satuan *</label>
                 <input id="rp-satuan" type="text" list="rp-satuan-list" placeholder="cth: kms, btng, titik" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
-                <datalist id="rp-satuan-list"><option value="kms"><option value="btng"><option value="titik"><option value="unit"><option value="phasa"></datalist>
+                <datalist id="rp-satuan-list"><option value="kms"><option value="btng"><option value="titik"><option value="unit"><option value="fasa"></datalist>
               </div>
             </div>
 
             <div style="margin-bottom:12px;background:var(--surface-2);border-radius:var(--radius-xs);padding:12px">
-              <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);margin-bottom:10px">📌 Pelaksana (langsung pilih tim)</div>
+              <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);margin-bottom:10px">📌 Pelaksana (langsung pilih tim, bukan berdasarkan GPS)</div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px">
                 <div>
                   <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Unit Kerja (ULP) *</label>
@@ -2691,6 +2783,7 @@ function switchView(view) {
     initFirebase().then(ok => { if (ok) listenVerifikasi(); });
   } else if (view === 'akun') {
     if (!isAdminMode) { showToast('Kelola Akun Regu hanya bisa diakses dalam Mode Admin.', 'warn'); switchView('beranda'); return; }
+    if (!isSuperadmin()) { showToast('Kelola Akun Regu hanya bisa diakses oleh Superadmin.', 'warn'); switchView('beranda'); return; }
     document.getElementById('viewAkun').style.display = '';
     document.getElementById('nav-akun').classList.add('active');
     initFirebase().then(ok => { if (ok) listenAkunRegu(); });
@@ -2699,6 +2792,97 @@ function switchView(view) {
 
 // Alias for backwards compat
 function switchTab(tab) { switchView(tab); }
+
+// ══════════════════════════════════════
+// AUTH — LOGIN BERJENJANG (Superadmin UP3 / Admin ULP)
+// ══════════════════════════════════════
+// CATATAN: ini gerbang akses level-aplikasi (siapa yang boleh MEMBUKA
+// dashboard & data ULP mana yang dia lihat), TERPISAH dari "Mode Admin"
+// (ADMIN_PIN di bawah) yang tetap dipertahankan sebagai gerbang khusus
+// tombol hapus data — dua lapis ini sengaja tidak digabung.
+//
+// Password sama untuk semua akun (1111) sesuai permintaan supervisor —
+// disimpan plain di sini karena ini kredensial internal level-role
+// (bukan per-orang), sama semangatnya dengan ADMIN_PIN yang sudah ada.
+const AUTH_ACCOUNTS = {
+  'up3 jayapura': { role: 'superadmin', password: '1111', label: 'UP3 Jayapura', ulp: null },
+  'ulp jayapura': { role: 'admin_ulp',  password: '1111', label: 'ULP Jayapura', ulp: 'ULP Jayapura' },
+  'ulp abepura':  { role: 'admin_ulp',  password: '1111', label: 'ULP Abepura',  ulp: 'ULP Abepura' },
+  'ulp sentani':  { role: 'admin_ulp',  password: '1111', label: 'ULP Sentani', ulp: 'ULP Sentani' },
+  'ulp arso':     { role: 'admin_ulp',  password: '1111', label: 'ULP Arso',    ulp: 'ULP Arso' },
+  'ulp genyem':   { role: 'admin_ulp',  password: '1111', label: 'ULP Genyem',  ulp: 'ULP Genyem' },
+  'ulp sarmi':    { role: 'admin_ulp',  password: '1111', label: 'ULP Sarmi',   ulp: 'ULP Sarmi' },
+};
+const AUTH_SESSION_KEY = 'ffm_auth_session'; // localStorage → sengaja bukan sessionStorage, supaya login bertahan sampai klik Logout manual (sesuai permintaan)
+
+function normalizeAuthKey(s) {
+  return String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+function normalizeUlp(s) {
+  return String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+let currentAuth = null; // { username, role: 'superadmin'|'admin_ulp', ulp, label } atau null kalau belum login
+try {
+  const saved = JSON.parse(localStorage.getItem(AUTH_SESSION_KEY) || 'null');
+  if (saved && saved.role && AUTH_ACCOUNTS[normalizeAuthKey(saved.username)]) currentAuth = saved;
+} catch (e) { currentAuth = null; }
+
+// Scope ULP aktif untuk akun yang sedang login: null = tanpa batasan (Superadmin,
+// termasuk bisa lihat PT MITRA), atau nama ULP persis seperti key di ROSTER_ULP_TEAMS.
+function getScopeUlp() {
+  return currentAuth && currentAuth.role === 'admin_ulp' ? currentAuth.ulp : null;
+}
+function isSuperadmin() {
+  return !currentAuth || currentAuth.role === 'superadmin';
+}
+// Filter generik untuk array [id, obj] hasil Object.entries(snapshot) dari node
+// yang membawa field `ulp` (petugas, absensi, laporan, penugasan). Kalau akun
+// yang login adalah Admin ULP, hanya baris dengan ulp yang sama persis yang
+// diloloskan — otomatis membuat PT MITRA (ulp berbeda) tidak pernah tampil
+// untuk Admin ULP mana pun, karena tidak pernah cocok dengan ulp mereka sendiri.
+function scopeFilterEntries(entries) {
+  const scope = getScopeUlp();
+  if (!scope) return entries;
+  const scopeKey = normalizeUlp(scope);
+  return entries.filter(([, v]) => normalizeUlp(v && v.ulp) === scopeKey);
+}
+
+window.doLoginSupervisor = function() {
+  const usernameRaw = document.getElementById('login-username').value;
+  const password     = document.getElementById('login-password').value;
+  const errEl        = document.getElementById('login-err');
+  const acc = AUTH_ACCOUNTS[normalizeAuthKey(usernameRaw)];
+
+  if (!usernameRaw) { errEl.textContent = 'Pilih akun terlebih dahulu.'; errEl.style.display = 'block'; return; }
+  if (!acc || acc.password !== password) { errEl.textContent = 'Username atau password salah.'; errEl.style.display = 'block'; return; }
+
+  errEl.style.display = 'none';
+  currentAuth = { username: usernameRaw, role: acc.role, ulp: acc.ulp, label: acc.label };
+  localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(currentAuth));
+  document.getElementById('login-password').value = '';
+  showAppAfterLogin();
+};
+
+window.doLogoutSupervisor = async function() {
+  if (!(await confirmDialog('Keluar dari akun ini? Anda perlu login ulang untuk membuka dashboard lagi.', { title: 'Logout', okLabel: 'Ya, Keluar' }))) return;
+  localStorage.removeItem(AUTH_SESSION_KEY);
+  location.reload(); // cara paling aman untuk reset semua listener/cache Firebase di memori
+};
+
+function applyAuthUI() {
+  const isAdmin = isSuperadmin();
+  document.getElementById('user-name').textContent = isAdmin ? 'Superadmin NUMBAY' : 'Admin ULP';
+  document.getElementById('user-avatar').textContent = isAdmin ? 'SP' : (currentAuth.ulp || '').replace('ULP ', '').slice(0, 2).toUpperCase();
+  applyAdminUI(); // ikut sinkronkan teks user-role & visibilitas nav-akun (bergantung role + Mode Admin)
+}
+
+function showAppAfterLogin() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.querySelector('.app').style.display = '';
+  applyAuthUI();
+  startAppAfterAuth();
+}
 
 // ══════════════════════════════════════
 // FIREBASE INTEGRATION
@@ -2748,9 +2932,12 @@ async function toggleAdminMode() {
 
 function applyAdminUI() {
   document.getElementById('user-chip').classList.toggle('is-admin', isAdminMode);
-  document.getElementById('user-role').textContent = isAdminMode ? 'Mode Admin Aktif' : 'UP3 Jayapura';
+  document.getElementById('user-role').textContent = isAdminMode ? 'Mode Admin Aktif' : (currentAuth ? currentAuth.label : 'UP3 Jayapura');
   document.getElementById('th-aksi-absensi').style.display = isAdminMode ? '' : 'none';
-  document.getElementById('nav-akun').style.display = isAdminMode ? '' : 'none';
+  // Kelola Akun Regu (users/{username}) sengaja Superadmin-only: data akun ini
+  // tidak menyimpan field `ulp` per akun (lihat catatan di listenAkunRegu),
+  // jadi tidak bisa difilter aman per ULP untuk Admin ULP.
+  document.getElementById('nav-akun').style.display = (isAdminMode && isSuperadmin()) ? '' : 'none';
   if (!isAdminMode && document.getElementById('viewAkun').style.display !== 'none') {
     switchView('beranda');
   }
@@ -2933,7 +3120,8 @@ function listenPetugasBadge() {
   const ref = window._fbRef(fbDb, 'petugas');
   fbListeners.petugasBadge = window._fbOnValue(ref, snap => {
     const data = snap.val() || {};
-    const aktif = Object.values(data).filter(v => v.status !== 'Offline').length;
+    const entries = scopeFilterEntries(Object.entries(data));
+    const aktif = entries.filter(([, v]) => v.status !== 'Offline').length;
     document.getElementById('nav-badge-petugas').textContent = aktif;
   });
 }
@@ -3007,32 +3195,49 @@ const ROSTER_ULP_TEAMS = {
   'ULP Jayapura': [
     'Tim Pemeliharaan PLN ND', 'Tim Inspeksi JTM Tier 1 Jayapura', 'Tim Inspeksi JTM Tier 2 Jayapura',
     'Tim Inspeksi Gardu', 'Tim ROW PT APP Jayapura', 'Tim ROW PT Lau Daling',
-    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2'
+    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2',
+    'Tim Yantek Jayapura 11', 'Tim Yantek Jayapura 12', 'Tim Yantek Jayapura 21'
   ],
   'ULP Abepura': [
     'Tim Pemeliharaan PLN ND', 'Tim Inspeksi JTM Tier 1 Abepura', 'Tim Inspeksi Gardu',
     'Tim ROW PT AKA Rifki Papua', 'Tim ROW PT Intrabes Abepura', 'Tim ROW PLN ND Abepura',
-    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2'
+    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2',
+    'Tim Yantek Abepura 11', 'Tim Yantek Abepura 12', 'Tim Yantek Abepura 13', 'Tim Yantek Abepura 21'
   ],
   'ULP Sentani': [
     'Tim Pemeliharaan PLN ND', 'Tim Inspeksi JTM Tier 1 Sentani', 'Tim Inspeksi Gardu',
     'Tim ROW PT APP Sentani', 'Tim ROW PT Dasha Gauri', 'Tim ROW PT Intrabes Sentani',
-    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2'
+    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2',
+    'Tim Yantek Sentani 11', 'Tim Yantek Sentani 12', 'Tim Yantek Sentani 21'
   ],
   'ULP Arso': [
     'Tim Pemeliharaan PLN ND', 'Tim Inspeksi JTM Tier 1 Arso', 'Tim Inspeksi Gardu',
     'Tim ROW PT APP Arso', 'Tim ROW PT Intrabes Arso', 'Tim ROW PLN ND Arso',
-    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2'
+    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2',
+    'Tim Yantek Arso 11', 'Tim Yantek Arso 21'
   ],
   'ULP Genyem': [
     'Tim Pemeliharaan PLN ND', 'Tim Inspeksi JTM Tier 1 Genyem', 'Tim Inspeksi Gardu',
     'Tim ROW PT APP Genyem', 'Tim ROW PLN ND Genyem',
-    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2'
+    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2',
+    'Tim Yantek Genyem 11', 'Tim Yantek Genyem 12'
   ],
   'ULP Sarmi': [
     'Tim Pemeliharaan PLN ND', 'Tim Inspeksi JTM Tier 1 Sarmi', 'Tim Inspeksi Gardu',
     'Tim ROW PT APP Sarmi', 'Tim ROW PLN ND Sarmi',
-    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2'
+    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2',
+    'Tim Yantek Sarmi 11', 'Tim Yantek Sarmi 12'
+  ],
+  // "PT MITRA" diperlakukan sebagai Unit Kerja tersendiri (setara ULP),
+  // dengan tiap nama PT di bawah ini berperan sebagai Regu/Tim-nya —
+  // permintaan supervisor: strukturnya sama seperti ULP+Tim di atas.
+  'PT MITRA': [
+    'PT URSULA ABADI', 'PT HARAPAN PAPUA SEJAHTERA', 'PT TIGA RIZKY JAYA',
+    'PT KALIAGA NINER PERSADA', 'PT RAJAWALI PERKASA RAYA', 'PT PLN NUSA DAYA',
+    'PT AKA RIFKI PAPUA', 'PT AKBAR PAPUA PERKASA', 'PT INTRABES SELARA',
+    'PT LAU DALING', 'PT DASHA GAURI PAPUA', 'PT PUTRA SENTANI JAYA',
+    'PT BUBUN BUSU', 'PT KASITAMMUAN AMAN SEJAHTERA', 'PT LAKAWAN',
+    'PT MATA ALLO PAPUA', 'PT PARDAME BINTANG UTARA', 'PT IRIANA KARYA UTAMA'
   ]
 };
 
@@ -3045,7 +3250,8 @@ const KODE_ULP = {
   'ULP Sentani':  'SEN',
   'ULP Arso':     'ARS',
   'ULP Genyem':   'GYM',
-  'ULP Sarmi':    'SRM'
+  'ULP Sarmi':    'SRM',
+  'PT MITRA':     'MTR'
 };
 
 // ══════════════════════════════════════════════════════════════
@@ -3591,7 +3797,7 @@ function listenPetugas() {
     // hanya petugas yang absen/update posisi HARI INI — log GPS hari
     // sebelumnya (belum ke-overwrite / lupa logout) tidak dihitung.
     const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-    const entries = Object.entries(data).filter(([,v]) => v.ts && v.ts >= todayStart.getTime());
+    const entries = scopeFilterEntries(Object.entries(data).filter(([,v]) => v.ts && v.ts >= todayStart.getTime()));
 
     // update badge
     const aktif = entries.filter(([,v]) => v.status !== 'Offline').length;
@@ -3750,7 +3956,7 @@ function listenLaporanCheckpoints(forceRefresh) {
   fbListeners.laporanCheckpoint = window._fbOnValue(target, snap => {
     if (!checkpointLayerGroup) return;
     const data = snap.val() || {};
-    const entries = Object.entries(data).filter(([, l]) => l.lat && l.lng && l.waktu && l.waktu >= start && l.waktu <= end);
+    const entries = scopeFilterEntries(Object.entries(data).filter(([, l]) => l.lat && l.lng && l.waktu && l.waktu >= start && l.waktu <= end));
 
     const seen = new Set();
     entries.forEach(([id, l]) => {
@@ -4107,8 +4313,8 @@ function listenAbsensi() {
 
     // filter hari ini
     const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-    const todayEntries = entries
-      .filter(([,v]) => v.waktu && v.waktu >= todayStart.getTime())
+    const todayEntries = scopeFilterEntries(entries
+      .filter(([,v]) => v.waktu && v.waktu >= todayStart.getTime()))
       .sort((a,b) => (b[1].waktu||0)-(a[1].waktu||0));
 
     document.getElementById('absensiCount').textContent = todayEntries.length + ' absen';
@@ -4142,7 +4348,7 @@ function listenLogAbsensi() {
   const ref = window._fbRef(fbDb, 'absensi');
   fbListeners.logAbsensi = window._fbOnValue(ref, snap => {
     const data = snap.val() || {};
-    logAbsensiAllEntries = Object.entries(data).filter(([, v]) => v && v.waktu);
+    logAbsensiAllEntries = scopeFilterEntries(Object.entries(data).filter(([, v]) => v && v.waktu));
     renderLogAbsensi();
   });
 }
@@ -4604,7 +4810,7 @@ function listenLaporan() {
   const ref = window._fbRef(fbDb, 'laporan');
   fbListeners.laporan = window._fbOnValue(ref, snap => {
     const data = snap.val() || {};
-    const entries = Object.entries(data).sort((a,b) => (b[1].waktu||0)-(a[1].waktu||0));
+    const entries = scopeFilterEntries(Object.entries(data)).sort((a,b) => (b[1].waktu||0)-(a[1].waktu||0));
 
     document.getElementById('laporanCount').textContent = entries.length + ' laporan';
     renderLaporanGrid(entries);
@@ -4811,28 +5017,95 @@ let currentAssignRegu = null;
 function populateTiketUlpSelect() {
   const sel = document.getElementById('tiket-ulp');
   if (!sel || sel.options.length > 1) return; // sudah pernah diisi
-  Object.keys(ROSTER_ULP_TEAMS).forEach(ulp => {
+  const scope = getScopeUlp();
+  // Admin ULP hanya boleh membuat/menugaskan pekerjaan untuk ULP-nya sendiri
+  // (termasuk otomatis tidak pernah melihat "PT MITRA" di daftar ini).
+  const daftarUlp = scope ? [scope] : Object.keys(ROSTER_ULP_TEAMS);
+  daftarUlp.forEach(ulp => {
     const opt = document.createElement('option');
     opt.value = ulp; opt.textContent = ulp;
     sel.appendChild(opt);
   });
+  if (scope) {
+    sel.value = scope;
+    sel.disabled = true;
+    onTiketUlpChange();
+  }
 }
 
-// Isi dropdown Gardu. Beda dari dropdown lain di bawah — ini BOLEH diisi
-// ulang (bukan cuma sekali) karena tombol "+ Tambah Gardu" bisa nambah opsi
-// baru kapan saja selagi modal masih terbuka.
+// ── Gardu — MULTI-SELECT ──
+// Field Gardu bisa diisi lebih dari 1 (rencana pekerjaan sering mencakup
+// beberapa gardu sekaligus). Diganti dari <select> tunggal menjadi kotak
+// chip + dropdown checklist. Nilai yang disimpan tetap STRING dipisah koma
+// (field "rpGardu") supaya semua kode lama yang membaca t.rpGardu sebagai
+// teks (tabel, popup peta, lokasi default, dsb) tetap jalan tanpa diubah.
+let rpGarduSelected = [];
+
+function renderRpGarduBox() {
+  const box = document.getElementById('rp-gardu-box');
+  if (!box) return;
+  box.innerHTML = rpGarduSelected.length
+    ? rpGarduSelected.map(g => `<span style="background:var(--info-bg);color:var(--info);border-radius:999px;padding:3px 9px;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:5px">${g}<span onclick="event.stopPropagation();hapusRpGardu('${g.replace(/'/g,"\\'")}')" style="cursor:pointer;font-weight:800;line-height:1">×</span></span>`).join('')
+    : '<span style="color:var(--text-3)">— Pilih Gardu —</span>';
+}
+
+function renderRpGarduDropdown() {
+  const dd = document.getElementById('rp-gardu-dropdown');
+  if (!dd) return;
+  const list = daftarGarduGabungan();
+  dd.innerHTML = list.length
+    ? list.map(v => `<label style="display:flex;align-items:center;gap:8px;padding:7px 8px;font-size:12.5px;cursor:pointer;border-radius:6px" onmouseover="this.style.background='var(--surface-2)'" onmouseout="this.style.background=''"><input type="checkbox" ${rpGarduSelected.includes(v)?'checked':''} onchange="toggleRpGarduPilih('${v.replace(/'/g,"\\'")}', this.checked)">${v}</label>`).join('')
+    : '<div style="padding:8px;font-size:12px;color:var(--text-3)">Belum ada data Gardu. Pakai "+ Tambah Gardu".</div>';
+}
+
+window.toggleRpGarduDropdown = function() {
+  const dd = document.getElementById('rp-gardu-dropdown');
+  if (!dd) return;
+  const isOpen = dd.style.display === 'block';
+  if (isOpen) { dd.style.display = 'none'; return; }
+  renderRpGarduDropdown();
+  dd.style.display = 'block';
+};
+
+window.toggleRpGarduPilih = function(nama, checked) {
+  if (checked) { if (!rpGarduSelected.includes(nama)) rpGarduSelected.push(nama); }
+  else { rpGarduSelected = rpGarduSelected.filter(g => g !== nama); }
+  renderRpGarduBox();
+};
+
+window.hapusRpGardu = function(nama) {
+  rpGarduSelected = rpGarduSelected.filter(g => g !== nama);
+  renderRpGarduBox();
+  const dd = document.getElementById('rp-gardu-dropdown');
+  if (dd && dd.style.display === 'block') renderRpGarduDropdown();
+};
+
+// Tutup dropdown Gardu kalau klik di luar kotaknya.
+document.addEventListener('click', (e) => {
+  const dd = document.getElementById('rp-gardu-dropdown');
+  const box = document.getElementById('rp-gardu-box');
+  if (dd && dd.style.display === 'block' && !dd.contains(e.target) && !box.contains(e.target)) dd.style.display = 'none';
+});
+
+// Isi ulang pilihan Gardu. selectedValue boleh berupa string "GarduA, GarduB"
+// (format tersimpan di Firebase) ATAU array. Beda dari dropdown lain di bawah
+// — daftar opsinya BOLEH diisi ulang kapan saja karena tombol "+ Tambah
+// Gardu" bisa nambah opsi baru selagi modal masih terbuka.
 function populateRpGarduSelect(selectedValue) {
-  const sel = document.getElementById('rp-gardu');
-  if (!sel) return;
-  const current = selectedValue !== undefined ? selectedValue : sel.value;
-  sel.innerHTML = '<option value="">— Pilih Gardu —</option>' +
-    daftarGarduGabungan().map(v => `<option value="${v}">${v}</option>`).join('');
-  if (current && [...sel.options].some(o => o.value === current)) sel.value = current;
+  if (selectedValue !== undefined) {
+    if (Array.isArray(selectedValue)) rpGarduSelected = selectedValue.filter(Boolean);
+    else if (typeof selectedValue === 'string' && selectedValue.trim()) rpGarduSelected = selectedValue.split(',').map(s => s.trim()).filter(Boolean);
+    else rpGarduSelected = [];
+  }
+  renderRpGarduBox();
+  const dd = document.getElementById('rp-gardu-dropdown');
+  if (dd && dd.style.display === 'block') renderRpGarduDropdown();
 }
 
 // Tombol "+ Tambah Gardu" — nambah 1 nama Gardu baru ke daftar lokal
 // (localStorage) sampai data resmi master Gardu dikirim & dipasang di
-// RP_GARDU_LIST. Gardu yang baru ditambah langsung terpilih di dropdown.
+// RP_GARDU_LIST. Gardu yang baru ditambah langsung ikut terpilih (menambah
+// ke pilihan yang sudah ada, bukan menggantikannya).
 window.tambahGarduBaru = async function() {
   const nama = await promptDialog('Nama / kode Gardu baru:', { title: 'Tambah Gardu', okLabel: 'Tambah', inputType: 'text', placeholder: 'cth: Gardu GH-024' });
   if (!nama || !nama.trim()) return;
@@ -4842,7 +5115,9 @@ window.tambahGarduBaru = async function() {
     daftarLokal.push(namaBersih);
     localStorage.setItem(RP_GARDU_LOCAL_KEY, JSON.stringify(daftarLokal));
   }
-  populateRpGarduSelect(namaBersih);
+  if (!rpGarduSelected.includes(namaBersih)) rpGarduSelected.push(namaBersih);
+  renderRpGarduBox();
+  renderRpGarduDropdown();
 };
 
 // Isi semua dropdown "Detail Rencana Pekerjaan" (Kategori, Jenis, Rincian, Health Index, dst) sekali saja.
@@ -4998,7 +5273,7 @@ window.bukaModalTiket = function(id, data) {
   document.getElementById('rp-pic').value                = data?.rpPic            || '';
   document.getElementById('rp-keterangan').value          = data?.rpKeterangan     || '';
 
-  document.getElementById('tiket-ulp').value = data?.ulp || '';
+  document.getElementById('tiket-ulp').value = getScopeUlp() || data?.ulp || '';
   onTiketUlpChange(); // isi ulang dropdown tim sesuai ulp (kosong kalau ulp kosong)
   const reguSel = document.getElementById('tiket-regu');
   currentAssignRegu = data?.assignedRegu || null;
@@ -5050,7 +5325,7 @@ window.simpanTiket = async function() {
   const rpWaktu            = document.getElementById('rp-waktu').value.trim() || null;
   const rpPenyulang         = document.getElementById('rp-penyulang').value.trim() || null;
   const rpSection           = document.getElementById('rp-section').value.trim() || null;
-  const rpGardu             = document.getElementById('rp-gardu').value || null;
+  const rpGardu             = rpGarduSelected.length ? rpGarduSelected.join(', ') : null;
   const rpHealthIndex      = document.getElementById('rp-health-index').value || null;
   const rpKategori          = document.getElementById('rp-kategori').value;
   const rpJenisPekerjaan   = document.getElementById('rp-jenis-pekerjaan').value || null;
@@ -5088,6 +5363,11 @@ window.simpanTiket = async function() {
   }
   if (rpVolRaw === '' || +rpVolRaw < 0) {
     errEl.textContent = 'Vol wajib diisi (angka ≥ 0).';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (!rpSatuan) {
+    errEl.textContent = 'Satuan wajib diisi (cth: kms, btng, titik, unit, fasa).';
     errEl.style.display = 'block';
     return;
   }
@@ -5188,7 +5468,7 @@ function listenTiket() {
   const r = window._fbRef(fbDb, 'penugasan');
   fbListeners.tiket = window._fbOnValue(r, snap => {
     const data = snap.val() || {};
-    const entries = Object.entries(data);
+    const entries = scopeFilterEntries(Object.entries(data));
     renderTiketTable(entries);
     targetKerjaCache = entries
       .filter(([, t]) => t.tipePeriode && t.periodeKey && t.targetVolume != null)
@@ -5477,7 +5757,7 @@ function listenVerifikasi() {
   const r = window._fbRef(fbDb, 'laporan');
   fbListeners.verifikasi = window._fbOnValue(r, snap => {
     const data = snap.val() || {};
-    const entries = Object.entries(data).sort((a,b) => (b[1].waktu||0)-(a[1].waktu||0));
+    const entries = scopeFilterEntries(Object.entries(data)).sort((a,b) => (b[1].waktu||0)-(a[1].waktu||0));
     renderVerifikasiGrid(entries);
     hasilVerifikasiEntries = entries;
     populateHasilVerifikasiFilters(entries);
@@ -5958,26 +6238,35 @@ window.toggleSidebar = function() {
   setSidebarCollapsed(!isCollapsed);
 };
 
-loadAll();
-switchView('beranda');
-applyAdminUI(); // sinkronkan tampilan dengan status Mode Admin (sessionStorage) saat halaman dibuka
-initSidebarState(); // pulihkan status collapse/expand sidebar dari localStorage
+function startAppAfterAuth() {
+  loadAll();
+  switchView('beranda');
+  applyAdminUI(); // sinkronkan tampilan dengan status Mode Admin (sessionStorage) saat halaman dibuka
+  initSidebarState(); // pulihkan status collapse/expand sidebar dari localStorage
 
-// Sambungkan ke Firebase & nyalakan badge "Petugas Aktif" SEJAK HALAMAN DIBUKA
-initFirebase().then(ok => {
-  if (ok) {
-    // patch: expose set untuk tiket
-    import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js').then(m => { window._fbSet = m.set; });
-    listenPetugasBadge();
-    listenVerifikasiBadge();
-  }
-});
+  // Sambungkan ke Firebase & nyalakan badge "Petugas Aktif" SEJAK HALAMAN DIBUKA
+  initFirebase().then(ok => {
+    if (ok) {
+      // patch: expose set untuk tiket
+      import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js').then(m => { window._fbSet = m.set; });
+      listenPetugasBadge();
+      listenVerifikasiBadge();
+    }
+  });
+}
+
+// Kalau sesi login sudah tersimpan (localStorage, bertahan sampai Logout manual),
+// langsung masuk ke app tanpa perlu login ulang. Kalau belum, layar login (sudah
+// tampil secara default di HTML) yang menunggu submit dari doLoginSupervisor().
+if (currentAuth) {
+  showAppAfterLogin();
+}
 
 function listenVerifikasiBadge() {
   const r = window._fbRef(fbDb, 'laporan');
   window._fbOnValue(r, snap => {
     const data = snap.val() || {};
-    const menunggu = Object.values(data).filter(l => !l.statusVerifikasi).length;
+    const menunggu = scopeFilterEntries(Object.entries(data)).filter(([, l]) => !l.statusVerifikasi).length;
     const badge = document.getElementById('nav-badge-verifikasi');
     if (menunggu > 0) { badge.textContent = menunggu; badge.style.display = ''; }
     else badge.style.display = 'none';
@@ -6130,7 +6419,7 @@ function listenRekap() {
   const r = window._fbRef(fbDb, 'laporan');
   fbListeners.rekap = window._fbOnValue(r, snap => {
     const data = snap.val() || {};
-    renderRekap(Object.entries(data));
+    renderRekap(scopeFilterEntries(Object.entries(data)));
   });
 }
 
