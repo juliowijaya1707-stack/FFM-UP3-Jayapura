@@ -1635,7 +1635,7 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
               <div>
-                <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Hari / Tanggal</label>
+                <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Hari / Tanggal *</label>
                 <input id="rp-tanggal" type="date" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
               </div>
               <div>
@@ -1654,6 +1654,16 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
                 <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Section</label>
                 <input id="rp-section" type="text" placeholder="cth: PLTD ARBAIS" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
               </div>
+            </div>
+
+            <div style="margin-bottom:12px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2)">Gardu</label>
+                <button type="button" onclick="tambahGarduBaru()" style="background:none;border:none;color:var(--pln-blue-light,#0057b8);font-size:11px;font-weight:700;cursor:pointer;padding:0">+ Tambah Gardu</button>
+              </div>
+              <select id="rp-gardu" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;height:38px;background:var(--surface)">
+                <option value="">— Pilih Gardu —</option>
+              </select>
             </div>
 
             <div style="margin-bottom:12px">
@@ -1680,14 +1690,14 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
 
             <div style="margin-bottom:12px">
               <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Rincian Pekerjaan *</label>
-              <select id="rp-rincian" onchange="onRpRincianChange()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;height:38px;background:var(--surface)">
+              <select id="rp-rincian" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;height:38px;background:var(--surface)">
                 <option value="">— Pilih Rincian Pekerjaan —</option>
               </select>
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
               <div>
-                <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Vol</label>
+                <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Vol *</label>
                 <input id="rp-vol" type="number" min="0" step="any" placeholder="0" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;font-family:var(--mono);outline:none">
               </div>
               <div>
@@ -1697,10 +1707,28 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
               </div>
             </div>
 
-            <div style="margin-bottom:12px">
-              <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Pelaksana</label>
-              <input id="rp-pelaksana" type="text" list="rp-pelaksana-list" placeholder="cth: PT PLN Nusa Daya" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
-              <datalist id="rp-pelaksana-list"><option value="PT PLN Nusa Daya"><option value="PT Akbar Papua"></datalist>
+            <div style="margin-bottom:12px;background:var(--surface-2);border-radius:var(--radius-xs);padding:12px">
+              <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);margin-bottom:10px">📌 Pelaksana (langsung pilih tim, bukan berdasarkan GPS)</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px">
+                <div>
+                  <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Unit Kerja (ULP) *</label>
+                  <select id="tiket-ulp" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;height:38px;background:var(--surface)" onchange="onTiketUlpChange()">
+                    <option value="">— Pilih ULP —</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Tim / Regu *</label>
+                  <select id="tiket-regu" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;height:38px;background:var(--surface)" onchange="onTiketReguChange()">
+                    <option value="">— Pilih ULP dulu —</option>
+                  </select>
+                </div>
+              </div>
+              <div id="tiket-tim-aktif-panel" style="margin-bottom:0;background:var(--surface);border-radius:var(--radius-xs);padding:10px 12px;">
+                <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);margin-bottom:6px">🟢 Tim yang Sedang Aktif Hari Ini</div>
+                <div id="tiket-tim-aktif-list" style="display:flex;flex-wrap:wrap;gap:6px">
+                  <div style="font-size:11px;color:var(--text-3)">Memuat status tim…</div>
+                </div>
+              </div>
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
@@ -1721,16 +1749,10 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
               <input id="rp-daerah-padam" type="text" placeholder="cth: Pasar Sentral Mararena" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
             </div>
 
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-              <div>
-                <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Titik Koordinat <span style="font-weight:400;color:var(--text-3)">(opsional)</span></label>
-                <input id="rp-titik-koordinat" type="text" placeholder="cth: -2.5916, 140.6719" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;font-family:var(--mono);outline:none">
-              </div>
-              <div>
-                <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Jenis Pemadaman</label>
-                <select id="rp-jenis-pemadaman" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;height:38px;background:var(--surface)">
-                </select>
-              </div>
+            <div style="margin-bottom:12px">
+              <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Jenis Pemadaman</label>
+              <select id="rp-jenis-pemadaman" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;height:38px;background:var(--surface)">
+              </select>
             </div>
 
             <div style="margin-bottom:12px">
@@ -1744,88 +1766,6 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
             </div>
           </div>
 
-          <div style="border-top:1px dashed var(--line);margin:16px 0;padding-top:14px">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);margin-bottom:10px">📝 Judul Penugasan &amp; Lokasi</div>
-            <div style="margin-bottom:12px">
-              <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Judul / Uraian Singkat Pekerjaan * <span style="font-weight:400;color:var(--text-3);text-transform:none">(otomatis dari Rincian Pekerjaan kalau kosong)</span></label>
-              <input id="tiket-jenis" type="text" placeholder="cth: Perbaikan kabel putus penyulang Entrop" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;transition:border-color 0.18s" onfocus="this.style.borderColor='var(--pln-blue-light)'" onblur="this.style.borderColor='var(--line)'">
-            </div>
-            <div style="margin-bottom:0">
-              <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Lokasi / Aset <span style="font-weight:400;color:var(--text-3)">(opsional)</span></label>
-              <input id="tiket-lokasi" type="text" placeholder="cth: Gardu GH-024 Jl. Raya Sentani" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;transition:border-color 0.18s" onfocus="this.style.borderColor='var(--pln-blue-light)'" onblur="this.style.borderColor='var(--line)'">
-            </div>
-          </div>
-
-          <div style="border-top:1px dashed var(--line);margin:16px 0;padding-top:14px">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);margin-bottom:10px">📌 Tugaskan ke Tim (langsung pilih, bukan berdasarkan GPS)</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px">
-              <div>
-                <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Unit Kerja (ULP) *</label>
-                <select id="tiket-ulp" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;height:38px;background:var(--surface)" onchange="onTiketUlpChange()">
-                  <option value="">— Pilih ULP —</option>
-                </select>
-              </div>
-              <div>
-                <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Tim / Regu *</label>
-                <select id="tiket-regu" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;height:38px;background:var(--surface)" onchange="onTiketReguChange()">
-                  <option value="">— Pilih ULP dulu —</option>
-                </select>
-              </div>
-            </div>
-            <div id="tiket-tim-aktif-panel" style="margin-bottom:4px;background:var(--surface-2);border-radius:var(--radius-xs);padding:10px 12px;">
-              <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);margin-bottom:6px">🟢 Tim yang Sedang Aktif Hari Ini</div>
-              <div id="tiket-tim-aktif-list" style="display:flex;flex-wrap:wrap;gap:6px">
-                <div style="font-size:11px;color:var(--text-3)">Memuat status tim…</div>
-              </div>
-            </div>
-          </div>
-
-          <div style="border-top:1px dashed var(--line);margin:16px 0;padding-top:14px">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);margin-bottom:10px">🎯 Target Volume &amp; Periode</div>
-            <div style="margin-bottom:12px">
-              <div style="display:flex;gap:8px">
-                <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px;cursor:pointer;font-size:12.5px;font-weight:600">
-                  <input type="radio" name="target-tipe" value="harian" checked onchange="onTargetTipeChange()"> Harian
-                </label>
-                <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px;cursor:pointer;font-size:12.5px;font-weight:600">
-                  <input type="radio" name="target-tipe" value="mingguan" onchange="onTargetTipeChange()"> Mingguan
-                </label>
-                <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px;cursor:pointer;font-size:12.5px;font-weight:600">
-                  <input type="radio" name="target-tipe" value="bulanan" onchange="onTargetTipeChange()"> Bulanan
-                </label>
-              </div>
-            </div>
-            <div id="target-range-toggle-wrap" style="margin-bottom:12px;display:none">
-              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--text-2);background:rgba(0,87,184,0.06);border:1px dashed var(--line);border-radius:var(--radius-xs);padding:9px 12px">
-                <input type="checkbox" id="target-range-mode" onchange="onTargetRangeModeChange()">
-                🔁 Isi untuk beberapa hari sekaligus (opsional) — 1 angka target langsung berlaku ke semua tanggal dalam rentang, masing-masing jadi penugasan sendiri
-              </label>
-            </div>
-            <div style="margin-bottom:12px">
-              <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px" id="target-periode-label">Tanggal *</label>
-              <input id="target-periode-harian" type="date" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
-              <input id="target-periode-mingguan" type="week" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;display:none">
-              <input id="target-periode-bulanan" type="month" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;display:none">
-              <div id="target-range-fields" style="display:none">
-                <div style="display:flex;gap:8px">
-                  <div style="flex:1">
-                    <label style="font-size:10.5px;font-weight:700;color:var(--text-3);display:block;margin-bottom:4px">Dari Tanggal *</label>
-                    <input id="target-range-mulai" type="date" onchange="updateTargetRangeInfo()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
-                  </div>
-                  <div style="flex:1">
-                    <label style="font-size:10.5px;font-weight:700;color:var(--text-3);display:block;margin-bottom:4px">Sampai Tanggal *</label>
-                    <input id="target-range-selesai" type="date" onchange="updateTargetRangeInfo()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
-                  </div>
-                </div>
-                <div id="target-range-info" style="font-size:11px;color:var(--text-3);margin-top:6px"></div>
-              </div>
-            </div>
-            <div style="margin-bottom:0">
-              <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Target Volume * <span style="font-weight:400;color:var(--text-3);text-transform:none">(cth: 12 gardu)</span></label>
-              <input id="target-volume" type="number" min="0" placeholder="0" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;font-family:var(--mono);outline:none">
-              <div id="target-volume-hint" style="font-size:11px;color:var(--text-3);margin-top:4px;display:none">Angka ini akan diterapkan ke setiap tanggal dalam rentang (bukan dijumlah/dibagi).</div>
-            </div>
-          </div>
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0 12px">
             <div>
@@ -3123,14 +3063,34 @@ const RP_PDKB_LIST = ['TIDAK', 'YA'];
 const RP_METODE_LIST = ['OFFLINE', 'ONLINE'];
 const RP_JENIS_PEMADAMAN_LIST = ['TM', 'TR', 'Tanpa Pemadaman'];
 
+// Daftar master Gardu — kosong dulu, menyusul data resminya (nama/kode gardu
+// per ULP). Sementara itu, supervisor bisa nambah item baru langsung dari
+// tombol "+ Tambah Gardu" di form; item tambahan itu disimpan di localStorage
+// browser (bukan Firebase) supaya tidak hilang antar sesi sampai data resmi
+// dari Gardu dikirim & array ini diisi permanen.
+const RP_GARDU_LIST = [];
+const RP_GARDU_LOCAL_KEY = 'rpGarduTambahan';
+
+function getGarduTambahanLokal() {
+  try { return JSON.parse(localStorage.getItem(RP_GARDU_LOCAL_KEY) || '[]'); }
+  catch (e) { return []; }
+}
+
+function daftarGarduGabungan() {
+  const gabungan = [...RP_GARDU_LIST, ...getGarduTambahanLokal()];
+  return [...new Set(gabungan)].sort((a, b) => a.localeCompare(b, 'id'));
+}
+
 // Rincian Pekerjaan dikelompokkan per kategori aset supaya dropdown ~130 item
 // tetap mudah dicari (sesuai daftar kerja UP3 Jayapura).
 const RP_RINCIAN_GROUPS = {
   'Umum / Bangunan / JTM Dasar': [
     'Perbaikan Andongan', 'Perbaikan Andongan (JTR)', 'Inspeksi Kubikel', 'Pemeliharaan Kubikel',
     'Pembersihan Halaman Bangunan', 'Pengecatan Bangunan', 'SLO PHBTM', 'Inspeksi Tier 1 JTM',
-    'Inspeksi Tier 2 JTM', 'Pengukuran Tahanan Isolasi JTM/SKTM', 'Rabas Pohon', 'Pembersihan Terminasi',
-    'Tebang Pohon', 'Pemasangan Westpex', 'Pemasangan Cover Isolator Tarik', 'Pemasangan Cover Isolator Tumpu',
+    'Inspeksi Tier 2 JTM', 'Pengukuran Tahanan Isolasi JTM/SKTM', 'Rabas Pohon', 'Rabas Pohon Kriteria-1', 'Rabas Pohon Kriteria-2', 
+    'Rabas Pohon Kriteria-3', 'Rabas Pohon Kriteria-4', 'Rabas Pohon Kriteria-5', 'Rabas Pohon Tuntas', 'Pembersihan Terminasi',
+    'Tebang Pohon', 'Tebang Pohon Kriteria-1','Tebang Pohon Kriteria-2','Tebang Pohon Kriteria-3','Tebang Pohon Kriteria-4','Tebang Pohon Kriteria-5',
+    'Pemasangan Westpex', 'Pemasangan Cover Isolator Tarik', 'Pemasangan Cover Isolator Tumpu',
     'Pemasangan Cover LA', 'Pemasangan Cover FCO Bawah', 'Pemasangan Cover FCO Atas', 'Pemasangan IJUK',
     'Pembersihan Corong', 'Pembersihan Jaring Layang-layang', 'Sisip Tiang', 'Perbaikan Konstruksi Schoor',
     'Perbaikan Tiang Miring', 'Penggantian Traves', 'Penggantian Tiang Keropos/Rusak TM',
@@ -3184,78 +3144,20 @@ const RP_RINCIAN_GROUPS = {
 // ══════════════════════════════════════════════════════════════
 let targetKerjaCache = []; // [{ulp, regu, periodeKey, tipePeriode, targetVolume, dibuatOleh, waktu}] — dibangun dari node 'penugasan' (lihat listenTiket)
 
-window.onTargetTipeChange = function() {
-  const tipe = document.querySelector('input[name="target-tipe"]:checked').value;
-  const label = document.getElementById('target-periode-label');
-  ['harian','mingguan','bulanan'].forEach(t => {
-    document.getElementById('target-periode-' + t).style.display = (t === tipe) ? 'block' : 'none';
-  });
-  label.textContent = tipe === 'harian' ? 'Tanggal *' : tipe === 'mingguan' ? 'Minggu *' : 'Bulan *';
-
-  // Toggle "isi beberapa hari sekaligus" cuma relevan untuk tipe Harian & saat BUAT baru
-  // (Mingguan/Bulanan sudah otomatis mewakili satu rentang periode sendiri; saat edit
-  // penugasan yang sudah ada, mode rentang tidak relevan karena cuma 1 penugasan itu).
-  const toggleWrap = document.getElementById('target-range-toggle-wrap');
-  const isEdit = !!currentEditTiketId;
-  if (tipe === 'harian' && !isEdit) {
-    toggleWrap.style.display = 'block';
-  } else {
-    toggleWrap.style.display = 'none';
-    document.getElementById('target-range-mode').checked = false;
-  }
-  onTargetRangeModeChange();
-};
-
-// ── Poin tambahan: "isi sekali, otomatis berlaku untuk beberapa hari sekaligus" ──
-// Opsional — default tetap input 1 tanggal seperti semula. Kalau dicentang,
-// field tanggal tunggal disembunyikan dan diganti rentang Dari–Sampai;
-// 1 angka Target Volume yang diisi akan disalin ke SETIAP tanggal dalam
-// rentang itu sebagai penugasan harian tersendiri (bukan dibagi/dijumlah).
-window.onTargetRangeModeChange = function() {
-  const tipe = document.querySelector('input[name="target-tipe"]:checked').value;
-  const rangeOn = tipe === 'harian' && document.getElementById('target-range-mode').checked;
-  document.getElementById('target-periode-harian').style.display = rangeOn ? 'none' : (tipe === 'harian' ? 'block' : 'none');
-  document.getElementById('target-range-fields').style.display = rangeOn ? 'block' : 'none';
-  document.getElementById('target-volume-hint').style.display = rangeOn ? 'block' : 'none';
-  updateTargetRangeInfo();
-};
-
-// Daftar tanggal (yyyy-mm-dd) inklusif dari mulai..selesai
-function daftarTanggalRange(mulai, selesai) {
-  const out = [];
-  let d = new Date(mulai + 'T00:00:00');
-  const end = new Date(selesai + 'T00:00:00');
-  while (d <= end) {
-    out.push(d.toISOString().slice(0, 10));
-    d.setDate(d.getDate() + 1);
-  }
-  return out;
-}
+// CATATAN MIGRASI: field terpisah "Target Volume & Periode" (Harian/Mingguan/
+// Bulanan + rentang tanggal) sudah dihapus dari form Rencana Pekerjaan atas
+// permintaan supervisor — dianggap dobel dengan field Vol (Detail RKM) dan
+// Tanggal (Hari/Tanggal). Mulai sekarang setiap penugasan baru/edit SELALU
+// tersimpan sebagai tipePeriode:'harian' dengan periodeKey = Hari/Tanggal dan
+// targetVolume = Vol (lihat simpanTiket). Ini supaya fitur % capaian, grafik
+// Beranda, dan Rekap per Tim/Regu di bawah (yang membaca tipePeriode/
+// periodeKey/targetVolume) TETAP JALAN tanpa refactor besar. Konsekuensinya:
+// tidak bisa lagi bikin target Mingguan/Bulanan atau isi banyak tanggal
+// sekaligus dari form ini — kalau perlu itu lagi, field itu harus dikembalikan.
 
 function fmtTglRangeID(dateStr) {
   return new Date(dateStr + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 }
-
-const TARGET_RANGE_MAKS_HARI = 62; // pengaman — cegah 1 klik menulis ratusan node Firebase sekaligus
-
-window.updateTargetRangeInfo = function() {
-  const infoEl = document.getElementById('target-range-info');
-  if (!infoEl) return;
-  const rangeOn = document.getElementById('target-range-mode') && document.getElementById('target-range-mode').checked;
-  if (!rangeOn) { infoEl.textContent = ''; return; }
-  const mulai = document.getElementById('target-range-mulai').value;
-  const selesai = document.getElementById('target-range-selesai').value;
-  if (!mulai || !selesai) { infoEl.textContent = 'Pilih tanggal Dari dan Sampai.'; infoEl.style.color = 'var(--text-3)'; return; }
-  if (selesai < mulai) { infoEl.textContent = '⚠️ Tanggal Sampai tidak boleh sebelum Tanggal Mulai.'; infoEl.style.color = 'var(--crit)'; return; }
-  const jumlah = daftarTanggalRange(mulai, selesai).length;
-  if (jumlah > TARGET_RANGE_MAKS_HARI) {
-    infoEl.textContent = `⚠️ Rentang ${jumlah} hari melebihi batas maksimal ${TARGET_RANGE_MAKS_HARI} hari sekali isi. Persempit rentangnya.`;
-    infoEl.style.color = 'var(--crit)';
-    return;
-  }
-  infoEl.textContent = `✓ Akan dibuat ${jumlah} penugasan terpisah (${fmtTglRangeID(mulai)} – ${fmtTglRangeID(selesai)}), masing-masing dengan Target Volume yang sama.`;
-  infoEl.style.color = 'var(--text-3)';
-};
 
 const TIPE_PERIODE_LABEL = { harian: 'Harian', mingguan: 'Mingguan', bulanan: 'Bulanan' };
 
@@ -4916,6 +4818,33 @@ function populateTiketUlpSelect() {
   });
 }
 
+// Isi dropdown Gardu. Beda dari dropdown lain di bawah — ini BOLEH diisi
+// ulang (bukan cuma sekali) karena tombol "+ Tambah Gardu" bisa nambah opsi
+// baru kapan saja selagi modal masih terbuka.
+function populateRpGarduSelect(selectedValue) {
+  const sel = document.getElementById('rp-gardu');
+  if (!sel) return;
+  const current = selectedValue !== undefined ? selectedValue : sel.value;
+  sel.innerHTML = '<option value="">— Pilih Gardu —</option>' +
+    daftarGarduGabungan().map(v => `<option value="${v}">${v}</option>`).join('');
+  if (current && [...sel.options].some(o => o.value === current)) sel.value = current;
+}
+
+// Tombol "+ Tambah Gardu" — nambah 1 nama Gardu baru ke daftar lokal
+// (localStorage) sampai data resmi master Gardu dikirim & dipasang di
+// RP_GARDU_LIST. Gardu yang baru ditambah langsung terpilih di dropdown.
+window.tambahGarduBaru = async function() {
+  const nama = await promptDialog('Nama / kode Gardu baru:', { title: 'Tambah Gardu', okLabel: 'Tambah', inputType: 'text', placeholder: 'cth: Gardu GH-024' });
+  if (!nama || !nama.trim()) return;
+  const namaBersih = nama.trim();
+  const daftarLokal = getGarduTambahanLokal();
+  if (!daftarGarduGabungan().includes(namaBersih)) {
+    daftarLokal.push(namaBersih);
+    localStorage.setItem(RP_GARDU_LOCAL_KEY, JSON.stringify(daftarLokal));
+  }
+  populateRpGarduSelect(namaBersih);
+};
+
 // Isi semua dropdown "Detail Rencana Pekerjaan" (Kategori, Jenis, Rincian, Health Index, dst) sekali saja.
 function populateRpDropdowns() {
   const fillSimple = (id, list, withBlank) => {
@@ -4925,6 +4854,7 @@ function populateRpDropdowns() {
       list.map(v => `<option value="${v}">${v}</option>`).join('');
     sel.dataset.filled = '1';
   };
+  populateRpGarduSelect('');
   fillSimple('rp-health-index', RP_HEALTH_INDEX_LIST, true);
   fillSimple('rp-kategori', RP_KATEGORI_LIST, true);
   fillSimple('rp-jenis-pekerjaan', RP_JENIS_PEKERJAAN_LIST, true);
@@ -4941,14 +4871,6 @@ function populateRpDropdowns() {
     rincianSel.dataset.filled = '1';
   }
 }
-
-// Saat Rincian Pekerjaan dipilih, otomatis isi Judul/Uraian Singkat kalau
-// field itu masih kosong — supaya supervisor tidak perlu ngetik ulang.
-window.onRpRincianChange = function() {
-  const rincian = document.getElementById('rp-rincian').value;
-  const judulEl = document.getElementById('tiket-jenis');
-  if (rincian && !judulEl.value.trim()) judulEl.value = rincian;
-};
 
 // Saat ULP dipilih, isi dropdown Tim/Regu sesuai roster ULP tsb.
 // Ini yang menggantikan mekanisme "tim terdekat via GPS" — supervisor
@@ -5053,8 +4975,6 @@ window.bukaModalTiket = function(id, data) {
   nomorPreview.textContent = data?.nomor || 'Dibuat otomatis saat disimpan';
   nomorPreview.style.color = data?.nomor ? 'var(--text-1)' : 'var(--text-3)';
 
-  document.getElementById('tiket-jenis').value    = data?.jenis    || '';
-  document.getElementById('tiket-lokasi').value   = data?.lokasi   || '';
   document.getElementById('tiket-koordinat-awal').value  = data?.koordinatAwal  || '';
   document.getElementById('tiket-koordinat-akhir').value = data?.koordinatAkhir || '';
   document.getElementById('tiket-err').style.display = 'none';
@@ -5064,17 +4984,16 @@ window.bukaModalTiket = function(id, data) {
   document.getElementById('rp-waktu').value            = data?.rpWaktu          || '';
   document.getElementById('rp-penyulang').value         = data?.rpPenyulang      || '';
   document.getElementById('rp-section').value           = data?.rpSection        || '';
+  populateRpGarduSelect(data?.rpGardu || '');
   document.getElementById('rp-health-index').value      = data?.rpHealthIndex    || '';
   document.getElementById('rp-kategori').value           = data?.rpKategori       || '';
   document.getElementById('rp-jenis-pekerjaan').value    = data?.rpJenisPekerjaan || '';
   document.getElementById('rp-rincian').value            = data?.rpRincian        || '';
   document.getElementById('rp-vol').value                = data?.rpVol ?? '';
   document.getElementById('rp-satuan').value             = data?.rpSatuan         || '';
-  document.getElementById('rp-pelaksana').value           = data?.rpPelaksana      || '';
   document.getElementById('rp-pdkb').value               = data?.rpPdkb           || 'TIDAK';
   document.getElementById('rp-metode').value              = data?.rpMetode         || 'OFFLINE';
   document.getElementById('rp-daerah-padam').value        = data?.rpDaerahPadam    || '';
-  document.getElementById('rp-titik-koordinat').value    = data?.rpTitikKoordinat || '';
   document.getElementById('rp-jenis-pemadaman').value    = data?.rpJenisPemadaman || 'TM';
   document.getElementById('rp-pic').value                = data?.rpPic            || '';
   document.getElementById('rp-keterangan').value          = data?.rpKeterangan     || '';
@@ -5087,26 +5006,6 @@ window.bukaModalTiket = function(id, data) {
     reguSel.value = currentAssignRegu;
   }
   updateAssignedChip();
-
-  // ── Target Volume & Periode (digabung dari fitur Target Kerja Regu) ──
-  const isEdit = !!(data && data.tipePeriode);
-  document.getElementById('target-range-mode').checked = false;
-  document.getElementById('target-range-mulai').value = '';
-  document.getElementById('target-range-selesai').value = '';
-  document.getElementById('target-range-info').textContent = '';
-  if (isEdit) {
-    document.querySelector(`input[name="target-tipe"][value="${data.tipePeriode}"]`).checked = true;
-    onTargetTipeChange();
-    document.getElementById('target-periode-' + data.tipePeriode).value = data.periodeKey || '';
-    document.getElementById('target-volume').value = data.targetVolume ?? '';
-  } else {
-    document.querySelector('input[name="target-tipe"][value="harian"]').checked = true;
-    onTargetTipeChange();
-    document.getElementById('target-periode-harian').value = '';
-    document.getElementById('target-periode-mingguan').value = '';
-    document.getElementById('target-periode-bulanan').value = '';
-    document.getElementById('target-volume').value = '';
-  }
 
   document.getElementById('modal-tiket').style.display = 'flex';
   renderTimAktif();
@@ -5140,36 +5039,37 @@ async function generateNomorPenugasan(ulp) {
 }
 
 window.simpanTiket = async function() {
-  const jenis          = document.getElementById('tiket-jenis').value.trim();
-  const lokasi         = document.getElementById('tiket-lokasi').value.trim();
   const ulp            = document.getElementById('tiket-ulp').value;
   const regu           = document.getElementById('tiket-regu').value;
   const koordinatAwal  = document.getElementById('tiket-koordinat-awal').value.trim();
   const koordinatAkhir = document.getElementById('tiket-koordinat-akhir').value.trim();
-  const tipePeriode    = document.querySelector('input[name="target-tipe"]:checked').value;
-  const targetVolume   = document.getElementById('target-volume').value;
-  const rangeOn        = tipePeriode === 'harian' && !currentEditTiketId && document.getElementById('target-range-mode').checked;
   const errEl          = document.getElementById('tiket-err');
 
-  // ── Detail Rencana Pekerjaan (RKM) — semua opsional kecuali Kategori & Rincian ──
+  // ── Detail Rencana Pekerjaan (RKM) — semua opsional kecuali Kategori, Rincian & Vol ──
   const rpTanggal         = document.getElementById('rp-tanggal').value || null;
   const rpWaktu            = document.getElementById('rp-waktu').value.trim() || null;
   const rpPenyulang         = document.getElementById('rp-penyulang').value.trim() || null;
   const rpSection           = document.getElementById('rp-section').value.trim() || null;
+  const rpGardu             = document.getElementById('rp-gardu').value || null;
   const rpHealthIndex      = document.getElementById('rp-health-index').value || null;
   const rpKategori          = document.getElementById('rp-kategori').value;
   const rpJenisPekerjaan   = document.getElementById('rp-jenis-pekerjaan').value || null;
   const rpRincian           = document.getElementById('rp-rincian').value;
   const rpVolRaw            = document.getElementById('rp-vol').value;
   const rpSatuan            = document.getElementById('rp-satuan').value.trim() || null;
-  const rpPelaksana         = document.getElementById('rp-pelaksana').value.trim() || null;
   const rpPdkb              = document.getElementById('rp-pdkb').value;
   const rpMetode            = document.getElementById('rp-metode').value;
   const rpDaerahPadam       = document.getElementById('rp-daerah-padam').value.trim() || null;
-  const rpTitikKoordinat   = document.getElementById('rp-titik-koordinat').value.trim() || null;
   const rpJenisPemadaman   = document.getElementById('rp-jenis-pemadaman').value;
   const rpPic               = document.getElementById('rp-pic').value.trim() || null;
   const rpKeterangan        = document.getElementById('rp-keterangan').value.trim() || null;
+
+  // Judul & Lokasi tidak lagi diketik manual — Judul otomatis dari Rincian
+  // Pekerjaan, Lokasi otomatis dari Gardu / Section / Penyulang (paling
+  // spesifik yang terisi), supaya tabel Daftar Rencana Pekerjaan & tampilan
+  // petugas.html tetap dapat isinya tanpa perlu field terpisah.
+  const jenis  = rpRincian;
+  const lokasi = rpGardu || rpSection || rpPenyulang || '';
 
   if (!rpKategori) {
     errEl.textContent = 'Kategori Pekerjaan wajib dipilih.';
@@ -5181,13 +5081,13 @@ window.simpanTiket = async function() {
     errEl.style.display = 'block';
     return;
   }
-  if (!jenis) {
-    errEl.textContent = 'Judul / Uraian Singkat Pekerjaan wajib diisi.';
+  if (!rpTanggal) {
+    errEl.textContent = 'Hari / Tanggal wajib diisi.';
     errEl.style.display = 'block';
     return;
   }
-  if (!koordinatValidOrEmpty(rpTitikKoordinat)) {
-    errEl.textContent = 'Format Titik Koordinat harus "lat, lng", cth: -2.5916, 140.6719.';
+  if (rpVolRaw === '' || +rpVolRaw < 0) {
+    errEl.textContent = 'Vol wajib diisi (angka ≥ 0).';
     errEl.style.display = 'block';
     return;
   }
@@ -5201,14 +5101,14 @@ window.simpanTiket = async function() {
     errEl.style.display = 'block';
     return;
   }
-  if (targetVolume === '' || +targetVolume < 0) {
-    errEl.textContent = 'Target Volume wajib diisi (angka ≥ 0).';
-    errEl.style.display = 'block';
-    return;
-  }
   if (!(await initFirebase())) { errEl.textContent = 'Firebase belum terhubung.'; errEl.style.display = 'block'; return; }
   errEl.style.display = 'none';
 
+  // tipePeriode/periodeKey/targetVolume tetap ditulis di belakang layar (selalu
+  // 'harian', periodeKey = Hari/Tanggal, targetVolume = Vol) supaya fitur %
+  // capaian, grafik Beranda, dan Rekap per Tim/Regu yang membaca field ini
+  // tetap berfungsi normal walau UI "Target Volume & Periode" terpisah sudah
+  // dihapus dari form ini.
   const baseFields = {
     jenis, lokasi, ulp,
     koordinatAwal: koordinatAwal || null,
@@ -5216,66 +5116,24 @@ window.simpanTiket = async function() {
     assignedRegu: regu,
     statusTiket: 'Aktif',
     dibuatOleh: 'Supervisor',
-    rpTanggal, rpWaktu, rpPenyulang, rpSection, rpHealthIndex,
+    rpTanggal, rpWaktu, rpPenyulang, rpSection, rpGardu, rpHealthIndex,
     rpKategori, rpJenisPekerjaan, rpRincian,
-    rpVol: rpVolRaw === '' ? null : +rpVolRaw, rpSatuan, rpPelaksana,
-    rpPdkb, rpMetode, rpDaerahPadam, rpTitikKoordinat, rpJenisPemadaman, rpPic, rpKeterangan
+    rpVol: +rpVolRaw, rpSatuan,
+    rpPdkb, rpMetode, rpDaerahPadam, rpJenisPemadaman, rpPic, rpKeterangan,
+    tipePeriode: 'harian', periodeKey: rpTanggal, targetVolume: +rpVolRaw
   };
-
-  // ── Mode rentang (opsional, hanya saat BUAT BARU + tipe Harian): 1 angka
-  // Target Volume ditulis jadi beberapa Penugasan terpisah sekaligus, masing-
-  // masing dapat Nomor Penugasan sendiri. ──
-  if (rangeOn) {
-    const mulai = document.getElementById('target-range-mulai').value;
-    const selesai = document.getElementById('target-range-selesai').value;
-    if (!mulai || !selesai) { errEl.textContent = 'Tanggal Dari dan Sampai wajib diisi.'; errEl.style.display = 'block'; return; }
-    if (selesai < mulai) { errEl.textContent = 'Tanggal Sampai tidak boleh sebelum Tanggal Dari.'; errEl.style.display = 'block'; return; }
-    const tanggalList = daftarTanggalRange(mulai, selesai);
-    if (tanggalList.length > TARGET_RANGE_MAKS_HARI) {
-      errEl.textContent = `Rentang ${tanggalList.length} hari melebihi batas maksimal ${TARGET_RANGE_MAKS_HARI} hari sekali isi.`;
-      errEl.style.display = 'block';
-      return;
-    }
-    try {
-      const waktu = Date.now();
-      await Promise.all(tanggalList.map(async periodeKey => {
-        const nomor = await generateNomorPenugasan(ulp);
-        const id = 'penugasan_' + nomor.replace(/[^a-zA-Z0-9]/g,'_') + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6);
-        return window._fbSet(window._fbRef(fbDb, 'penugasan/' + id), {
-          ...baseFields, nomor,
-          tipePeriode: 'harian', periodeKey,
-          targetVolume: +targetVolume,
-          waktu
-        });
-      }));
-      showToast(`${tanggalList.length} penugasan berhasil dibuat untuk ${regu} (${fmtTglRangeID(mulai)} – ${fmtTglRangeID(selesai)}).`, 'ok');
-      tutupModalTiket();
-    } catch (e) {
-      errEl.textContent = 'Gagal menyimpan: ' + e.message;
-      errEl.style.display = 'block';
-    }
-    return;
-  }
-
-  // ── Mode normal: 1 penugasan, 1 periode ──
-  const periodeKey = document.getElementById('target-periode-' + tipePeriode).value;
-  if (!periodeKey) { errEl.textContent = 'Periode Target wajib diisi.'; errEl.style.display = 'block'; return; }
 
   try {
     if (currentEditTiketId) {
       // Edit: nomor & id tetap, cuma update field-fieldnya.
-      await window._fbUpdate(window._fbRef(fbDb, 'penugasan/' + currentEditTiketId), {
-        ...baseFields, tipePeriode, periodeKey,
-        targetVolume: +targetVolume
-      });
+      await window._fbUpdate(window._fbRef(fbDb, 'penugasan/' + currentEditTiketId), baseFields);
       showToast('Penugasan berhasil diperbarui.', 'ok');
     } else {
       // Baru: generate Nomor Penugasan otomatis, lalu simpan.
       const nomor = await generateNomorPenugasan(ulp);
       const id = 'penugasan_' + nomor.replace(/[^a-zA-Z0-9]/g,'_') + '_' + Date.now().toString(36);
       await window._fbSet(window._fbRef(fbDb, 'penugasan/' + id), {
-        ...baseFields, nomor, tipePeriode, periodeKey,
-        targetVolume: +targetVolume,
+        ...baseFields, nomor,
         waktu: Date.now()
       });
       showToast('Penugasan ' + nomor + ' disimpan → ditugaskan ke ' + regu + '.', 'ok');
@@ -5310,7 +5168,7 @@ function renderTiketTable(entries) {
     const delBtn = isAdminMode ? `<button class="btn-del" onclick="hapusTiket('${id}')">🗑</button>` : '';
     return `<tr>
       <td style="font-family:var(--mono);font-size:12px;font-weight:700">${t.nomor||'—'}</td>
-      <td style="font-weight:600">${t.jenis||'—'}${t.rpKategori ? `<div style="margin-top:3px"><span style="font-size:10px;font-weight:700;background:var(--info-bg);color:var(--info);padding:1px 7px;border-radius:99px">${t.rpKategori}</span>${t.rpRincian ? ` <span style="font-size:10.5px;color:var(--text-3)">· ${t.rpRincian}</span>` : ''}</div>` : ''}${(t.rpPenyulang||t.rpSection) ? `<div style="font-size:10.5px;color:var(--text-3);margin-top:2px">⚡ ${t.rpPenyulang||'—'}${t.rpSection ? ' / ' + t.rpSection : ''}</div>` : ''}</td>
+      <td style="font-weight:600">${t.jenis||'—'}${t.rpKategori ? `<div style="margin-top:3px"><span style="font-size:10px;font-weight:700;background:var(--info-bg);color:var(--info);padding:1px 7px;border-radius:99px">${t.rpKategori}</span>${t.rpRincian ? ` <span style="font-size:10.5px;color:var(--text-3)">· ${t.rpRincian}</span>` : ''}</div>` : ''}${(t.rpPenyulang||t.rpSection||t.rpGardu) ? `<div style="font-size:10.5px;color:var(--text-3);margin-top:2px">⚡ ${t.rpPenyulang||'—'}${t.rpSection ? ' / ' + t.rpSection : ''}${t.rpGardu ? ' / ' + t.rpGardu : ''}</div>` : ''}</td>
       <td style="font-size:12px;color:var(--text-2)">${t.lokasi||'—'}${(t.koordinatAwal||t.koordinatAkhir) ? `<div style="font-family:var(--mono);font-size:10px;color:var(--text-3);margin-top:2px">📍 ${t.koordinatAwal||'—'} → ${t.koordinatAkhir||'—'}</div>` : ''}</td>
       <td>${t.ulp||'—'}</td>
       <td style="font-size:12px">${t.assignedRegu ? `📌 ${t.assignedRegu}` : '<span style="color:var(--text-3)">Belum ditugaskan</span>'}</td>

@@ -1075,6 +1075,38 @@ body {
       <div id="tiket-info-box" style="display:none;margin-top:8px;background:var(--surface2);border:1px solid var(--border-str);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.8;color:var(--text)"></div>
     </div>
 
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="field"><label>Penyulang</label>
+        <input type="text" id="lapor-penyulang" list="lapor-penyulang-list" placeholder="cth: MARARENA">
+        <datalist id="lapor-penyulang-list"><option value="MARARENA"><option value="ARBAIS"></datalist>
+      </div>
+      <div class="field"><label>Section</label>
+        <input type="text" id="lapor-section" placeholder="cth: PLTD ARBAIS">
+      </div>
+    </div>
+
+    <div class="field">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <label style="margin-bottom:0">Gardu</label>
+        <button type="button" onclick="tambahGarduBaruLapor()" style="background:none;border:none;color:var(--pln-blue);font-size:11px;font-weight:700;cursor:pointer;padding:0">+ Tambah Gardu</button>
+      </div>
+      <select id="lapor-gardu" style="width:100%">
+        <option value="">— Pilih Gardu —</option>
+      </select>
+    </div>
+
+    <div class="field"><label>Health Index Penyulang</label>
+      <select id="lapor-health-index" style="width:100%">
+        <option value="">— Pilih —</option>
+      </select>
+    </div>
+
+    <div class="field"><label>Kategori Pekerjaan <span style="color:var(--red)">*</span></label>
+      <select id="lapor-kategori" style="width:100%">
+        <option value="">— Pilih —</option>
+      </select>
+    </div>
+
     <div class="field"><label>Jenis Pekerjaan</label>
       <select id="lapor-jenis-pekerjaan" style="width:100%">
         <option value="">— Pilih —</option>
@@ -1085,11 +1117,43 @@ body {
         <option value="">— Pilih Rincian Pekerjaan —</option>
       </select>
     </div>
-    <div class="field"><label>Audit Material</label><input type="text" id="lapor-material" placeholder="cth: Cover Anti Hewan, Cable Tie"></div>
-    <div class="field">
-      <label>Realisasi Volume <span style="color:var(--red)">*</span></label>
-      <input type="number" id="lapor-realisasi" placeholder="0" inputmode="numeric" required>
-      <div style="font-size:10px;color:var(--text-muted);margin-top:4px">Wajib diisi (boleh 0). Target ditentukan supervisor dari dashboard, tidak perlu diisi di sini.</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="field">
+        <label>Vol <span style="color:var(--red)">*</span></label>
+        <input type="number" id="lapor-vol" placeholder="0" min="0" step="any" inputmode="numeric" required>
+      </div>
+      <div class="field">
+        <label>Satuan <span style="color:var(--red)">*</span></label>
+        <input type="text" id="lapor-satuan" list="lapor-satuan-list" placeholder="cth: kms, btng, titik">
+        <datalist id="lapor-satuan-list"><option value="kms"><option value="btng"><option value="titik"><option value="unit"><option value="phasa"></datalist>
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--text-muted);margin:-6px 0 14px">Vol &amp; Satuan realisasi wajib diisi (Vol boleh 0). Target ditentukan supervisor dari dashboard, tidak perlu diisi ulang di sini.</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="field"><label>Kolaborasi PDKB</label>
+        <select id="lapor-pdkb" style="width:100%"></select>
+      </div>
+      <div class="field"><label>Metode</label>
+        <select id="lapor-metode" style="width:100%"></select>
+      </div>
+    </div>
+
+    <div class="field"><label>Daerah Padam <span style="font-size:10px;color:var(--text-muted);font-weight:400">(opsional)</span></label>
+      <input type="text" id="lapor-daerah-padam" placeholder="cth: Pasar Sentral Mararena">
+    </div>
+
+    <div class="field"><label>Jenis Pemadaman</label>
+      <select id="lapor-jenis-pemadaman" style="width:100%"></select>
+    </div>
+
+    <div class="field"><label>PIC <span style="font-size:10px;color:var(--text-muted);font-weight:400">(opsional)</span></label>
+      <input type="text" id="lapor-pic" placeholder="cth: Benoni Pehupo">
+    </div>
+
+    <div class="field"><label>Keterangan <span style="font-size:10px;color:var(--text-muted);font-weight:400">(opsional)</span></label>
+      <textarea id="lapor-keterangan" rows="2" placeholder="Catatan tambahan..."></textarea>
     </div>
     <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--pln-blue);margin-bottom:6px">Foto Sebelum / Progres / Sesudah</div>
     <div style="font-size:10.5px;color:var(--text-muted);margin-bottom:10px;line-height:1.5">Ambil 3 foto langsung dengan kamera HP dari <b>angle (sudut) yang sama</b> supaya perubahan kondisi terlihat jelas. Saat ambil foto Progres &amp; Sesudah, aplikasi menampilkan bayangan transparan dari foto Sebelum sebagai panduan angle. Foto otomatis tersimpan walau aplikasi ditutup.</div>
@@ -1928,10 +1992,33 @@ const ULP_LIST = Object.keys(ROSTER_ULP_TEAMS);
 // sini konsisten dengan yang dipakai supervisor saat membuat Rencana
 // Pekerjaan (RKM) — kalau daftar di dashboard diubah, salin ulang ke sini juga.
 // ══════════════════════════════════════════════════════════════
+const RP_KATEGORI_LIST = ['KONTRAK AO', 'KONTRAK AI', 'KONTRAK VARCOST', 'EMERGENCY', 'GREBEK'];
+
 const RP_JENIS_PEKERJAAN_LIST = [
   'Sempurna Proteksi', 'Sempurna Material', 'Sempurna Pembebanan',
   'Sempurna Inspeksi', 'Sempurna Konstruksi', 'Sempurna ROW'
 ];
+
+const RP_HEALTH_INDEX_LIST = ['SEHAT', 'KURANG SEHAT', 'SAKIT', '#N/A'];
+const RP_PDKB_LIST = ['TIDAK', 'YA'];
+const RP_METODE_LIST = ['OFFLINE', 'ONLINE'];
+const RP_JENIS_PEMADAMAN_LIST = ['TM', 'TR', 'Tanpa Pemadaman'];
+
+// Daftar master Gardu — sama seperti di index.html (dashboard supervisor):
+// data resmi menyusul, sementara item tambahan disimpan di localStorage per
+// HP masing-masing lewat tombol "+ Tambah Gardu" di form Laporan.
+const RP_GARDU_LIST = [];
+const RP_GARDU_LOCAL_KEY = 'rpGarduTambahan';
+
+function getGarduTambahanLokal() {
+  try { return JSON.parse(localStorage.getItem(RP_GARDU_LOCAL_KEY) || '[]'); }
+  catch (e) { return []; }
+}
+
+function daftarGarduGabungan() {
+  const gabungan = [...RP_GARDU_LIST, ...getGarduTambahanLokal()];
+  return [...new Set(gabungan)].sort((a, b) => a.localeCompare(b, 'id'));
+}
 
 const RP_RINCIAN_GROUPS = {
   'Umum / Bangunan / JTM Dasar': [
@@ -1980,8 +2067,43 @@ const RP_RINCIAN_GROUPS = {
   ]
 };
 
-// Isi dropdown Jenis & Rincian Pekerjaan di form Laporan sekali saja (dipanggil saat app siap).
+// Isi dropdown Gardu di form Laporan. Beda dari dropdown lain di bawah —
+// ini BOLEH diisi ulang (bukan cuma sekali) karena tombol "+ Tambah Gardu"
+// bisa nambah opsi baru kapan saja selagi modal masih terbuka.
+function populateLaporGarduSelect(selectedValue) {
+  const sel = document.getElementById('lapor-gardu');
+  if (!sel) return;
+  const current = selectedValue !== undefined ? selectedValue : sel.value;
+  sel.innerHTML = '<option value="">— Pilih Gardu —</option>' +
+    daftarGarduGabungan().map(v => `<option value="${v}">${v}</option>`).join('');
+  if (current && [...sel.options].some(o => o.value === current)) sel.value = current;
+}
+
+// Tombol "+ Tambah Gardu" di form Laporan — sama seperti di dashboard
+// supervisor, item baru disimpan di localStorage HP masing-masing.
+window.tambahGarduBaruLapor = function() {
+  const nama = prompt('Nama / kode Gardu baru:');
+  if (!nama || !nama.trim()) return;
+  const namaBersih = nama.trim();
+  const daftarLokal = getGarduTambahanLokal();
+  if (!daftarGarduGabungan().includes(namaBersih)) {
+    daftarLokal.push(namaBersih);
+    localStorage.setItem(RP_GARDU_LOCAL_KEY, JSON.stringify(daftarLokal));
+  }
+  populateLaporGarduSelect(namaBersih);
+};
+
+// Isi dropdown Jenis & Rincian Pekerjaan (dan field RKM lain yang sama
+// dengan form "Buat Rencana Pekerjaan" di dashboard supervisor) di form
+// Laporan sekali saja (dipanggil saat app siap).
 function populateLaporPekerjaanDropdowns() {
+  const fillSimple = (id, list, withBlank) => {
+    const sel = document.getElementById(id);
+    if (!sel || sel.dataset.filled) return;
+    sel.innerHTML = (withBlank ? '<option value="">— Pilih —</option>' : '') +
+      list.map(v => `<option value="${v}">${v}</option>`).join('');
+    sel.dataset.filled = '1';
+  };
   const jenisSel = document.getElementById('lapor-jenis-pekerjaan');
   if (jenisSel && !jenisSel.dataset.filled) {
     jenisSel.innerHTML = '<option value="">— Pilih —</option>' +
@@ -1996,6 +2118,12 @@ function populateLaporPekerjaanDropdowns() {
       ).join('');
     rincianSel.dataset.filled = '1';
   }
+  populateLaporGarduSelect('');
+  fillSimple('lapor-health-index', RP_HEALTH_INDEX_LIST, true);
+  fillSimple('lapor-kategori', RP_KATEGORI_LIST, true);
+  fillSimple('lapor-pdkb', RP_PDKB_LIST, false);
+  fillSimple('lapor-metode', RP_METODE_LIST, false);
+  fillSimple('lapor-jenis-pemadaman', RP_JENIS_PEMADAMAN_LIST, false);
 }
 
 // Isi dropdown Unit Kerja dengan daftar ULP dari roster (opsi "Lainnya"
@@ -3400,10 +3528,21 @@ window.bukaModalLapor = function() {
   populateLaporPekerjaanDropdowns();
   populateLaporTiketSelect('');
   document.getElementById('tiket-info-box').style.display = 'none';
+  document.getElementById('lapor-penyulang').value = '';
+  document.getElementById('lapor-section').value = '';
+  populateLaporGarduSelect('');
+  document.getElementById('lapor-health-index').value = '';
+  document.getElementById('lapor-kategori').value = '';
   document.getElementById('lapor-jenis-pekerjaan').value = '';
   document.getElementById('lapor-rincian').value = '';
-  document.getElementById('lapor-material').value = '';
-  document.getElementById('lapor-realisasi').value = '';
+  document.getElementById('lapor-vol').value = '';
+  document.getElementById('lapor-satuan').value = '';
+  document.getElementById('lapor-pdkb').value = 'TIDAK';
+  document.getElementById('lapor-metode').value = 'OFFLINE';
+  document.getElementById('lapor-daerah-padam').value = '';
+  document.getElementById('lapor-jenis-pemadaman').value = 'TM';
+  document.getElementById('lapor-pic').value = '';
+  document.getElementById('lapor-keterangan').value = '';
   laporFoto = { before: null, progres: null, after: null };
   LAPOR_FASE_ORDER.forEach(resetSlotFoto);
   restoreLaporDraft(); // pulihkan foto Sebelum/Progres/Sesudah yang tersimpan sebelumnya, kalau ada
@@ -3526,6 +3665,30 @@ window.onLaporTiketSelectChange = function() {
       rincianSel.value = found.jenis;
     }
   }
+
+  // Auto-isi field RKM lain (Penyulang, Section, Gardu, Health Index, Kategori,
+  // Vol, Satuan, PDKB, Metode, Daerah Padam, Jenis Pemadaman, PIC, Keterangan)
+  // dari data penugasan, kalau ada dan field-nya masih kosong.
+  const fillIfEmpty = (id, val) => {
+    const el = document.getElementById(id);
+    if (el && !el.value && val) el.value = val;
+  };
+  const fillSelectIfEmpty = (id, val) => {
+    const el = document.getElementById(id);
+    if (el && !el.value && val && [...el.options].some(o => o.value === val)) el.value = val;
+  };
+  fillIfEmpty('lapor-penyulang', found.rpPenyulang);
+  fillIfEmpty('lapor-section', found.rpSection);
+  if (found.rpGardu) populateLaporGarduSelect(document.getElementById('lapor-gardu').value || found.rpGardu);
+  fillSelectIfEmpty('lapor-health-index', found.rpHealthIndex);
+  fillSelectIfEmpty('lapor-kategori', found.rpKategori);
+  // Vol sengaja TIDAK di-auto-isi dari target — ini realisasi aktual yang
+  // harus diisi manual oleh petugas, bukan disalin dari target supervisor.
+  fillIfEmpty('lapor-satuan', found.rpSatuan);
+  fillSelectIfEmpty('lapor-jenis-pemadaman', found.rpJenisPemadaman);
+  fillIfEmpty('lapor-daerah-padam', found.rpDaerahPadam);
+  fillIfEmpty('lapor-pic', found.rpPic);
+  fillIfEmpty('lapor-keterangan', found.rpKeterangan);
 };
 
 function resetSlotFoto(target) {
@@ -3673,15 +3836,28 @@ window.submitLaporan = async function() {
   const btn    = document.getElementById('lapor-btn-submit');
   const jenisPekerjaan = document.getElementById('lapor-jenis-pekerjaan').value;
   const rincian   = document.getElementById('lapor-rincian').value.trim();
-  const material  = document.getElementById('lapor-material').value.trim();
-  const realisasiEl = document.getElementById('lapor-realisasi');
-  const realisasi = realisasiEl.value;
+  const penyulang = document.getElementById('lapor-penyulang').value.trim();
+  const section   = document.getElementById('lapor-section').value.trim();
+  const gardu     = document.getElementById('lapor-gardu').value;
+  const healthIndex = document.getElementById('lapor-health-index').value;
+  const kategori  = document.getElementById('lapor-kategori').value;
+  const volEl = document.getElementById('lapor-vol');
+  const vol = volEl.value;
+  const satuanEl = document.getElementById('lapor-satuan');
+  const satuan = satuanEl.value.trim();
+  const pdkb            = document.getElementById('lapor-pdkb').value;
+  const metode          = document.getElementById('lapor-metode').value;
+  const daerahPadam     = document.getElementById('lapor-daerah-padam').value.trim();
+  const jenisPemadaman  = document.getElementById('lapor-jenis-pemadaman').value;
+  const pic             = document.getElementById('lapor-pic').value.trim();
+  const keterangan      = document.getElementById('lapor-keterangan').value.trim();
   const nomorTiket = document.getElementById('lapor-tiket-select')?.value || null;
 
   if (!rincian) { errEl.textContent = 'Rincian pekerjaan wajib dipilih.'; errEl.style.display = 'block'; return; }
-  // Realisasi wajib diisi (boleh 0), target sudah tidak diisi petugas —
+  // Vol & Satuan wajib diisi (Vol boleh 0), target sudah tidak diisi petugas —
   // ditentukan supervisor lewat menu Kelola Penugasan Pekerjaan (bagian Target Kerja Regu) di dashboard.
-  if (realisasi === '') { errEl.textContent = 'Realisasi Volume wajib diisi (boleh 0).'; errEl.style.display = 'block'; realisasiEl.focus(); return; }
+  if (vol === '' || +vol < 0) { errEl.textContent = 'Vol wajib diisi (angka ≥ 0).'; errEl.style.display = 'block'; volEl.focus(); return; }
+  if (!satuan) { errEl.textContent = 'Satuan wajib diisi.'; errEl.style.display = 'block'; satuanEl.focus(); return; }
   if (!laporFoto.before || !laporFoto.progres || !laporFoto.after) {
     errEl.textContent = 'Foto Sebelum, Progres, dan Sesudah wajib diambil ketiganya (angle harus sama).';
     errEl.style.display = 'block';
@@ -3721,8 +3897,24 @@ window.submitLaporan = async function() {
     ulp:  currentUser ? currentUser.ulp  : '—',
     anggotaHadir: currentUser ? (currentUser.anggotaHadir || '') : '',
     jenisPekerjaan: jenisPekerjaan || null,
-    rincian, material,
-    realisasi: realisasi || '0',
+    rincian,
+    // "realisasi" & "material" dipertahankan supaya dashboard supervisor
+    // (grafik target/realisasi, export, PDF) tetap jalan tanpa perubahan;
+    // material sudah tidak diisi lagi dari sisi petugas (field dihapus).
+    realisasi: vol || '0',
+    realisasiSatuan: satuan || null,
+    material: null,
+    lapPenyulang: penyulang || null,
+    lapSection: section || null,
+    lapGardu: gardu || null,
+    lapHealthIndex: healthIndex || null,
+    lapKategori: kategori || null,
+    lapPdkb: pdkb || null,
+    lapMetode: metode || null,
+    lapDaerahPadam: daerahPadam || null,
+    lapJenisPemadaman: jenisPemadaman || null,
+    lapPic: pic || null,
+    lapKeterangan: keterangan || null,
     nomorTiket: nomorTiket || null,
     lat: lastPos ? lastPos.coords.latitude  : null,
     lng: lastPos ? lastPos.coords.longitude : null,
