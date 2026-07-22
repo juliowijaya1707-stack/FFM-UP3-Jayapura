@@ -3649,6 +3649,7 @@ window.onPetugasFilterChange = function() {
   petugasListPage = 1;
   applyPetugasFilters();
   renderPetugasListPaged();
+  renderPetugasMapMarkers(petugasFilteredEntries);
 };
 
 function renderPetugasCardHtml(id, p) {
@@ -3821,6 +3822,34 @@ function buildPetugasPopup(p) {
   `;
 }
 
+// Render marker di peta dari entries yang SUDAH difilter (search/ULP/status) —
+// dipanggil baik saat data Firebase baru masuk maupun saat filter diganti,
+// supaya peta selalu menampilkan persis petugas yang sama dengan daftar di kanan.
+function renderPetugasMapMarkers(entries) {
+  const seen = new Set();
+  entries.forEach(([id, p]) => {
+    seen.add(id);
+    if (!p.lat || !p.lng) return;
+    if (petugasMarkers[id]) {
+      petugasMarkers[id].setLatLng([p.lat, p.lng]);
+      petugasMarkers[id].setIcon(createPetugasIcon(p.status, p.ulp, p.regu));
+      petugasMarkers[id].setPopupContent(buildPetugasPopup(p));
+    } else {
+      const m = L.marker([p.lat, p.lng], { icon: createPetugasIcon(p.status, p.ulp, p.regu) }).addTo(mapPetugas);
+      m.bindPopup(buildPetugasPopup(p), { maxWidth: 250 });
+      petugasMarkers[id] = m;
+    }
+  });
+  // hapus marker yang tidak lagi cocok dengan filter (atau sudah hilang dari Firebase)
+  Object.keys(petugasMarkers).forEach(id => {
+    if (!seen.has(id)) { mapPetugas.removeLayer(petugasMarkers[id]); delete petugasMarkers[id]; }
+  });
+
+  const aktifShown = entries.filter(([,v]) => v.status !== 'Offline').length;
+  document.getElementById('petugasMapCount').textContent = aktifShown + ' aktif dari ' + entries.length + ' ditampilkan';
+  document.getElementById('petugasMapCount').title = 'Aktif = status bukan "Offline" (masih Standby/Perjalanan/Aktif Bekerja/Tidak Terhubung). Jumlah di sini mengikuti filter Cari/ULP/Status yang aktif di panel kanan.';
+}
+
 function listenPetugas() {
   if (fbListeners.petugas) return;
   const ref = window._fbRef(fbDb, 'petugas');
@@ -3831,36 +3860,15 @@ function listenPetugas() {
     const todayStart = new Date(); todayStart.setHours(0,0,0,0);
     const entries = scopeFilterEntries(Object.entries(data).filter(([,v]) => v.ts && v.ts >= todayStart.getTime()));
 
-    // update badge
+    // update badge (selalu total sesungguhnya, tidak ikut filter panel)
     const aktif = entries.filter(([,v]) => v.status !== 'Offline').length;
     document.getElementById('nav-badge-petugas').textContent = aktif;
 
-    // update map markers
-    const seen = new Set();
-    entries.forEach(([id, p]) => {
-      seen.add(id);
-      if (!p.lat || !p.lng) return;
-      if (petugasMarkers[id]) {
-        petugasMarkers[id].setLatLng([p.lat, p.lng]);
-        petugasMarkers[id].setIcon(createPetugasIcon(p.status, p.ulp, p.regu));
-        petugasMarkers[id].setPopupContent(buildPetugasPopup(p));
-      } else {
-        const m = L.marker([p.lat, p.lng], { icon: createPetugasIcon(p.status, p.ulp, p.regu) }).addTo(mapPetugas);
-        m.bindPopup(buildPetugasPopup(p), { maxWidth: 250 });
-        petugasMarkers[id] = m;
-      }
-    });
-    // remove stale markers (termasuk petugas hari sebelumnya yang tersaring di atas)
-    Object.keys(petugasMarkers).forEach(id => {
-      if (!seen.has(id)) { mapPetugas.removeLayer(petugasMarkers[id]); delete petugasMarkers[id]; }
-    });
-
-    // update count
-    document.getElementById('petugasMapCount').textContent = aktif + ' aktif dari ' + entries.length + ' hari ini';
-    document.getElementById('petugasMapCount').title = 'Aktif = status bukan "Offline" (masih Standby/Perjalanan/Aktif Bekerja/Tidak Terhubung). Total ' + entries.length + ' termasuk yang sudah Offline (lapor Selesai / logout).';
-
-    // update list
+    // update list (ini juga yang mengisi ulang petugasFilteredEntries lewat applyPetugasFilters())
     renderPetugasList(entries);
+
+    // update peta memakai hasil filter yang sama dengan daftar di kanan
+    renderPetugasMapMarkers(petugasFilteredEntries);
   });
 }
 
