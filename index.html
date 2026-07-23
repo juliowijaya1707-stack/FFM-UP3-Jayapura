@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#003D82">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="NUMBAY Supervisor">
+<meta name="apple-mobile-web-app-title" content="NUMBAY TL/Admin">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"/>
@@ -992,12 +992,12 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
     </div>
     <div class="login-field">
       <label for="login-password">Password</label>
-      <input id="login-password" type="password" placeholder="••••" autocomplete="current-password" onkeydown="if(event.key==='Enter') doLoginSupervisor();">
+      <input id="login-password" type="password" placeholder="••••" autocomplete="current-password" onkeydown="if(event.key==='Enter') doLoginTLAdmin();">
     </div>
 
     <div id="login-err"></div>
 
-    <button id="login-submit-btn" onclick="doLoginSupervisor()">Masuk</button>
+    <button id="login-submit-btn" onclick="doLoginTLAdmin()">Masuk</button>
 
     <div class="login-hint">Superadmin dapat mengakses seluruh ULP &amp; PT MITRA.<br>Admin ULP hanya mengakses data petugas ULP-nya sendiri.</div>
   </div>
@@ -1052,7 +1052,7 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
       </a>
     </div>
     <div class="nav-group">
-      <div class="nav-group-label">Supervisor</div>
+      <div class="nav-group-label">TL/Admin</div>
       <a class="nav-item" id="nav-tiket" href="#" title="Rencana Pekerjaan" onclick="switchView('tiket');return false;">
         <span class="nav-icon">🎫</span> <span class="nav-label">Rencana Pekerjaan</span>
       </a>
@@ -1079,12 +1079,12 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
     <div class="user-chip" id="user-chip" onclick="toggleAdminMode()" title="Klik untuk masuk/keluar Mode Admin" style="flex:1;min-width:0">
       <div class="user-avatar" id="user-avatar">SP</div>
       <div class="user-text">
-        <div class="user-name" id="user-name">Supervisor NUMBAY</div>
+        <div class="user-name" id="user-name">TL/Admin NUMBAY</div>
         <div class="user-role" id="user-role">UP3 Jayapura</div>
       </div>
       <div class="user-live"></div>
     </div>
-    <button id="logout-btn" onclick="doLogoutSupervisor()" title="Keluar (Logout)" style="flex-shrink:0;background:rgba(255,255,255,0.06);border:none;color:rgba(255,255,255,0.65);width:34px;height:34px;border-radius:9px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:background 0.15s var(--ease),color 0.15s var(--ease)" onmouseover="this.style.background='var(--crit)';this.style.color='#fff'" onmouseout="this.style.background='rgba(255,255,255,0.06)';this.style.color='rgba(255,255,255,0.65)'">⏻</button>
+    <button id="logout-btn" onclick="doLogoutTLAdmin()" title="Keluar (Logout)" style="flex-shrink:0;background:rgba(255,255,255,0.06);border:none;color:rgba(255,255,255,0.65);width:34px;height:34px;border-radius:9px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:background 0.15s var(--ease),color 0.15s var(--ease)" onmouseover="this.style.background='var(--crit)';this.style.color='#fff'" onmouseout="this.style.background='rgba(255,255,255,0.06)';this.style.color='rgba(255,255,255,0.65)'">⏻</button>
   </div>
 </aside>
 
@@ -1576,7 +1576,7 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
         </div>
         <div id="el-info" style="font-size:12px;color:var(--text-2);margin-bottom:12px;padding:10px 13px;background:var(--surface-2);border-radius:var(--radius-xs)"></div>
         <div id="el-warn-verified" style="display:none;font-size:12px;color:var(--warn);background:var(--warn-bg);border:1px solid rgba(217,123,10,0.3);padding:10px 13px;border-radius:var(--radius-xs);margin-bottom:16px">
-          ⚠️ Laporan ini <b>sudah diverifikasi</b>. Menyimpan perubahan akan mengembalikan status ke <b>"Menunggu Verifikasi"</b> — perlu diverifikasi ulang oleh supervisor.
+          ⚠️ Laporan ini <b>sudah diverifikasi</b>. Menyimpan perubahan akan mengembalikan status ke <b>"Menunggu Verifikasi"</b> — perlu diverifikasi ulang oleh TL/Admin.
         </div>
         <div style="display:flex;flex-direction:column;gap:14px">
           <div>
@@ -1634,7 +1634,7 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
         <div class="kpi-card green">
           <div class="kpi-label"><div class="kpi-dot" style="background:var(--ok)"></div>Terverifikasi</div>
           <div class="kpi-value" id="rekap-verif">—</div>
-          <div class="kpi-meta">Disetujui supervisor</div>
+          <div class="kpi-meta">Disetujui TL/Admin</div>
         </div>
         <div class="kpi-card amber">
           <div class="kpi-label"><div class="kpi-dot" style="background:var(--warn)"></div>Menunggu</div>
@@ -1944,12 +1944,12 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
       </div>
     </div>
 
-    <!-- ══ VERIFIKASI SUPERVISOR VIEW ══ -->
+    <!-- ══ VERIFIKASI TL/ADMIN VIEW ══ -->
     <div id="viewVerifikasi" style="display:none;" class="firebase-view">
       <div class="fb-header">
         <div>
           <div class="card-title" style="font-size:16px">✅ Verifikasi Laporan Pekerjaan</div>
-          <div style="font-size:12px;color:var(--text-secondary);margin-top:3px">Close-loop · Supervisor verifikasi hasil pekerjaan petugas lapangan hari ini</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:3px">Close-loop · TL/Admin verifikasi hasil pekerjaan petugas lapangan hari ini</div>
         </div>
         <span id="verifikasiCount" class="card-count">0 menunggu</span>
       </div>
@@ -2089,9 +2089,9 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
           </div>
 
           <div style="margin-top:16px;border-top:1px solid var(--line);padding-top:16px">
-            <div style="font-family:var(--font-display);font-size:13px;font-weight:800;margin-bottom:12px">Form Verifikasi Supervisor</div>
+            <div style="font-family:var(--font-display);font-size:13px;font-weight:800;margin-bottom:12px">Form Verifikasi TL/Admin</div>
             <div style="margin-bottom:12px">
-              <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Catatan Supervisor</label>
+              <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Catatan TL/Admin</label>
               <textarea id="verif-catatan" rows="3" placeholder="Catatan hasil verifikasi lapangan..." style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;resize:vertical;outline:none;font-family:var(--font)"></textarea>
             </div>
             <div style="display:flex;gap:10px;margin-bottom:10px">
@@ -2931,7 +2931,7 @@ function switchTab(tab) { switchView(tab); }
 // (ADMIN_PIN di bawah) yang tetap dipertahankan sebagai gerbang khusus
 // tombol hapus data — dua lapis ini sengaja tidak digabung.
 //
-// Password sama untuk semua akun (1111) sesuai permintaan supervisor —
+// Password sama untuk semua akun (1111) sesuai permintaan TL/Admin —
 // disimpan plain di sini karena ini kredensial internal level-role
 // (bukan per-orang), sama semangatnya dengan ADMIN_PIN yang sudah ada.
 const AUTH_ACCOUNTS = {
@@ -2978,7 +2978,7 @@ function scopeFilterEntries(entries) {
   return entries.filter(([, v]) => normalizeUlp(v && v.ulp) === scopeKey);
 }
 
-window.doLoginSupervisor = function() {
+window.doLoginTLAdmin = function() {
   const usernameRaw = document.getElementById('login-username').value;
   const password     = document.getElementById('login-password').value;
   const errEl        = document.getElementById('login-err');
@@ -2994,7 +2994,7 @@ window.doLoginSupervisor = function() {
   showAppAfterLogin();
 };
 
-window.doLogoutSupervisor = async function() {
+window.doLogoutTLAdmin = async function() {
   if (!(await confirmDialog('Keluar dari akun ini? Anda perlu login ulang untuk membuka dashboard lagi.', { title: 'Logout', okLabel: 'Ya, Keluar' }))) return;
   localStorage.removeItem(AUTH_SESSION_KEY);
   location.reload(); // cara paling aman untuk reset semua listener/cache Firebase di memori
@@ -3247,7 +3247,7 @@ async function initFirebase() {
   try {
     const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
     const { getDatabase, ref, onValue, remove, update, query, orderByChild, startAt, endAt, runTransaction } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
-    fbApp = initializeApp(FB_CONFIG, 'supervisor');
+    fbApp = initializeApp(FB_CONFIG, 'tladmin');
     fbDb  = getDatabase(fbApp);
     window._fbRef = ref; window._fbOnValue = onValue; window._fbRemove = remove; window._fbUpdate = update;
     window._fbQuery = query; window._fbOrderByChild = orderByChild; window._fbStartAt = startAt; window._fbEndAt = endAt;
@@ -3309,7 +3309,7 @@ function getUlpColor(ulp) {
 // Semua data isian bebas dari petugas (Keterangan, Anggota Hadir, PIC, Daerah
 // Padam, ULP/Regu manual, No. Tiket, dsb.) HARUS lewat fungsi ini sebelum
 // disisipkan ke innerHTML/popup. Tanpa ini, teks berisi tag HTML/skrip yang
-// diketik di form Lapor akan ikut dieksekusi di layar supervisor saat
+// diketik di form Lapor akan ikut dieksekusi di layar TL/Admin saat
 // laporan dibuka (celah XSS). Dipakai di setiap render kartu/tabel/popup
 // yang menampilkan data dari petugas.
 function esc(v) {
@@ -3440,7 +3440,7 @@ let targetKerjaCache = []; // [{ulp, regu, periodeKey, tipePeriode, targetVolume
 
 // CATATAN MIGRASI: field terpisah "Target Volume & Periode" (Harian/Mingguan/
 // Bulanan + rentang tanggal) sudah dihapus dari form Rencana Pekerjaan atas
-// permintaan supervisor — dianggap dobel dengan field Vol (Detail RKM) dan
+// permintaan TL/Admin — dianggap dobel dengan field Vol (Detail RKM) dan
 // Tanggal (Hari/Tanggal). Mulai sekarang setiap penugasan baru/edit SELALU
 // tersimpan sebagai tipePeriode:'harian' dengan periodeKey = Hari/Tanggal dan
 // targetVolume = Vol (lihat simpanTiket). Ini supaya fitur % capaian, grafik
@@ -3719,7 +3719,7 @@ function renderPetugasCardHtml(id, p) {
   const avatarBadge  = (!isTerputus && teamIcon.badge) ? `<span class="team-icon-badge">${teamIcon.badge}</span>` : '';
   // "Tidak Terhubung" berarti koneksi realtime terputus otomatis (app ditutup/
   // di-kill, HP mati, atau lama tidak dibuka) — BUKAN petugas sengaja selesai
-  // tugas (itu baru jadi 'Offline'). Jadi pesannya dibedakan supaya supervisor
+  // tugas (itu baru jadi 'Offline'). Jadi pesannya dibedakan supaya TL/Admin
   // tidak salah kira "sudah selesai" padahal cuma HP-nya yang tidak merespons.
   const peringatan = isTerputus
     ? `<div style="font-size:10.5px;color:var(--done);font-weight:700;margin-top:3px">📴 Tidak terhubung — terakhir terlihat ${ago}, belum tentu selesai tugas</div>`
@@ -4857,7 +4857,7 @@ function renderLaporanCardHtml(id, l) {
     </div>` : '';
   const editBtn = isAdminMode ? `<button class="btn-edit" title="Edit laporan ini" onclick="bukaModalEditLaporan('${id}')">✏️</button>` : '';
   const delBtn  = isAdminMode ? `<button class="btn-del" title="Hapus laporan ini" onclick="hapusLaporan('${id}')">🗑</button>` : '';
-  const editedBadge = l.editedAt ? `<div style="font-size:10.5px;color:var(--warn);margin-top:4px">✏️ Diedit ${l.statusVerifikasi ? '' : '— menunggu verifikasi ulang '}oleh ${esc(l.editedBy)||'Supervisor'} · ${new Date(l.editedAt).toLocaleString('id-ID')}</div>` : '';
+  const editedBadge = l.editedAt ? `<div style="font-size:10.5px;color:var(--warn);margin-top:4px">✏️ Diedit ${l.statusVerifikasi ? '' : '— menunggu verifikasi ulang '}oleh ${esc(l.editedBy)||'TL/Admin'} · ${new Date(l.editedAt).toLocaleString('id-ID')}</div>` : '';
   return `<div class="laporan-card">
     <div class="laporan-card-header">
       <div>
@@ -5056,7 +5056,7 @@ window.exportLaporanPDF = function() {
   }
 };
 
-// ── Edit Laporan (Supervisor/Admin) — #8: edit pasca-verifikasi wajib verifikasi ulang ──
+// ── Edit Laporan (TL/Admin/Admin) — #8: edit pasca-verifikasi wajib verifikasi ulang ──
 let currentEditLaporanId = null;
 let currentEditLaporanData = null;
 let editLaporanWasVerified = false;
@@ -5112,11 +5112,11 @@ window.simpanEditLaporan = async function() {
 
   const payload = {
     rincian, material, target, realisasi,
-    editedAt: Date.now(), editedBy: 'Supervisor'
+    editedAt: Date.now(), editedBy: 'TL/Admin'
   };
 
   // #8: kalau laporan ini sebelumnya sudah Terverifikasi, reset ke "menunggu verifikasi"
-  // supaya perubahan data tidak "menyelinap" tanpa dicek ulang oleh supervisor.
+  // supaya perubahan data tidak "menyelinap" tanpa dicek ulang oleh TL/Admin.
   // Data verifikasi lama disimpan di verifSebelumnya sebagai jejak audit, bukan dihapus.
   if (editLaporanWasVerified) {
     const old = currentEditLaporanData || {};
@@ -5147,7 +5147,7 @@ window.simpanEditLaporan = async function() {
 };
 
 // ══════════════════════════════════════
-// TIKET P0/P1 — SUPERVISOR
+// TIKET P0/P1 — TL/ADMIN
 // ══════════════════════════════════════
 let currentEditTiketId = null;
 let lastTiketEntries = null;
@@ -5262,7 +5262,7 @@ function populateRpGarduSelect(selectedValue) {
   if (dd && dd.style.display === 'block') renderRpGarduDropdown();
 }
 
-// Tombol "+ Tambah Gardu" — Gardu yang ditambahkan supervisor/petugas di sini
+// Tombol "+ Tambah Gardu" — Gardu yang ditambahkan TL/Admin/petugas di sini
 // HANYA berlaku untuk laporan yang sedang diisi saat ini (langsung masuk ke
 // pilihan Gardu terpilih). Item ini SENGAJA TIDAK disimpan ke localStorage /
 // daftar dropdown, supaya tidak otomatis muncul lagi jadi opsi permanen di
@@ -5401,7 +5401,7 @@ function populateRpDropdowns() {
 }
 
 // Saat ULP dipilih, isi dropdown Tim/Regu sesuai roster ULP tsb.
-// Ini yang menggantikan mekanisme "tim terdekat via GPS" — supervisor
+// Ini yang menggantikan mekanisme "tim terdekat via GPS" — TL/Admin
 // menugaskan LANGSUNG ke tim tertentu di ULP tertentu, bukan hasil hitung jarak.
 window.onTiketUlpChange = function() {
   const ulp = document.getElementById('tiket-ulp').value;
@@ -5433,7 +5433,7 @@ function updateAssignedChip() {
 }
 
 // ── Ringkasan tim yang sedang aktif hari ini (chip list), ditampilkan di
-// dalam modal Kelola Penugasan sebagai INFO untuk supervisor — bukan lagi
+// dalam modal Kelola Penugasan sebagai INFO untuk TL/Admin — bukan lagi
 // dasar penugasan (dasarnya sekarang dropdown ULP → Tim di atas). Dipakai
 // dari data realtime node "petugas" (sama sumbernya dgn peta & absensi).
 window.renderTimAktif = function() {
@@ -5540,7 +5540,7 @@ window.bukaModalTiket = function(id, data) {
   renderTimAktif();
 
   // Pastikan data posisi/status tim (node "petugas") sudah ditarik walau
-  // supervisor belum pernah buka menu Peta — supaya list "Tim Aktif" terisi.
+  // TL/Admin belum pernah buka menu Peta — supaya list "Tim Aktif" terisi.
   initFirebase().then(ok => { if (ok) listenPetugas(); });
 };
 
@@ -5558,7 +5558,7 @@ function koordinatValidOrEmpty(raw) {
 
 // Generate Nomor Penugasan otomatis & atomik: KODE_ULP-0001, urut per ULP,
 // tidak pernah reset. Pakai Firebase transaction supaya aman walau 2
-// supervisor menyimpan penugasan di ULP yang sama pada saat bersamaan.
+// TL/Admin menyimpan penugasan di ULP yang sama pada saat bersamaan.
 async function generateNomorPenugasan(ulp) {
   const kode = KODE_ULP[ulp] || 'GEN';
   const counterRef = window._fbRef(fbDb, 'penugasanCounter/' + kode);
@@ -5644,7 +5644,7 @@ window.simpanTiket = async function() {
     koordinatAkhir: koordinatAkhir || null,
     assignedRegu: regu,
     statusTiket: 'Aktif',
-    dibuatOleh: 'Supervisor',
+    dibuatOleh: 'TL/Admin',
     rpTanggal, rpWaktu, rpPenyulang, rpSection, rpGardu, rpHealthIndex,
     rpKategori, rpJenisPekerjaan, rpRincian,
     rpVol: +rpVolRaw, rpSatuan,
@@ -5807,7 +5807,7 @@ function renderTiketProgres() {
 }
 
 // ══════════════════════════════════════
-// VERIFIKASI SUPERVISOR
+// VERIFIKASI TL/ADMIN
 // ══════════════════════════════════════
 let currentVerifId = null;
 let currentVerifLaporan = null;
@@ -5845,7 +5845,7 @@ function populateVerifRincianDropdowns() {
   }
 }
 
-// #12: "Edit Laporan" terpisah sudah dihapus dari layar Hasil Verifikasi — supervisor
+// #12: "Edit Laporan" terpisah sudah dihapus dari layar Hasil Verifikasi — TL/Admin
 // sekarang mengubah ISI laporan (rincian, penyulang, target/realisasi, dst) dan HASIL
 // verifikasinya sekaligus di modal ini ("Ubah Hasil Verifikasi"), tanpa perlu masuk Mode
 // Admin. Fungsi ini karena itu selalu mengisi field rincian laporan sebagai form yang
@@ -5853,11 +5853,29 @@ function populateVerifRincianDropdowns() {
 // mode: 'verifikasi' (default, dipanggil dari tab "Verifikasi Laporan") atau
 // 'hasil' (dipanggil dari tombol "Ubah Hasil Verifikasi" di tab "Hasil Verifikasi").
 // Sebelumnya modal ini SELALU berjudul & bertombol "Verifikasi Laporan" walau
-// dibuka dari tab "Hasil Verifikasi", sehingga supervisor mengira aksinya
+// dibuka dari tab "Hasil Verifikasi", sehingga TL/Admin mengira aksinya
 // "pindah"/muncul di tab Verifikasi Laporan — padahal sebenarnya cuma modal
 // overlay yang tetap berada di tab manapun ia dibuka, dan hasilnya memang
 // langsung tersimpan & tampil kembali di tab asalnya. Judul & tombol sekarang
 // disesuaikan supaya jelas konteksnya.
+// BUG FIX: sebelumnya tombol "Verifikasi Sekarang" / "Ubah Verifikasi" / "Ubah Hasil
+// Verifikasi" menyisipkan SELURUH objek laporan (hasil JSON.stringify) langsung ke
+// dalam atribut HTML onclick. Untuk laporan yang fotonya belum sempat ter-upload dan
+// masih tersimpan sebagai base64 lokal (fotoBeforeBase64/fotoProgresBase64/
+// fotoAfterBase64 — bisa beberapa MB per foto), atribut onclick jadi sangat besar
+// sehingga browser gagal mem-parsingnya dan modal tidak pernah terbuka (tombol
+// terlihat seperti tidak merespons sama sekali). Perbaikannya: data laporan
+// disimpan di cache JS (window._verifDataCache, diisi saat grid dirender) dan
+// tombol hanya membawa id — jauh lebih ringan & tidak tergantung isi/ukuran data.
+window.bukaModalVerifikasiById = function(id, mode) {
+  const laporan = window._verifDataCache && window._verifDataCache[id];
+  if (!laporan) {
+    alert('Data laporan tidak ditemukan (mungkin filter/list berubah). Coba refresh data lalu ulangi.');
+    return;
+  }
+  window.bukaModalVerifikasi(id, laporan, mode);
+};
+
 window.bukaModalVerifikasi = function(id, laporan, mode) {
   currentVerifId = id;
   currentVerifLaporan = laporan;
@@ -5958,7 +5976,7 @@ window.submitVerifikasi = async function() {
   btn.disabled = true; btn.textContent = 'Menyimpan...';
   try {
     const upd = {
-      // ── Rincian laporan (bisa diubah supervisor kalau ada kesalahan input petugas) ──
+      // ── Rincian laporan (bisa diubah TL/Admin kalau ada kesalahan input petugas) ──
       rincian,
       lapKategori: document.getElementById('vf-kategori').value || null,
       jenisPekerjaan: document.getElementById('vf-jenis').value || null,
@@ -5976,14 +5994,14 @@ window.submitVerifikasi = async function() {
       realisasi: realisasi || null,
       realisasiSatuan: document.getElementById('vf-satuan').value.trim() || null,
       editedAt: Date.now(),
-      editedBy: 'Supervisor',
+      editedBy: 'TL/Admin',
       // ── Hasil verifikasi ──
       statusVerifikasi: hasil,
       verifTarget: target || null,
       verifRealisasi: realisasi || null,
       verifCatatan: catatan || null,
       verifWaktu: Date.now(),
-      verifOleh: 'Supervisor NUMBAY'
+      verifOleh: 'TL/Admin NUMBAY'
     };
     const { update, get } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
     await update(window._fbRef(fbDb, 'laporan/' + currentVerifId), upd);
@@ -6018,13 +6036,13 @@ window.submitVerifikasi = async function() {
   }
 };
 
-// Tombol manual untuk supervisor menutup tiket sendiri (cadangan, kalau tidak tertaut/tidak ke-auto-close)
+// Tombol manual untuk TL/Admin menutup tiket sendiri (cadangan, kalau tidak tertaut/tidak ke-auto-close)
 window.tutupTiketManual = async function(tiketId) {
   if (!fbDb) return;
   if (!(await confirmDialog('Tutup penugasan ini? Status akan diubah menjadi "Selesai".', { title: 'Tutup Penugasan', danger: false }))) return;
   try {
     const { update } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
-    await update(window._fbRef(fbDb, 'penugasan/' + tiketId), { statusTiket: 'Selesai', selesaiOtomatisPada: Date.now(), selesaiOtomatisDari: 'manual-supervisor' });
+    await update(window._fbRef(fbDb, 'penugasan/' + tiketId), { statusTiket: 'Selesai', selesaiOtomatisPada: Date.now(), selesaiOtomatisDari: 'manual-TL/Admin' });
     showToast('Penugasan ditutup.', 'ok');
   } catch(e) { showToast('Gagal menutup penugasan: ' + e.message, 'err'); }
 };
@@ -6092,6 +6110,12 @@ function renderVerifikasiGrid() {
   if (menunggu > 0) { badge.textContent = menunggu; badge.style.display = ''; }
   else badge.style.display = 'none';
 
+  // Cache data laporan per id supaya tombol Verifikasi tidak perlu menyisipkan
+  // seluruh objek laporan (termasuk foto base64 yang bisa berukuran besar kalau
+  // belum sempat ter-upload) ke dalam atribut HTML onclick — lihat bukaModalVerifikasiById().
+  window._verifDataCache = window._verifDataCache || {};
+  entries.forEach(([id, l]) => { window._verifDataCache[id] = l; });
+
   const grid = document.getElementById('verifikasiGrid');
   if (entries.length === 0) {
     const msg = (verifikasiRawEntries && verifikasiRawEntries.length > 0)
@@ -6123,14 +6147,14 @@ function renderVerifikasiGrid() {
 
     const verifInfo = sv ? `
       <div style="padding:10px 15px;border-top:1px solid var(--line);background:${svBg};font-size:11.5px;color:var(--text-2)">
-        <b>Verifikasi oleh:</b> ${esc(l.verifOleh)||'Supervisor'} · ${l.verifWaktu ? new Date(l.verifWaktu).toLocaleString('id-ID') : '—'}<br>
+        <b>Verifikasi oleh:</b> ${esc(l.verifOleh)||'TL/Admin'} · ${l.verifWaktu ? new Date(l.verifWaktu).toLocaleString('id-ID') : '—'}<br>
         <b>Target:</b> ${l.verifTarget||l.target||'—'} &nbsp;|&nbsp; <b>Realisasi:</b> ${l.verifRealisasi||l.realisasi||'—'}<br>
         ${l.verifCatatan ? `<b>Catatan:</b> ${esc(l.verifCatatan)}` : ''}
       </div>` : '';
 
     const btnVerif = !sv
-      ? `<button onclick="bukaModalVerifikasi('${id}',${JSON.stringify(l).replace(/"/g,'&quot;')})" style="background:var(--pln-blue);color:#fff;border:none;border-radius:var(--radius-xs);padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;width:100%;margin-top:10px">✅ Verifikasi Sekarang</button>`
-      : `<button onclick="bukaModalVerifikasi('${id}',${JSON.stringify(l).replace(/"/g,'&quot;')})" style="background:none;color:var(--text-2);border:1px solid var(--line);border-radius:var(--radius-xs);padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer;width:100%;margin-top:8px">Ubah Verifikasi</button>`;
+      ? `<button onclick="bukaModalVerifikasiById('${id}')" style="background:var(--pln-blue);color:#fff;border:none;border-radius:var(--radius-xs);padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;width:100%;margin-top:10px">✅ Verifikasi Sekarang</button>`
+      : `<button onclick="bukaModalVerifikasiById('${id}')" style="background:none;color:var(--text-2);border:1px solid var(--line);border-radius:var(--radius-xs);padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer;width:100%;margin-top:8px">Ubah Verifikasi</button>`;
 
     const delBtn = isAdminMode ? `<button class="btn-del" title="Hapus laporan" onclick="hapusLaporan('${id}')">🗑</button>` : '';
 
@@ -6230,7 +6254,7 @@ function renderHasilVerifikasiCard(id, l) {
   // verifikasinya dilakukan sekaligus lewat "Ubah Hasil Verifikasi" di bawah ini,
   // tanpa perlu masuk Mode Admin terlebih dahulu.
   const btnAksi = `<div style="display:flex;gap:8px;margin-top:10px">
-      <button onclick="bukaModalVerifikasi('${id}',${JSON.stringify(l).replace(/"/g,'&quot;')},'hasil')" style="flex:1;background:var(--pln-blue);color:#fff;border:1px solid var(--pln-blue);border-radius:var(--radius-xs);padding:8px 12px;font-size:11.5px;font-weight:700;cursor:pointer">✏️ Ubah Hasil Verifikasi</button>
+      <button onclick="bukaModalVerifikasiById('${id}','hasil')" style="flex:1;background:var(--pln-blue);color:#fff;border:1px solid var(--pln-blue);border-radius:var(--radius-xs);padding:8px 12px;font-size:11.5px;font-weight:700;cursor:pointer">✏️ Ubah Hasil Verifikasi</button>
     </div>`;
 
   return `<div class="laporan-card">
@@ -6247,7 +6271,7 @@ function renderHasilVerifikasiCard(id, l) {
         ${btnAksi}
       </div>
       <div style="padding:10px 15px;border-top:1px solid var(--line);font-size:11.5px;color:var(--text-2)">
-        <b>Diverifikasi oleh:</b> ${esc(l.verifOleh)||'Supervisor'} · ${l.verifWaktu ? new Date(l.verifWaktu).toLocaleString('id-ID') : '—'}<br>
+        <b>Diverifikasi oleh:</b> ${esc(l.verifOleh)||'TL/Admin'} · ${l.verifWaktu ? new Date(l.verifWaktu).toLocaleString('id-ID') : '—'}<br>
         ${l.verifCatatan ? `<b>Catatan:</b> ${esc(l.verifCatatan)}` : '<span style="color:var(--text-3)">Tanpa catatan</span>'}
       </div>
     </div>`;
@@ -6278,6 +6302,11 @@ window.renderHasilVerifikasiGrid = function() {
 
   const groupBy = document.getElementById('hv-groupby')?.value || 'ulp';
   const entries = getHasilVerifikasiFilteredEntries();
+
+  // Sama seperti di renderVerifikasiGrid(): cache laporan per id, jangan sisipkan
+  // objek laporan penuh ke atribut HTML onclick — lihat bukaModalVerifikasiById().
+  window._verifDataCache = window._verifDataCache || {};
+  entries.forEach(([id, l]) => { window._verifDataCache[id] = l; });
 
   if (countEl) countEl.textContent = entries.length + ' laporan';
 
@@ -6318,7 +6347,7 @@ window.renderHasilVerifikasiGrid = function() {
 
 // ══════════════════════════════════════
 // EXPORT HASIL VERIFIKASI — Excel & PDF (dengan foto Sebelum/Progres/Sesudah)
-// Dipakai supervisor buat tahu laporan mana yang Terverifikasi/Revisi/Ditolak,
+// Dipakai TL/Admin buat tahu laporan mana yang Terverifikasi/Revisi/Ditolak,
 // lalu dikirim ke petugas lewat WA.
 // ══════════════════════════════════════
 
@@ -6376,7 +6405,7 @@ window.exportHasilVerifikasiExcel = function() {
       'Material': l.material || '—',
       'Realisasi': l.realisasi || '—',
       'Waktu Laporan': fmtWaktuFull(l.waktu),
-      'Diverifikasi Oleh': l.verifOleh || 'Supervisor',
+      'Diverifikasi Oleh': l.verifOleh || 'TL/Admin',
       'Waktu Verifikasi': l.verifWaktu ? fmtWaktuFull(l.verifWaktu) : '—',
       'Catatan Verifikasi': l.verifCatatan || '—',
       'Link Foto Sebelum': l.fotoBeforeUrl || (l.fotoBeforeBase64 ? '(tersimpan lokal, tidak ada link)' : '—'),
@@ -6559,7 +6588,7 @@ window.exportHasilVerifikasiPDF = async function() {
       doc.setTextColor(110);
       doc.text(`Waktu Laporan: ${fmtWaktuFull(l.waktu)}`, padCardX, cy);
       cy += 12;
-      doc.text(`Diverifikasi oleh: ${l.verifOleh || 'Supervisor'}  ·  ${l.verifWaktu ? fmtWaktuFull(l.verifWaktu) : '—'}`, padCardX, cy);
+      doc.text(`Diverifikasi oleh: ${l.verifOleh || 'TL/Admin'}  ·  ${l.verifWaktu ? fmtWaktuFull(l.verifWaktu) : '—'}`, padCardX, cy);
       cy += 12;
       if (catatanLines.length) {
         doc.setTextColor(70);
@@ -6666,7 +6695,7 @@ function startAppAfterAuth() {
 
 // Kalau sesi login sudah tersimpan (localStorage, bertahan sampai Logout manual),
 // langsung masuk ke app tanpa perlu login ulang. Kalau belum, layar login (sudah
-// tampil secara default di HTML) yang menunggu submit dari doLoginSupervisor().
+// tampil secara default di HTML) yang menunggu submit dari doLoginTLAdmin().
 //
 // SEMENTARA DINONAKTIFKAN (2026-07-21) atas permintaan — layar login masih ngebug.
 // Kode login TIDAK dihapus, hanya dilewati: langsung auto-login sebagai Superadmin
