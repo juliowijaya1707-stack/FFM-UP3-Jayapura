@@ -2,7 +2,13 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<!-- Pinch-to-zoom (user-scalable) diaktifkan kembali. Sebelumnya di-nonaktifkan
+     (user-scalable=no) yang menyulitkan petugas yang perlu memperbesar tulisan
+     untuk membaca — kebiasaan lama yang kurang ramah aksesibilitas. maximum-scale
+     dinaikkan ke 5x supaya masih bisa diperbesar signifikan tanpa membuat layout
+     berantakan pada zoom ekstrem. -->
+
 <title>NUMBAY — PLN UP3 Jayapura</title>
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" href="./favicon.ico">
@@ -1472,6 +1478,7 @@ body {
   </div>
 </div>
 
+<script src="master-data.js"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getDatabase, ref, set, get, onValue, update, onDisconnect, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
@@ -1491,6 +1498,18 @@ const firebaseConfig = {
 // ══════════════════════════════════════
 // TOAST & CONFIRM — pengganti alert()/confirm() bawaan browser
 // ══════════════════════════════════════
+// ── Pembersih teks (HTML-escape) ──
+// Dipakai saat menampilkan kembali data (laporan/tugas/catatan revisi) ke
+// layar petugas lewat innerHTML, supaya karakter HTML tidak ikut dieksekusi.
+function esc(v) {
+  if (v === null || v === undefined) return '';
+  return String(v)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 function showToast(message, type = 'info', duration = 3800) {
   const stack = document.getElementById('toast-stack');
   if (!stack) return;
@@ -2033,67 +2052,6 @@ async function uploadFotoAman(dataUrl, folder, publicIdHint, opts = {}) {
   }
 }
 
-// ── LOGIN ──────────────────────────────────────────────
-// SEMENTARA: tanpa verifikasi username/password. Regu/Tim dipilih dari
-// dropdown nama baku (FIX: sebelumnya ketik bebas, rawan typo/beda-beda
-// ejaan per petugas yang bikin dashboard mendata regu yang sama sebagai
-// banyak entitas berbeda). Opsi "Lainnya" tetap ada sebagai cadangan.
-//
-// Roster resmi (NUMBAY v2): daftar Tim per Unit Kerja. Tim yang namanya
-// sudah menyebut kota (mis. "Tim ROW PT APP Jayapura") cuma ada di 1 ULP,
-// jadi begitu dipilih, Unit Kerja otomatis terkunci ke ULP itu. Tim yang
-// generik & sama namanya di semua ULP (Pemeliharaan PLN ND, Inspeksi
-// Gardu, Mitra Konstruksi, PDKB SL 1/2) tetap butuh Unit Kerja dipilih
-// manual dari beberapa opsi yang valid untuk tim tsb.
-const ROSTER_ULP_TEAMS = {
-  'ULP Jayapura': [
-    'Tim Pemeliharaan PLN ND', 'Tim Inspeksi JTM Tier 1 Jayapura', 'Tim Inspeksi JTM Tier 2 Jayapura',
-    'Tim Inspeksi Gardu', 'Tim ROW PT APP Jayapura', 'Tim ROW PT Lau Daling',
-    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2',
-    'Tim Yantek Jayapura 11', 'Tim Yantek Jayapura 12', 'Tim Yantek Jayapura 21'
-  ],
-  'ULP Abepura': [
-    'Tim Pemeliharaan PLN ND', 'Tim Inspeksi JTM Tier 1 Abepura', 'Tim Inspeksi Gardu',
-    'Tim ROW PT AKA Rifki Papua', 'Tim ROW PT Intrabes Abepura', 'Tim ROW PLN ND Abepura',
-    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2',
-    'Tim Yantek Abepura 11', 'Tim Yantek Abepura 12', 'Tim Yantek Abepura 13', 'Tim Yantek Abepura 21'
-  ],
-  'ULP Sentani': [
-    'Tim Pemeliharaan PLN ND', 'Tim Inspeksi JTM Tier 1 Sentani', 'Tim Inspeksi Gardu',
-    'Tim ROW PT APP Sentani', 'Tim ROW PT Dasha Gauri', 'Tim ROW PT Intrabes Sentani',
-    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2',
-    'Tim Yantek Sentani 11', 'Tim Yantek Sentani 12', 'Tim Yantek Sentani 21'
-  ],
-  'ULP Arso': [
-    'Tim Pemeliharaan PLN ND', 'Tim Inspeksi JTM Tier 1 Arso', 'Tim Inspeksi Gardu',
-    'Tim ROW PT APP Arso', 'Tim ROW PT Intrabes Arso', 'Tim ROW PLN ND Arso',
-    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2',
-    'Tim Yantek Arso 11', 'Tim Yantek Arso 21'
-  ],
-  'ULP Genyem': [
-    'Tim Pemeliharaan PLN ND', 'Tim Inspeksi JTM Tier 1 Genyem', 'Tim Inspeksi Gardu',
-    'Tim ROW PT APP Genyem', 'Tim ROW PLN ND Genyem',
-    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2',
-    'Tim Yantek Genyem 11', 'Tim Yantek Genyem 12'
-  ],
-  'ULP Sarmi': [
-    'Tim Pemeliharaan PLN ND', 'Tim Inspeksi JTM Tier 1 Sarmi', 'Tim Inspeksi Gardu',
-    'Tim ROW PT APP Sarmi', 'Tim ROW PLN ND Sarmi',
-    'Tim Mitra Konstruksi', 'Tim PDKB SL 1', 'Tim PDKB SL 2',
-    'Tim Yantek Sarmi 11', 'Tim Yantek Sarmi 12'
-  ],
-  // "PT MITRA" diperlakukan sebagai Unit Kerja tersendiri (setara ULP),
-  // dengan tiap nama PT di bawah ini berperan sebagai Regu/Tim-nya —
-  // permintaan supervisor: strukturnya sama seperti ULP+Tim di atas.
-  'PT MITRA': [
-    'PT URSULA ABADI', 'PT HARAPAN PAPUA SEJAHTERA', 'PT TIGA RIZKY JAYA',
-    'PT KALIAGA NINER PERSADA', 'PT RAJAWALI PERKASA RAYA', 'PT PLN NUSA DAYA',
-    'PT AKA RIFKI PAPUA', 'PT AKBAR PAPUA PERKASA', 'PT INTRABES SELARA',
-    'PT LAU DALING', 'PT DASHA GAURI PAPUA', 'PT PUTRA SENTANI JAYA',
-    'PT BUBUN BUSU', 'PT KASITAMMUAN AMAN SEJAHTERA', 'PT LAKAWAN',
-    'PT MATA ALLO PAPUA', 'PT PARDAME BINTANG UTARA', 'PT IRIANA KARYA UTAMA'
-  ]
-};
 
 // Reverse map: nama Tim -> daftar ULP tempat tim itu ada. Masih dipakai
 // untuk opsi "Lainnya" (Unit Kerja belum ada di daftar) supaya semua nama
@@ -2108,24 +2066,6 @@ Object.entries(ROSTER_ULP_TEAMS).forEach(([ulp, teams]) => {
 const ALL_TEAM_NAMES = Object.keys(TEAM_TO_ULPS).sort((a, b) => a.localeCompare(b));
 const ULP_LIST = Object.keys(ROSTER_ULP_TEAMS);
 
-// ══════════════════════════════════════════════════════════════
-// RENCANA PEKERJAAN — daftar master dropdown Jenis & Rincian Pekerjaan.
-// HARUS SAMA PERSIS dengan RP_JENIS_PEKERJAAN_LIST & RP_RINCIAN_GROUPS di
-// index.html (dashboard supervisor), supaya istilah yang dipilih petugas di
-// sini konsisten dengan yang dipakai supervisor saat membuat Rencana
-// Pekerjaan (RKM) — kalau daftar di dashboard diubah, salin ulang ke sini juga.
-// ══════════════════════════════════════════════════════════════
-const RP_KATEGORI_LIST = ['KONTRAK AO', 'KONTRAK AI', 'KONTRAK VARCOST', 'EMERGENCY', 'GREBEK'];
-
-const RP_JENIS_PEKERJAAN_LIST = [
-  'Sempurna Proteksi', 'Sempurna Material', 'Sempurna Pembebanan',
-  'Sempurna Inspeksi', 'Sempurna Konstruksi', 'Sempurna ROW'
-];
-
-const RP_HEALTH_INDEX_LIST = ['SEMPURNA', 'SEHAT', 'SAKIT', 'KRONIS'];
-const RP_PDKB_LIST = ['TIDAK', 'YA'];
-const RP_METODE_LIST = ['OFFLINE', 'ONLINE'];
-const RP_JENIS_PEMADAMAN_LIST = ['TM', 'TR', 'Tanpa Pemadaman'];
 
 // Data resmi master Penyulang → Section → Nomor Gardu, sama seperti di
 // index.html (dashboard supervisor). Sumber: FORMAT PEMADAMAN ULP, sheet
@@ -2190,52 +2130,6 @@ window.onLaporSectionChange = function() {
   populateLaporGarduSelect();
 };
 
-const RP_RINCIAN_GROUPS = {
-  'Umum / Bangunan / JTM Dasar': [
-    'Perbaikan Andongan', 'Perbaikan Andongan (JTR)', 'Inspeksi Kubikel', 'Pemeliharaan Kubikel',
-    'Pembersihan Halaman Bangunan', 'Pengecatan Bangunan', 'SLO PHBTM', 'Inspeksi Tier 1 JTM',
-    'Inspeksi Tier 2 JTM', 'Pengukuran Tahanan Isolasi JTM/SKTM', 'Rabas Pohon', 'Pembersihan Terminasi',
-    'Tebang Pohon', 'Pemasangan Westpex', 'Pemasangan Cover Isolator Tarik', 'Pemasangan Cover Isolator Tumpu',
-    'Pemasangan Cover LA', 'Pemasangan Cover FCO Bawah', 'Pemasangan Cover FCO Atas', 'Pemasangan IJUK',
-    'Pembersihan Corong', 'Pembersihan Jaring Layang-layang', 'Sisip Tiang', 'Perbaikan Konstruksi Schoor',
-    'Perbaikan Tiang Miring', 'Penggantian Traves', 'Penggantian Tiang Keropos/Rusak TM',
-    'Pemasangan Pondasi Tiang', 'Pemasangan Top Ties', 'Konsul Phasa S', 'Perubahan Konstruksi Segitiga',
-    'Pengecatan Tiang', 'Perbaikan Sambungan SUTM'
-  ],
-  'Switching / Proteksi / Kubikel': [
-    'Perbaikan Kawat Rantas', 'Penggantian Isolator Tarik', 'Penggantian Isolator Tumpu',
-    'Penggantian Pin Insulator menjadi Pin Post', 'Pemasangan LA Jaringan', 'Pemasangan Fault Indikator',
-    'Penggantian Baterai LBS Motorized', 'Penggantian LBS', 'Penggantian Baterai Recloser', 'Penggantian FCO',
-    'Pemeliharaan LBS', 'Pemeliharaan Recloser', 'Pemasangan Cover LBS', 'Pemasangan Cover Recloser',
-    'Relokasi LBS', 'Relokasi Recloser', 'Pemasangan DS', 'Penggantian Rectifier Rusak',
-    'Penggantian Relay Rusak (Peremajaan)', 'Integrasi Keypoint ke SCADA', 'Assesment Keypoint',
-    'Pemeliharaan berbasis PDKB', 'SLO JTM', 'Perbaikan Tiang (las tiang/dll)', 'Pemasangan Klem H'
-  ],
-  'Gardu & Trafo': [
-    'Inspeksi Tier 1', 'Inspeksi Tier 2', 'Pengukuran Beban', 'Penyeimbangan Beban', 'Manajemen/Mutasi Trafo',
-    'Menaikkan Tap Changer Trafo Distribusi', 'Penggantian PHBTR Rusak', 'Penggantian Dudukan PHBTR',
-    'Pembersihan Halaman Gardu Distribusi', 'Pengecatan Gardu', 'Penggantian In / Out Gardu',
-    'Penggantian Tiang Keropos/Rusak Gardu', 'Perbaikan LA Gardu', 'Perbaikan Grounding Gardu',
-    'Penyesuaian Rating (Fuse Link)', 'Pemasangan Cover LA & Bushing Gardu', 'Penyesuaian tegangan drop',
-    'Downrating trafo', 'Uprating Trafo', 'Pemasangan Cover Cut Out Gardu', 'SLO Gardu Distribusi',
-    'Pengecekan Pintu PHBTR', 'Pengecekan trafo rembes', 'Manuver beban gardu', 'Rehabilitasi Gardu',
-    'Pengisian Minyak trafo pada Trafo'
-  ],
-  'Jaringan JTR': [
-    'Inspeksi (JTR)', 'Perampalan Pohon (JTR)', 'Joinisasi/Perbaikan Sambungan (JTR)',
-    'Penggantian Aksesoris Tarikan (JTR)', 'Perbaikan Tiang Miring (JTR)', 'Pemasangan Grounding (JTR)',
-    'Pemasangan Schoor (JTR)', 'Pengecatan Tiang (JTR)', 'Pemasangan Kumis (JTR)',
-    'Penggantian Tiang Keropos/Rusak (JTR)', 'Penggantian Kabel Incoming/Outgoing (JTR)',
-    'Penggantian Pipa Incoming/Outgoing (JTR)', 'Penarikan Kabel JTR', 'Rekonektorisasi JTR', 'SLO JTR',
-    'Pemasangan Kabel JTR', 'Pembongkaran Kabel JTR', 'Pembongkaran tiang JTR', 'Perbaikan SR Deret',
-    'Penggantian Tap Konektor Menjadi Konektor Press', 'Pemasangan Service Wedge Clamp'
-  ],
-  'Pembangunan / Uprating': [
-    'Pembangunan Konstruksi Tiang JTM', 'Uprating SUTM', 'Uprating MVTIC', 'Uprating SKTM',
-    'Pembangunan Gardu Sisip', 'Pembangunan Gardu portal', 'Pembangunan Gardu Hubung',
-    'Pembangunan Konstruksi Tiang JTR', 'Uprating SUTR', 'Pembangunan LBS Threeway', 'Pembangunan Recloser'
-  ]
-};
 
 // RINCIAN_SATUAN_MAP — pemetaan Rincian Pekerjaan ("LEAD MEASURE") ke Satuan
 // ("STN") sesuai master FORMAT PEMADAMAN ULP - TARGET. Dipakai untuk mengisi
@@ -4105,10 +3999,10 @@ window.listenRevisiDanTugas = function() {
     banner.style.display = 'block';
     list.innerHTML = perluRevisi.sort((a,b) => (b[1].verifWaktu||0) - (a[1].verifWaktu||0)).map(([id, l]) => `
       <div style="background:var(--surface-card,#fff);border:1px solid rgba(220,53,69,0.2);border-radius:12px;padding:10px 12px">
-        <div style="font-size:12.5px;font-weight:700;color:var(--text)">${l.rincian || '—'}</div>
-        ${l.nomorTiket ? `<div style="font-size:11px;color:var(--text-muted);font-family:'SF Mono','Fira Code',monospace;margin-top:2px">${l.nomorTiket}</div>` : ''}
-        ${l.verifCatatan ? `<div style="font-size:11.5px;color:#C0293C;margin-top:6px">📝 ${l.verifCatatan}</div>` : ''}
-        <button type="button" onclick="bukaModalLaporUntuk('${l.nomorTiket||''}','${id}')" style="margin-top:8px;background:#C0293C;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;width:100%">🔁 Lapor Ulang</button>
+        <div style="font-size:12.5px;font-weight:700;color:var(--text)">${esc(l.rincian) || '—'}</div>
+        ${l.nomorTiket ? `<div style="font-size:11px;color:var(--text-muted);font-family:'SF Mono','Fira Code',monospace;margin-top:2px">${esc(l.nomorTiket)}</div>` : ''}
+        ${l.verifCatatan ? `<div style="font-size:11.5px;color:#C0293C;margin-top:6px">📝 ${esc(l.verifCatatan)}</div>` : ''}
+        <button type="button" onclick="bukaModalLaporUntuk('${esc(l.nomorTiket||'')}','${id}')" style="margin-top:8px;background:#C0293C;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;width:100%">🔁 Lapor Ulang</button>
       </div>
     `).join('');
   });
@@ -4126,12 +4020,12 @@ window.listenRevisiDanTugas = function() {
     card.style.display = 'block';
     list.innerHTML = tugasSaya.sort((a,b) => (b[1].waktu||0) - (a[1].waktu||0)).map(([id, t]) => `
       <div style="background:var(--surface2);border:1px solid var(--border-str);border-radius:12px;padding:10px 12px">
-        <div style="font-family:'SF Mono','Fira Code',monospace;font-size:11px;color:var(--text-muted)">${t.nomor||''}</div>
-        <div style="font-size:12.5px;font-weight:700;color:var(--text);margin-top:5px">${t.jenis || '—'}</div>
-        <div style="font-size:11px;color:var(--text-sec);margin-top:2px">${t.lokasi || '—'}</div>
-        ${t.targetVolume != null ? `<div style="font-size:11px;color:var(--text-sec);margin-top:2px">🎯 Target: <b>${t.targetVolume}</b>${t.periodeKey ? ' · ' + t.periodeKey : ''}</div>` : ''}
-        ${(t.koordinatAwal || t.koordinatAkhir) ? `<div style="font-size:10.5px;color:var(--text-muted);margin-top:2px;font-family:'SF Mono','Fira Code',monospace">📍 ${t.koordinatAwal||'—'} → ${t.koordinatAkhir||'—'}</div>` : ''}
-        <button type="button" onclick="bukaModalLaporUntuk('${t.nomor||''}')" style="margin-top:8px;background:var(--pln-blue);color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;width:100%">📋 Kerjakan Tugas Ini</button>
+        <div style="font-family:'SF Mono','Fira Code',monospace;font-size:11px;color:var(--text-muted)">${esc(t.nomor||'')}</div>
+        <div style="font-size:12.5px;font-weight:700;color:var(--text);margin-top:5px">${esc(t.jenis) || '—'}</div>
+        <div style="font-size:11px;color:var(--text-sec);margin-top:2px">${esc(t.lokasi) || '—'}</div>
+        ${t.targetVolume != null ? `<div style="font-size:11px;color:var(--text-sec);margin-top:2px">🎯 Target: <b>${esc(t.targetVolume)}</b>${t.periodeKey ? ' · ' + esc(t.periodeKey) : ''}</div>` : ''}
+        ${(t.koordinatAwal || t.koordinatAkhir) ? `<div style="font-size:10.5px;color:var(--text-muted);margin-top:2px;font-family:'SF Mono','Fira Code',monospace">📍 ${esc(t.koordinatAwal||'—')} → ${esc(t.koordinatAkhir||'—')}</div>` : ''}
+        <button type="button" onclick="bukaModalLaporUntuk('${esc(t.nomor||'')}')" style="margin-top:8px;background:var(--pln-blue);color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;width:100%">📋 Kerjakan Tugas Ini</button>
       </div>
     `).join('');
   });
@@ -4468,7 +4362,11 @@ window.submitLaporan = async function() {
     lat: lastPos ? lastPos.coords.latitude  : null,
     lng: lastPos ? lastPos.coords.longitude : null,
     waktu,
-    status: 'Selesai diverifikasi oleh Supervisor',
+    // CATATAN: laporan TIDAK diberi field `status` di sini. Status verifikasi
+    // laporan dikontrol murni lewat field `statusVerifikasi` (diisi supervisor
+    // saat memverifikasi — lihat index.html). Sengaja tidak diisi/default
+    // kosong di sini supaya laporan baru otomatis dianggap "Menunggu
+    // Verifikasi" (lihat index.html: `!l.statusVerifikasi` == pending).
     fotoBeforeUrl:  fotoResult.before.fotoUrl  || null, fotoBeforeBase64:  fotoResult.before.fotoBase64  || null,
     fotoProgresUrl: fotoResult.progres.fotoUrl || null, fotoProgresBase64: fotoResult.progres.fotoBase64 || null,
     fotoAfterUrl:   fotoResult.after.fotoUrl   || null, fotoAfterBase64:   fotoResult.after.fotoBase64   || null
@@ -4548,7 +4446,7 @@ function renderTaskList() {
         '</div>'
       : '';
     return '<div class="task-item">' +
-      '<div class="task-title">' + t.rincian + (t.nomorTiket ? ' <span style="font-weight:700;color:var(--pln-blue);font-size:11px">· ' + t.nomorTiket + '</span>' : '') + '</div>' +
+      '<div class="task-title">' + esc(t.rincian) + (t.nomorTiket ? ' <span style="font-weight:700;color:var(--pln-blue);font-size:11px">· ' + esc(t.nomorTiket) + '</span>' : '') + '</div>' +
       '<div class="task-meta">' + jam + ' · Target ' + (t.target||'—') + ' | Realisasi ' + (t.realisasi||'—') + '</div>' +
       '<div class="task-badge done">✓ Terkirim</div>' +
       thumbs +
