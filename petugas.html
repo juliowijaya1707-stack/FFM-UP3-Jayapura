@@ -1158,11 +1158,11 @@ body {
       </div>
       <div class="field">
         <label>Satuan <span style="color:var(--red)">*</span></label>
-        <input type="text" id="lapor-satuan" list="lapor-satuan-list" placeholder="cth: kms, btng, titik">
-        <datalist id="lapor-satuan-list"><option value="kms"><option value="btng"><option value="titik"><option value="unit"><option value="fasa"></datalist>
+        <input type="text" id="lapor-satuan" list="lapor-satuan-list" placeholder="Otomatis mengikuti Rincian Pekerjaan..." oninput="window._satuanManual = true">
+        <datalist id="lapor-satuan-list"><option value="bh"><option value="btg"><option value="btng"><option value="cell"><option value="fasa"><option value="gwg"><option value="kms"><option value="mtr"><option value="titik"><option value="unit"></datalist>
       </div>
     </div>
-    <div style="font-size:10px;color:var(--text-muted);margin:-6px 0 14px">Realisasi &amp; Satuan wajib diisi (boleh 0). Target ditentukan supervisor dari dashboard, tidak perlu diisi ulang di sini.</div>
+    <div style="font-size:10px;color:var(--text-muted);margin:-6px 0 14px">Realisasi &amp; Satuan wajib diisi (boleh 0). Satuan otomatis terisi mengikuti Rincian Pekerjaan, tapi bisa diubah manual. Target ditentukan supervisor dari dashboard, tidak perlu diisi ulang di sini.</div>
 
     <!-- Khusus Konstruksi — section opsional, tersembunyi sampai togglenya ditekan.
          Baru menampilkan (menambahkan) field-fieldnya begitu petugas menekan togglenya,
@@ -1175,10 +1175,6 @@ body {
         </div>
       </div>
       <div id="konstruksi-fields" style="display:none;margin-top:8px;border:1px dashed var(--border-str);border-radius:10px;padding:12px;background:var(--surface2)">
-        <div class="field"><label>Satuan <span style="font-size:10px;color:var(--text-muted);font-weight:400">(otomatis dari Rincian Pekerjaan, bisa diubah manual)</span></label>
-          <input type="text" id="lapor-konstruksi-satuan" list="lapor-konstruksi-satuan-list" placeholder="Otomatis mengikuti Rincian Pekerjaan..." oninput="window._konstruksiSatuanManual = true">
-          <datalist id="lapor-konstruksi-satuan-list"><option value="bh"><option value="btg"><option value="btng"><option value="cell"><option value="gwg"><option value="kms"><option value="mtr"><option value="titik"><option value="unit"></datalist>
-        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
           <div class="field" style="margin-bottom:0"><label style="font-size:10.5px">Jumlah Material Mitra</label>
             <input type="number" id="lapor-konstruksi-material-mitra" placeholder="0" min="0" step="any" inputmode="numeric">
@@ -2242,10 +2238,10 @@ const RP_RINCIAN_GROUPS = {
 };
 
 // RINCIAN_SATUAN_MAP — pemetaan Rincian Pekerjaan ("LEAD MEASURE") ke Satuan
-// ("STN") sesuai master FORMAT PEMADAMAN ULP - TARGET. Dipakai HANYA untuk
-// mengisi otomatis field Satuan di section "Khusus Konstruksi" begitu petugas
-// memilih Rincian Pekerjaan — petugas tetap bisa mengetik/mengubahnya manual
-// kalau satuan yang benar berbeda dari master ini.
+// ("STN") sesuai master FORMAT PEMADAMAN ULP - TARGET. Dipakai untuk mengisi
+// otomatis field Satuan (setelah Realisasi) begitu petugas memilih Rincian
+// Pekerjaan — petugas tetap bisa mengetik/mengubahnya manual kalau satuan
+// yang benar berbeda dari master ini.
 const RINCIAN_SATUAN_MAP = {
   'Perbaikan Andongan': 'kms',
   'Perbaikan Andongan (JTR)': 'kms',
@@ -2365,19 +2361,19 @@ const RINCIAN_SATUAN_MAP = {
   'Pembangunan Recloser': 'titik',
 };
 
-// Isi otomatis field Satuan di section "Khusus Konstruksi" berdasarkan Rincian
-// Pekerjaan yang sedang dipilih (RINCIAN_SATUAN_MAP). Dipanggil setiap kali
-// Rincian Pekerjaan berganti, dan setiap kali toggle "Khusus Konstruksi"
-// dinyalakan (kalau Rincian sudah terisi lebih dulu). TIDAK menimpa isian
-// kalau petugas sudah pernah mengetik manual di field Satuan tsb (petugas
-// tetap bebas mengoreksi/mengisi manual bila satuan master ini tidak sesuai).
-function applyKonstruksiSatuanOtomatis() {
-  const satuanEl = document.getElementById('lapor-konstruksi-satuan');
-  if (!satuanEl || window._konstruksiSatuanManual) return;
+// Isi otomatis field Satuan (setelah Realisasi) berdasarkan Rincian Pekerjaan
+// yang sedang dipilih (RINCIAN_SATUAN_MAP). Dipanggil setiap kali Rincian
+// Pekerjaan berganti. TIDAK menimpa isian kalau petugas sudah pernah mengetik
+// manual di field Satuan tsb (petugas tetap bebas mengoreksi/mengisi manual
+// bila satuan master ini tidak sesuai — lihat window._satuanManual, di-set
+// oleh oninput pada field #lapor-satuan).
+function applySatuanOtomatis() {
+  const satuanEl = document.getElementById('lapor-satuan');
+  if (!satuanEl || window._satuanManual) return;
   const rincianVal = document.getElementById('lapor-rincian')?.value || '';
   satuanEl.value = RINCIAN_SATUAN_MAP[rincianVal] || '';
 }
-window.applyKonstruksiSatuanOtomatis = applyKonstruksiSatuanOtomatis;
+window.applySatuanOtomatis = applySatuanOtomatis;
 
 // ── Gardu — MULTI-SELECT (form Laporan) ──
 // Sama seperti di dashboard supervisor: satu laporan bisa mencakup lebih
@@ -2431,9 +2427,11 @@ window.toggleLaporGarduDropdown = function() {
 };
 
 // Section "Khusus Konstruksi" — tersembunyi & kosong secara default, field-fieldnya
-// (Satuan, Jumlah Material Mitra, Jumlah Pasang, Jumlah Bongkar) baru ditampilkan begitu
+// (Jumlah Material Mitra, Jumlah Pasang, Jumlah Bongkar) baru ditampilkan begitu
 // petugas menekan togglenya. Menekan lagi menyembunyikan & mengosongkan isinya kembali,
 // supaya tidak ada data "khusus konstruksi" nyangkut kalau petugas berubah pikiran.
+// Field Satuan-nya sendiri sudah tidak ada di sini — sudah digabung ke field Satuan
+// utama (setelah Realisasi), yang otomatis mengikuti Rincian Pekerjaan.
 window.toggleKhususKonstruksi = function() {
   const box = document.getElementById('konstruksi-fields');
   const sw = document.getElementById('konstruksi-switch');
@@ -2443,16 +2441,13 @@ window.toggleKhususKonstruksi = function() {
     box.style.display = 'none';
     sw.style.background = '#cbd5e1';
     knob.style.left = '2px';
-    document.getElementById('lapor-konstruksi-satuan').value = '';
     document.getElementById('lapor-konstruksi-material-mitra').value = '';
     document.getElementById('lapor-konstruksi-pasang').value = '';
     document.getElementById('lapor-konstruksi-bongkar').value = '';
-    window._konstruksiSatuanManual = false;
   } else {
     box.style.display = 'block';
     sw.style.background = 'var(--green,#22A64A)';
     knob.style.left = '22px';
-    applyKonstruksiSatuanOtomatis(); // kalau Rincian Pekerjaan sudah terisi lebih dulu
   }
 };
 
@@ -2622,13 +2617,13 @@ function populateLaporPekerjaanDropdowns() {
     rincianSel.dataset.filled = '1';
   }
   enhanceSearchableSelect('lapor-rincian');
-  // Auto-isi Satuan (Khusus Konstruksi) mengikuti Rincian Pekerjaan yang
-  // dipilih (RINCIAN_SATUAN_MAP), begitu petugas memilih/mengganti Rincian
-  // Pekerjaan — tapi TIDAK menimpa kalau petugas sudah pernah mengetik
-  // manual di field Satuan itu sendiri (lihat window._konstruksiSatuanManual,
-  // di-set oleh oninput pada field #lapor-konstruksi-satuan).
+  // Auto-isi Satuan (field setelah Realisasi) mengikuti Rincian Pekerjaan
+  // yang dipilih (RINCIAN_SATUAN_MAP), begitu petugas memilih/mengganti
+  // Rincian Pekerjaan — tapi TIDAK menimpa kalau petugas sudah pernah
+  // mengetik manual di field Satuan itu sendiri (lihat window._satuanManual,
+  // di-set oleh oninput pada field #lapor-satuan).
   if (rincianSel && !rincianSel.dataset.satuanAutofillBound) {
-    rincianSel.addEventListener('change', applyKonstruksiSatuanOtomatis);
+    rincianSel.addEventListener('change', applySatuanOtomatis);
     rincianSel.dataset.satuanAutofillBound = '1';
   }
   isiPilihanPenyulang('lapor');
@@ -4054,6 +4049,7 @@ window.bukaModalLapor = function() {
   document.getElementById('lapor-rincian').value = '';
   document.getElementById('lapor-vol').value = '';
   document.getElementById('lapor-satuan').value = '';
+  window._satuanManual = false;
   document.getElementById('lapor-pdkb').value = 'TIDAK';
   document.getElementById('lapor-metode').value = 'OFFLINE';
   document.getElementById('lapor-daerah-padam').value = '';
@@ -4064,11 +4060,9 @@ window.bukaModalLapor = function() {
   document.getElementById('konstruksi-fields').style.display = 'none';
   document.getElementById('konstruksi-switch').style.background = '#cbd5e1';
   document.getElementById('konstruksi-switch-knob').style.left = '2px';
-  document.getElementById('lapor-konstruksi-satuan').value = '';
   document.getElementById('lapor-konstruksi-material-mitra').value = '';
   document.getElementById('lapor-konstruksi-pasang').value = '';
   document.getElementById('lapor-konstruksi-bongkar').value = '';
-  window._konstruksiSatuanManual = false;
   laporFoto = { before: null, progres: null, after: null };
   LAPOR_FASE_ORDER.forEach(resetSlotFoto);
   restoreLaporDraft(); // pulihkan foto Sebelum/Progres/Sesudah yang tersimpan sebelumnya, kalau ada
@@ -4387,7 +4381,6 @@ window.submitLaporan = async function() {
   // Khusus Konstruksi — section opsional (togglenya di UI), field ini kosong/null
   // kalau petugas tidak pernah menekan togglenya (dianggap bukan pekerjaan konstruksi).
   const konstruksiAktif    = document.getElementById('konstruksi-fields').style.display !== 'none';
-  const konstruksiSatuan   = konstruksiAktif ? document.getElementById('lapor-konstruksi-satuan').value.trim() : '';
   const konstruksiMaterialMitra = konstruksiAktif ? document.getElementById('lapor-konstruksi-material-mitra').value.trim() : '';
   const konstruksiPasang   = konstruksiAktif ? document.getElementById('lapor-konstruksi-pasang').value.trim() : '';
   const konstruksiBongkar  = konstruksiAktif ? document.getElementById('lapor-konstruksi-bongkar').value.trim() : '';
@@ -4468,7 +4461,6 @@ window.submitLaporan = async function() {
     lapPic: pic || null,
     lapKeterangan: keterangan || null,
     // Khusus Konstruksi — null semua kalau togglenya tidak diaktifkan petugas
-    lapKonstruksiSatuan: konstruksiSatuan || null,
     lapKonstruksiMaterialMitra: konstruksiMaterialMitra !== '' ? konstruksiMaterialMitra : null,
     lapKonstruksiPasang: konstruksiPasang !== '' ? konstruksiPasang : null,
     lapKonstruksiBongkar: konstruksiBongkar !== '' ? konstruksiBongkar : null,

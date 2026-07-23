@@ -1989,7 +1989,7 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
       <div id="modal-verifikasi" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(10,20,36,0.6);align-items:center;justify-content:center;">
         <div style="background:var(--surface);border-radius:var(--radius-lg);padding:28px;width:100%;max-width:560px;box-shadow:var(--shadow-lg);margin:16px;max-height:90vh;overflow-y:auto;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-            <div style="font-family:var(--font-display);font-size:16px;font-weight:800">Verifikasi Laporan</div>
+            <div id="modal-verifikasi-title" style="font-family:var(--font-display);font-size:16px;font-weight:800">Verifikasi Laporan</div>
             <button onclick="tutupModalVerifikasi()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-3);padding:4px">✕</button>
           </div>
           <div id="verif-detail-body"></div>
@@ -3039,23 +3039,36 @@ let checkpointMarkers = {};        // laporanId -> leaflet marker checkpoint
 // oleh sembarang pengguna. Kalau nanti sudah ada halaman login sungguhan,
 // ganti isAdminMode di sini agar mengikuti status login user (role === 'admin'),
 // dan hapus prompt PIN ini.
+//
+// PENTING: Mode Admin SENGAJA TIDAK dipertahankan lewat sessionStorage lagi.
+// Sebelumnya status "aktif" tersimpan di sessionStorage dan otomatis menyala
+// kembali tiap kali halaman dibuka ulang/di-refresh TANPA perlu PIN lagi —
+// ini yang menyebabkan bug "bisa hapus data padahal merasa tidak sedang
+// membuka Mode Admin" (nyala dari sesi sebelumnya, lupa dimatikan). Sekarang
+// Mode Admin SELALU dimulai OFF setiap kali halaman dimuat/di-refresh, dan
+// PIN wajib dimasukkan ulang tiap kali mau mengaktifkannya.
 const ADMIN_PIN = '1111'; // ganti PIN ini sesuai keinginan Anda
-let isAdminMode = sessionStorage.getItem('ffm_admin') === '1'; // reset tiap tab/browser ditutup
+let isAdminMode = false;
 
+let _adminToggleBusy = false;
 async function toggleAdminMode() {
-  if (isAdminMode) {
-    if (!(await confirmDialog('Keluar dari Mode Admin?', { title: 'Keluar Mode Admin', okLabel: 'Ya, Keluar', danger: false }))) return;
-    isAdminMode = false;
-    sessionStorage.removeItem('ffm_admin');
-  } else {
-    const pin = await promptDialog('Masukkan PIN Admin untuk mengaktifkan tombol hapus data:', { title: 'Mode Admin', okLabel: 'Masuk', placeholder: '••••' });
-    if (pin === null) return; // dibatalkan
-    if (pin !== ADMIN_PIN) { showToast('PIN salah.', 'err'); return; }
-    isAdminMode = true;
-    sessionStorage.setItem('ffm_admin', '1');
-    showToast('Mode Admin aktif.', 'ok');
+  if (_adminToggleBusy) return; // cegah klik ganda saat dialog konfirmasi/PIN masih terbuka
+  _adminToggleBusy = true;
+  try {
+    if (isAdminMode) {
+      if (!(await confirmDialog('Keluar dari Mode Admin?', { title: 'Keluar Mode Admin', okLabel: 'Ya, Keluar', danger: false }))) return;
+      isAdminMode = false;
+    } else {
+      const pin = await promptDialog('Masukkan PIN Admin untuk mengaktifkan tombol hapus data:', { title: 'Mode Admin', okLabel: 'Masuk', placeholder: '••••' });
+      if (pin === null) return; // dibatalkan
+      if (pin !== ADMIN_PIN) { showToast('PIN salah.', 'err'); return; }
+      isAdminMode = true;
+      showToast('Mode Admin aktif.', 'ok');
+    }
+    applyAdminUI();
+  } finally {
+    _adminToggleBusy = false;
   }
-  applyAdminUI();
 }
 
 function applyAdminUI() {
@@ -3071,10 +3084,17 @@ function applyAdminUI() {
   }
 
   // render ulang daftar yang sudah ada di memori, supaya tombol hapus langsung
-  // muncul/hilang saat ini juga, tanpa perlu menunggu data Firebase berubah
+  // muncul/hilang saat ini juga, tanpa perlu menunggu data Firebase berubah.
+  // PENTING: sebelumnya hanya 3 daftar ini yang di-render ulang — Tiket
+  // (Rencana Pekerjaan) & Verifikasi Laporan TIDAK ikut, jadi tombol hapus
+  // di kedua tampilan itu bisa nyangkut menampilkan status Mode Admin yang
+  // lama sampai data Firebase-nya berubah sendiri (bug: tombol hapus masih
+  // terlihat/tertekan padahal Mode Admin sudah dimatikan, atau sebaliknya).
   if (lastPetugasEntries) renderPetugasList(lastPetugasEntries);
   if (lastAbsensiEntries) renderAbsensiTable(lastAbsensiEntries);
   if (lastLaporanEntries) renderLaporanGrid(lastLaporanEntries);
+  if (lastTiketEntries) renderTiketTable(lastTiketEntries);
+  if (verifikasiRawEntries && verifikasiRawEntries.length) renderVerifikasiGrid();
 }
 
 // ══════════════════════════════════════
@@ -4896,15 +4916,15 @@ window.onLaporanPageSizeChange = function() {
 // Health Index, Kategori, PDKB, Metode, Data Pemadaman, PIC & Keterangan
 // (field lapPenyulang / lapSection / lapGardu / lapHealthIndex / lapKategori /
 // lapPdkb / lapMetode / lapDaerahPadam / lapJenisPemadaman / lapPic /
-// lapKeterangan). Field lapKonstruksiSatuan (dulu bernama "STN", pilihan Ya/Tidak)
-// diisi petugas hanya saat toggle "Khusus Konstruksi" diaktifkan — sekarang
-// terisi OTOMATIS mengikuti Rincian Pekerjaan yang dipilih, berdasarkan
-// master RINCIAN_SATUAN_MAP di petugas.html (kolom LEAD MEASURE -> STN dari
-// FORMAT PEMADAMAN ULP - TARGET), tapi petugas tetap bisa mengetik/mengubah
-// nilainya secara manual kalau satuan di master tidak sesuai. Fungsi ini
-// menyusun baris-baris itu, dan HANYA
-// menampilkan baris yang datanya memang terisi supaya kartu tidak penuh
-// baris kosong untuk laporan lama yang belum punya field ini.
+// lapKeterangan). Field lapKonstruksiSatuan (dulu section "Khusus Konstruksi"
+// punya field Satuan sendiri, otomatis mengikuti Rincian Pekerjaan berdasarkan
+// master RINCIAN_SATUAN_MAP di petugas.html) SUDAH DIHAPUS dari form petugas —
+// sekarang cukup 1 field Satuan (realisasiSatuan) yang otomatis mengikuti
+// Rincian Pekerjaan yang sama. Baris "Satuan Konstruksi" di bawah ini hanya
+// tersisa untuk menampilkan data laporan LAMA yang masih punya field ini;
+// laporan baru tidak akan mengisinya lagi. Fungsi ini menyusun baris-baris
+// detail laporan, dan HANYA menampilkan baris yang datanya memang terisi
+// supaya kartu tidak penuh baris kosong untuk laporan yang belum punya field ini.
 function laporanDetailFieldsHtml(l) {
   const lokasi = [l.lapPenyulang, l.lapSection, l.lapGardu].filter(Boolean).join(' / ');
   const pemadaman = [l.lapJenisPemadaman, l.lapDaerahPadam].filter(Boolean).join(' — ');
@@ -5895,6 +5915,7 @@ function renderTiketProgres() {
 // ══════════════════════════════════════
 let currentVerifId = null;
 let currentVerifLaporan = null;
+let currentVerifMode = 'verifikasi'; // 'verifikasi' atau 'hasil' — lihat bukaModalVerifikasi()
 let lastVerifEntries = null;
 let verifikasiRawEntries = [];
 
@@ -5933,10 +5954,24 @@ function populateVerifRincianDropdowns() {
 // verifikasinya sekaligus di modal ini ("Ubah Hasil Verifikasi"), tanpa perlu masuk Mode
 // Admin. Fungsi ini karena itu selalu mengisi field rincian laporan sebagai form yang
 // bisa diedit, bukan cuma teks statis seperti sebelumnya.
-window.bukaModalVerifikasi = function(id, laporan) {
+// mode: 'verifikasi' (default, dipanggil dari tab "Verifikasi Laporan") atau
+// 'hasil' (dipanggil dari tombol "Ubah Hasil Verifikasi" di tab "Hasil Verifikasi").
+// Sebelumnya modal ini SELALU berjudul & bertombol "Verifikasi Laporan" walau
+// dibuka dari tab "Hasil Verifikasi", sehingga supervisor mengira aksinya
+// "pindah"/muncul di tab Verifikasi Laporan — padahal sebenarnya cuma modal
+// overlay yang tetap berada di tab manapun ia dibuka, dan hasilnya memang
+// langsung tersimpan & tampil kembali di tab asalnya. Judul & tombol sekarang
+// disesuaikan supaya jelas konteksnya.
+window.bukaModalVerifikasi = function(id, laporan, mode) {
   currentVerifId = id;
   currentVerifLaporan = laporan;
+  currentVerifMode = mode === 'hasil' ? 'hasil' : 'verifikasi';
   populateVerifRincianDropdowns();
+
+  document.getElementById('modal-verifikasi-title').textContent =
+    currentVerifMode === 'hasil' ? 'Ubah Hasil Verifikasi' : 'Verifikasi Laporan';
+  document.getElementById('verif-btn-submit').textContent =
+    currentVerifMode === 'hasil' ? 'Simpan Perubahan' : 'Kirim Verifikasi';
 
   document.getElementById('vf-kategori').value        = laporan.lapKategori || '';
   document.getElementById('vf-jenis').value            = laporan.jenisPekerjaan || '';
@@ -6082,7 +6117,8 @@ window.submitVerifikasi = async function() {
     errEl.textContent = 'Gagal menyimpan: ' + e.message;
     errEl.style.display = 'block';
   } finally {
-    btn.disabled = false; btn.textContent = 'Kirim Verifikasi';
+    btn.disabled = false;
+    btn.textContent = currentVerifMode === 'hasil' ? 'Simpan Perubahan' : 'Kirim Verifikasi';
   }
 };
 
@@ -6298,7 +6334,7 @@ function renderHasilVerifikasiCard(id, l) {
   // verifikasinya dilakukan sekaligus lewat "Ubah Hasil Verifikasi" di bawah ini,
   // tanpa perlu masuk Mode Admin terlebih dahulu.
   const btnAksi = `<div style="display:flex;gap:8px;margin-top:10px">
-      <button onclick="bukaModalVerifikasi('${id}',${JSON.stringify(l).replace(/"/g,'&quot;')})" style="flex:1;background:var(--pln-blue);color:#fff;border:1px solid var(--pln-blue);border-radius:var(--radius-xs);padding:8px 12px;font-size:11.5px;font-weight:700;cursor:pointer">✏️ Ubah Hasil Verifikasi</button>
+      <button onclick="bukaModalVerifikasi('${id}',${JSON.stringify(l).replace(/"/g,'&quot;')},'hasil')" style="flex:1;background:var(--pln-blue);color:#fff;border:1px solid var(--pln-blue);border-radius:var(--radius-xs);padding:8px 12px;font-size:11.5px;font-weight:700;cursor:pointer">✏️ Ubah Hasil Verifikasi</button>
     </div>`;
 
   return `<div class="laporan-card">
@@ -6718,7 +6754,7 @@ window.toggleSidebar = function() {
 function startAppAfterAuth() {
   loadAll();
   switchView('beranda');
-  applyAdminUI(); // sinkronkan tampilan dengan status Mode Admin (sessionStorage) saat halaman dibuka
+  applyAdminUI(); // pastikan semua tombol hapus/edit tersembunyi di awal (Mode Admin selalu OFF saat halaman dibuka)
   initSidebarState(); // pulihkan status collapse/expand sidebar dari localStorage
 
   // Sambungkan ke Firebase & nyalakan badge "Petugas Aktif" SEJAK HALAMAN DIBUKA
