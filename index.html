@@ -4898,8 +4898,11 @@ window.onLaporanPageSizeChange = function() {
 // lapPdkb / lapMetode / lapDaerahPadam / lapJenisPemadaman / lapPic /
 // lapKeterangan). Field lapKonstruksiSatuan (dulu bernama "STN", pilihan Ya/Tidak)
 // diisi petugas hanya saat toggle "Khusus Konstruksi" diaktifkan — sekarang
-// berisi satuan pekerjaan konstruksi (btg/kms/unit/gawang/mtr/titik/bh, atau
-// isian manual lain). Fungsi ini menyusun baris-baris itu, dan HANYA
+// terisi OTOMATIS mengikuti Rincian Pekerjaan yang dipilih, berdasarkan
+// master RINCIAN_SATUAN_MAP di petugas.html (kolom LEAD MEASURE -> STN dari
+// FORMAT PEMADAMAN ULP - TARGET), tapi petugas tetap bisa mengetik/mengubah
+// nilainya secara manual kalau satuan di master tidak sesuai. Fungsi ini
+// menyusun baris-baris itu, dan HANYA
 // menampilkan baris yang datanya memang terisi supaya kartu tidak penuh
 // baris kosong untuk laporan lama yang belum punya field ini.
 function laporanDetailFieldsHtml(l) {

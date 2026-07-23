@@ -1175,9 +1175,9 @@ body {
         </div>
       </div>
       <div id="konstruksi-fields" style="display:none;margin-top:8px;border:1px dashed var(--border-str);border-radius:10px;padding:12px;background:var(--surface2)">
-        <div class="field"><label>Satuan</label>
-          <input type="text" id="lapor-konstruksi-satuan" list="lapor-konstruksi-satuan-list" placeholder="Pilih atau ketik satuan lain...">
-          <datalist id="lapor-konstruksi-satuan-list"><option value="btg"><option value="kms"><option value="unit"><option value="gawang"><option value="mtr"><option value="titik"><option value="bh"></datalist>
+        <div class="field"><label>Satuan <span style="font-size:10px;color:var(--text-muted);font-weight:400">(otomatis dari Rincian Pekerjaan, bisa diubah manual)</span></label>
+          <input type="text" id="lapor-konstruksi-satuan" list="lapor-konstruksi-satuan-list" placeholder="Otomatis mengikuti Rincian Pekerjaan..." oninput="window._konstruksiSatuanManual = true">
+          <datalist id="lapor-konstruksi-satuan-list"><option value="bh"><option value="btg"><option value="btng"><option value="cell"><option value="gwg"><option value="kms"><option value="mtr"><option value="titik"><option value="unit"></datalist>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
           <div class="field" style="margin-bottom:0"><label style="font-size:10.5px">Jumlah Material Mitra</label>
@@ -2241,6 +2241,144 @@ const RP_RINCIAN_GROUPS = {
   ]
 };
 
+// RINCIAN_SATUAN_MAP — pemetaan Rincian Pekerjaan ("LEAD MEASURE") ke Satuan
+// ("STN") sesuai master FORMAT PEMADAMAN ULP - TARGET. Dipakai HANYA untuk
+// mengisi otomatis field Satuan di section "Khusus Konstruksi" begitu petugas
+// memilih Rincian Pekerjaan — petugas tetap bisa mengetik/mengubahnya manual
+// kalau satuan yang benar berbeda dari master ini.
+const RINCIAN_SATUAN_MAP = {
+  'Perbaikan Andongan': 'kms',
+  'Perbaikan Andongan (JTR)': 'kms',
+  'Inspeksi Kubikel': 'cell',
+  'Pemeliharaan Kubikel': 'cell',
+  'Pembersihan Halaman Bangunan': 'unit',
+  'Pengecatan Bangunan': 'unit',
+  'SLO PHBTM': 'cell',
+  'Inspeksi Tier 1 JTM': 'kms',
+  'Inspeksi Tier 2 JTM': 'kms',
+  'Pengukuran Tahanan Isolasi JTM/SKTM': 'kms',
+  'Rabas Pohon': 'gwg',
+  'Pembersihan Terminasi': 'kms',
+  'Tebang Pohon': 'btng',
+  'Pemasangan Westpex': 'titik',
+  'Pemasangan Cover Isolator Tarik': 'bh',
+  'Pemasangan Cover Isolator Tumpu': 'bh',
+  'Pemasangan Cover LA': 'bh',
+  'Pemasangan Cover FCO Bawah': 'bh',
+  'Pemasangan Cover FCO Atas': 'bh',
+  'Pemasangan IJUK': 'bh',
+  'Pembersihan Corong': 'titik',
+  'Pembersihan Jaring Layang-layang': 'titik',
+  'Sisip Tiang': 'btng',
+  'Perbaikan Konstruksi Schoor': 'titik',
+  'Perbaikan Tiang Miring': 'btg',
+  'Penggantian Traves': 'titik',
+  'Penggantian Tiang Keropos/Rusak TM': 'btg',
+  'Pemasangan Pondasi Tiang': 'btg',
+  'Pemasangan Top Ties': 'bh',
+  'Konsul Phasa S': 'titik',
+  'Perubahan Konstruksi Segitiga': 'titik',
+  'Pengecatan Tiang': 'btg',
+  'Perbaikan Sambungan SUTM': 'titik',
+  'Perbaikan Kawat Rantas': 'titik',
+  'Penggantian Isolator Tarik': 'bh',
+  'Penggantian Isolator Tumpu': 'bh',
+  'Penggantian Pin Insulator menjadi Pin Post': 'bh',
+  'Pemasangan LA Jaringan': 'bh',
+  'Pemasangan Fault Indikator': 'bh',
+  'Penggantian Baterai LBS Motorized': 'bh',
+  'Penggantian LBS': 'bh',
+  'Penggantian Baterai Recloser': 'bh',
+  'Penggantian FCO': 'bh',
+  'Pemeliharaan LBS': 'unit',
+  'Pemeliharaan Recloser': 'unit',
+  'Pemasangan Cover LBS': 'unit',
+  'Pemasangan Cover Recloser': 'unit',
+  'Relokasi LBS': 'unit',
+  'Relokasi Recloser': 'unit',
+  'Pemasangan DS': 'titik',
+  'Penggantian Rectifier Rusak': 'bh',
+  'Penggantian Relay Rusak (Peremajaan)': 'bh',
+  'Integrasi Keypoint ke SCADA': 'titik',
+  'Assesment Keypoint': 'unit',
+  'Pemeliharaan berbasis PDKB': 'titik',
+  'SLO JTM': 'kms',
+  'Perbaikan Tiang (las tiang/dll)': 'btg',
+  'Pemasangan Klem H': 'bh',
+  'Inspeksi Tier 1': 'unit',
+  'Inspeksi Tier 2': 'unit',
+  'Pengukuran Beban': 'unit',
+  'Penyeimbangan Beban': 'unit',
+  'Manajemen/Mutasi Trafo': 'unit',
+  'Menaikkan Tap Changer Trafo Distribusi': 'unit',
+  'Penggantian PHBTR Rusak': 'unit',
+  'Penggantian Dudukan PHBTR': 'unit',
+  'Pembersihan Halaman Gardu Distribusi': 'unit',
+  'Pengecatan Gardu': 'unit',
+  'Penggantian In / Out Gardu': 'unit',
+  'Penggantian Tiang Keropos/Rusak Gardu': 'btg',
+  'Perbaikan LA Gardu': 'bh',
+  'Perbaikan Grounding Gardu': 'unit',
+  'Penyesuaian Rating (Fuse Link)': 'unit',
+  'Pemasangan Cover LA & Bushing Gardu': 'unit',
+  'Penyesuaian tegangan drop': 'unit',
+  'Downrating trafo': 'unit',
+  'Uprating Trafo': 'unit',
+  'Pemasangan Cover Cut Out Gardu': 'unit',
+  'SLO Gardu Distribusi': 'unit',
+  'Pengecekan Pintu PHBTR': 'unit',
+  'Pengecekan trafo rembes': 'unit',
+  'Manuver beban gardu': 'unit',
+  'Rehabilitasi Gardu': 'unit',
+  'Pengisian Minyak trafo pada Trafo': 'unit',
+  'Inspeksi (JTR)': 'kms',
+  'Perampalan Pohon (JTR)': 'kms',
+  'Joinisasi/Perbaikan Sambungan (JTR)': 'bh',
+  'Penggantian Aksesoris Tarikan (JTR)': 'bh',
+  'Perbaikan Tiang Miring (JTR)': 'btg',
+  'Pemasangan Grounding (JTR)': 'titik',
+  'Pemasangan Schoor (JTR)': 'btg',
+  'Pengecatan Tiang (JTR)': 'btg',
+  'Pemasangan Kumis (JTR)': 'titik',
+  'Penggantian Tiang Keropos/Rusak (JTR)': 'btg',
+  'Penggantian Kabel Incoming/Outgoing (JTR)': 'mtr',
+  'Penggantian Pipa Incoming/Outgoing (JTR)': 'mtr',
+  'Penarikan Kabel JTR': 'mtr',
+  'Rekonektorisasi JTR': 'titik',
+  'SLO JTR': 'kms',
+  'Pemasangan Kabel JTR': 'kms',
+  'Pembongkaran Kabel JTR': 'btg',
+  'Pembongkaran tiang JTR': 'kms',
+  'Perbaikan SR Deret': 'kms',
+  'Penggantian Tap Konektor Menjadi Konektor Press': 'bh',
+  'Pemasangan Service Wedge Clamp': 'bh',
+  'Pembangunan Konstruksi Tiang JTM': 'titik',
+  'Uprating SUTM': 'kms',
+  'Uprating MVTIC': 'kms',
+  'Uprating SKTM': 'kms',
+  'Pembangunan Gardu Sisip': 'unit',
+  'Pembangunan Gardu portal': 'unit',
+  'Pembangunan Gardu Hubung': 'unit',
+  'Pembangunan Konstruksi Tiang JTR': 'titik',
+  'Uprating SUTR': 'kms',
+  'Pembangunan LBS Threeway': 'titik',
+  'Pembangunan Recloser': 'titik',
+};
+
+// Isi otomatis field Satuan di section "Khusus Konstruksi" berdasarkan Rincian
+// Pekerjaan yang sedang dipilih (RINCIAN_SATUAN_MAP). Dipanggil setiap kali
+// Rincian Pekerjaan berganti, dan setiap kali toggle "Khusus Konstruksi"
+// dinyalakan (kalau Rincian sudah terisi lebih dulu). TIDAK menimpa isian
+// kalau petugas sudah pernah mengetik manual di field Satuan tsb (petugas
+// tetap bebas mengoreksi/mengisi manual bila satuan master ini tidak sesuai).
+function applyKonstruksiSatuanOtomatis() {
+  const satuanEl = document.getElementById('lapor-konstruksi-satuan');
+  if (!satuanEl || window._konstruksiSatuanManual) return;
+  const rincianVal = document.getElementById('lapor-rincian')?.value || '';
+  satuanEl.value = RINCIAN_SATUAN_MAP[rincianVal] || '';
+}
+window.applyKonstruksiSatuanOtomatis = applyKonstruksiSatuanOtomatis;
+
 // ── Gardu — MULTI-SELECT (form Laporan) ──
 // Sama seperti di dashboard supervisor: satu laporan bisa mencakup lebih
 // dari 1 Gardu. Nilai tetap disimpan sebagai STRING dipisah koma (field
@@ -2309,10 +2447,12 @@ window.toggleKhususKonstruksi = function() {
     document.getElementById('lapor-konstruksi-material-mitra').value = '';
     document.getElementById('lapor-konstruksi-pasang').value = '';
     document.getElementById('lapor-konstruksi-bongkar').value = '';
+    window._konstruksiSatuanManual = false;
   } else {
     box.style.display = 'block';
     sw.style.background = 'var(--green,#22A64A)';
     knob.style.left = '22px';
+    applyKonstruksiSatuanOtomatis(); // kalau Rincian Pekerjaan sudah terisi lebih dulu
   }
 };
 
@@ -2482,6 +2622,15 @@ function populateLaporPekerjaanDropdowns() {
     rincianSel.dataset.filled = '1';
   }
   enhanceSearchableSelect('lapor-rincian');
+  // Auto-isi Satuan (Khusus Konstruksi) mengikuti Rincian Pekerjaan yang
+  // dipilih (RINCIAN_SATUAN_MAP), begitu petugas memilih/mengganti Rincian
+  // Pekerjaan — tapi TIDAK menimpa kalau petugas sudah pernah mengetik
+  // manual di field Satuan itu sendiri (lihat window._konstruksiSatuanManual,
+  // di-set oleh oninput pada field #lapor-konstruksi-satuan).
+  if (rincianSel && !rincianSel.dataset.satuanAutofillBound) {
+    rincianSel.addEventListener('change', applyKonstruksiSatuanOtomatis);
+    rincianSel.dataset.satuanAutofillBound = '1';
+  }
   isiPilihanPenyulang('lapor');
   perbaruiPilihanSection('lapor');
   enhanceSearchableSelect('lapor-penyulang');
@@ -3919,6 +4068,7 @@ window.bukaModalLapor = function() {
   document.getElementById('lapor-konstruksi-material-mitra').value = '';
   document.getElementById('lapor-konstruksi-pasang').value = '';
   document.getElementById('lapor-konstruksi-bongkar').value = '';
+  window._konstruksiSatuanManual = false;
   laporFoto = { before: null, progres: null, after: null };
   LAPOR_FASE_ORDER.forEach(resetSlotFoto);
   restoreLaporDraft(); // pulihkan foto Sebelum/Progres/Sesudah yang tersimpan sebelumnya, kalau ada
