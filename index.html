@@ -738,7 +738,7 @@ tbody tr:hover td { background: var(--surface-2); }
 
 /* ── POPUP ── */
 .leaflet-popup-content-wrapper { border-radius: 14px; box-shadow: var(--shadow-lg); padding: 0; overflow: hidden; }
-.leaflet-popup-content { font-size: 13px; line-height: 1.5; min-width: 230px; font-family: var(--font); margin: 0; }
+.leaflet-popup-content { font-size: 13px; line-height: 1.5; min-width: 240px; max-width: 290px; font-family: var(--font); margin: 0; }
 .leaflet-popup-tip { box-shadow: var(--shadow-lg); }
 .leaflet-popup-close-button {
   top: 9px !important; right: 9px !important;
@@ -751,8 +751,11 @@ tbody tr:hover td { background: var(--surface-2); }
 }
 .leaflet-popup-close-button:hover { background: var(--surface-3) !important; color: var(--text-1) !important; }
 .popup-card    { padding: 14px 40px 12px 16px; }
-.popup-head    { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
-.popup-title   { font-weight: 800; font-size: 14.5px; color: var(--text-1); font-family: var(--font-display); line-height: 1.3; }
+/* flex-wrap: kalau nama tim panjang & badge ULP tidak cukup ruang di baris
+   yang sama, badge otomatis turun ke baris sendiri — supaya judul tim TIDAK
+   dipaksa memakai kolom sempit yang membuatnya patah jadi 3 baris acak-acakan. */
+.popup-head    { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 8px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.popup-title   { flex: 1 1 auto; min-width: 120px; font-weight: 800; font-size: 14.5px; color: var(--text-1); font-family: var(--font-display); line-height: 1.3; }
 .popup-jenis   { flex-shrink: 0; font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 20px; white-space: nowrap; letter-spacing: .02em; }
 .popup-jenis.jtm   { background: #dbeafe; color: #1d4ed8; }
 .popup-jenis.gardu { background: #f1f5f9; color: #475569; }
@@ -766,7 +769,17 @@ tbody tr:hover td { background: var(--surface-2); }
    terpotong-potong saat wrap ke baris baru. */
 .popup-label     { display: block; color: var(--text-3); font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
 .popup-block     { padding: 8px 0; }
-.popup-anggota   { font-weight: 650; font-size: 13px; color: var(--text-1); line-height: 1.5; text-align: left; }
+/* Regu dengan banyak anggota (5-6+ nama, tiap nama 1 baris) bisa membuat
+   kartu jadi sangat tinggi sampai melebihi tinggi popup default Leaflet —
+   ini yang menyebabkan sudut kartu terlihat terpotong/tidak rounded lagi
+   di bagian bawah. Dibatasi tinggi maksimal + scroll internal supaya
+   kartu selalu ringkas & sudutnya tetap rapi, berapa pun jumlah anggotanya. */
+.popup-anggota   {
+  font-weight: 650; font-size: 13px; color: var(--text-1); line-height: 1.5; text-align: left;
+  max-height: 92px; overflow-y: auto; padding-right: 4px;
+}
+.popup-anggota::-webkit-scrollbar { width: 5px; }
+.popup-anggota::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 99px; }
 .popup-stats     { display: flex; gap: 14px; padding-top: 10px; margin-top: 2px; border-top: 1px solid var(--line); }
 .popup-stat      { flex: 1; min-width: 0; }
 .popup-stat-val  { font-weight: 700; font-size: 12.5px; color: var(--text-1); white-space: nowrap; }
@@ -3881,9 +3894,27 @@ function getPeriodeRange(tipePeriode, periodeKey) {
   return { start: 0, end: Date.now() };
 }
 
-// Cari target yang cocok untuk 1 regu di 1 ULP, untuk tipe+periode tertentu.
+// Cek apakah 1 target (SELALU tersimpan sebagai tipePeriode:'harian' dengan
+// periodeKey = tanggal spesifik — lihat catatan migrasi di simpanTiket) jatuh
+// di dalam rentang [start, end) suatu periode yang sedang dilihat.
+function targetDalamRentang(t, start, end) {
+  if (!t.periodeKey) return false;
+  const d = new Date(t.periodeKey + 'T00:00:00').getTime();
+  return d >= start && d < end;
+}
+
+// Cari total target 1 regu di 1 ULP untuk suatu periode (Hari Ini/Minggu Ini/
+// Bulan Ini). PENTING: target yang tersimpan di tiap Rencana Pekerjaan SELALU
+// tipePeriode:'harian' per tanggal spesifik (bukan mingguan/bulanan) — jadi
+// untuk tab Minggu Ini/Bulan Ini, target-target harian yang tanggalnya jatuh
+// di rentang periode itu DIJUMLAHKAN, bukan dicari yang persis tipePeriode-nya
+// sama (yang tidak akan pernah ketemu & sebelumnya membuat kolom Target selalu
+// tampil "-" di tab Minggu Ini/Bulan Ini walau sudah diisi di Rencana Pekerjaan).
 function cariTargetKerja(ulp, regu, tipePeriode, periodeKey) {
-  return targetKerjaCache.find(t => t.ulp === ulp && t.regu === regu && t.tipePeriode === tipePeriode && t.periodeKey === periodeKey) || null;
+  const { start, end } = getPeriodeRange(tipePeriode, periodeKey);
+  const cocok = targetKerjaCache.filter(t => t.ulp === ulp && t.regu === regu && targetDalamRentang(t, start, end));
+  if (!cocok.length) return null;
+  return { targetVolume: cocok.reduce((s, t) => s + (+t.targetVolume || 0), 0) };
 }
 
 // Hitung % capaian 1 regu untuk 1 periode: realisasi (laporan terverifikasi,
@@ -3952,7 +3983,7 @@ function renderTargetChart() {
   // menu "Kelola Penugasan Pekerjaan" bagian Progres & Realisasi).
   const pairs = new Map();
   targetKerjaCache.forEach(t => {
-    if (t.tipePeriode === tipePeriode && t.periodeKey === periodeKey) pairs.set(t.ulp + '|||' + t.regu, { ulp: t.ulp, regu: t.regu });
+    if (targetDalamRentang(t, start, end)) pairs.set(t.ulp + '|||' + t.regu, { ulp: t.ulp, regu: t.regu });
   });
   (allLaporanCache || []).forEach(([, l]) => {
     if (!l.ulp || !l.regu || !l.waktu) return;
@@ -4257,9 +4288,12 @@ function buildPetugasPopup(p) {
   const ulpColor = getUlpColor(p.ulp);
   const teamIcon = getTeamIcon(p.regu);
   const badgeTxt = teamIcon.badge ? ` <span style="font-size:10px;font-weight:700;opacity:0.65">(${teamIcon.badge})</span>` : '';
-  // Nama anggota dipisah per baris (koma/·) supaya tiap orang jelas
-  // sebagai satu item, bukan satu blok teks panjang yang rapat ke kanan.
-  const anggotaList = (p.anggotaHadir || '').split(/\s*[,•]\s*/).filter(Boolean);
+  // Nama anggota dipisah per baris (koma/titik-koma/•/baris baru) supaya tiap
+  // orang jelas sebagai satu item, bukan satu blok teks panjang yang rapat ke
+  // kanan. Sejak "Anggota Regu Hari Ini" di app petugas jadi field per-nama,
+  // datanya selalu koma-terpisah rapi — pemisah lain di sini cuma jaga-jaga
+  // untuk data lama yang mungkin diketik bebas tanpa koma.
+  const anggotaList = (p.anggotaHadir || '').split(/\s*[,;•\n]\s*/).filter(Boolean);
   const anggotaHtml = anggotaList.length
     ? anggotaList.map(nm => `<div>${esc(nm)}</div>`).join('')
     : '—';
@@ -6348,7 +6382,7 @@ function renderTiketProgres() {
   // Kumpulkan semua pasangan (ULP, Regu) yang punya target ATAU laporan pada periode ini.
   const pairs = new Map();
   targetKerjaCache.forEach(t => {
-    if (t.tipePeriode === tipePeriode && t.periodeKey === periodeKey) pairs.set(t.ulp + '|||' + t.regu, { ulp: t.ulp, regu: t.regu });
+    if (targetDalamRentang(t, start, end)) pairs.set(t.ulp + '|||' + t.regu, { ulp: t.ulp, regu: t.regu });
   });
   filtered.forEach(([, l]) => { if (l.ulp && l.regu) pairs.set(l.ulp + '|||' + l.regu, { ulp: l.ulp, regu: l.regu }); });
 
@@ -7696,8 +7730,9 @@ function renderRekap(entries) {
     byUlp[k].realisasi += +(l.realisasi||0);
   });
   Object.keys(byUlp).forEach(ulp => {
+    const { start: tStart, end: tEnd } = getPeriodeRange(tipePeriode, periodeKeyNow);
     const targetSum = targetKerjaCache
-      .filter(t => t.ulp === ulp && t.tipePeriode === tipePeriode && t.periodeKey === periodeKeyNow)
+      .filter(t => t.ulp === ulp && targetDalamRentang(t, tStart, tEnd))
       .reduce((s,t) => s + (+t.targetVolume||0), 0);
     byUlp[ulp].target = targetSum;
   });
@@ -7786,8 +7821,9 @@ function computeRekapExportData() {
     byUlpMap[k].realisasi += +(l.realisasi||0);
   });
   Object.keys(byUlpMap).forEach(ulp => {
+    const { start: tStart, end: tEnd } = getPeriodeRange(tipePeriode, periodeKeyNow);
     byUlpMap[ulp].target = targetKerjaCache
-      .filter(t => t.ulp === ulp && t.tipePeriode === tipePeriode && t.periodeKey === periodeKeyNow)
+      .filter(t => t.ulp === ulp && targetDalamRentang(t, tStart, tEnd))
       .reduce((s,t) => s + (+t.targetVolume||0), 0);
   });
   const byUlp = Object.entries(byUlpMap).sort((a,b) => b[1].realisasi - a[1].realisasi);
