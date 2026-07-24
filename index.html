@@ -761,6 +761,16 @@ tbody tr:hover td { background: var(--surface-2); }
 .popup-val     { font-weight: 700; color: var(--text-1); text-align: right; flex: 1; }
 .popup-urgensi { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; color: #fff; }
 
+/* Kartu popup "Petugas Aktif" di peta — label di atas, nilai penuh di bawah
+   (bukan sejajar kiri/kanan) supaya daftar anggota yang panjang tidak
+   terpotong-potong saat wrap ke baris baru. */
+.popup-label     { display: block; color: var(--text-3); font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+.popup-block     { padding: 8px 0; }
+.popup-anggota   { font-weight: 650; font-size: 13px; color: var(--text-1); line-height: 1.5; text-align: left; }
+.popup-stats     { display: flex; gap: 14px; padding-top: 10px; margin-top: 2px; border-top: 1px solid var(--line); }
+.popup-stat      { flex: 1; min-width: 0; }
+.popup-stat-val  { font-weight: 700; font-size: 12.5px; color: var(--text-1); white-space: nowrap; }
+
 td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ══════════════════════════════════════
@@ -1062,6 +1072,9 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
       </a>
       <a class="nav-item" id="nav-hasil-verifikasi" href="#" title="Hasil Verifikasi" onclick="switchView('hasil-verifikasi');return false;">
         <span class="nav-icon">📁</span> <span class="nav-label">Hasil Verifikasi</span>
+      </a>
+      <a class="nav-item" id="nav-riwayat-inspeksi" href="#" title="Peta Riwayat Inspeksi" onclick="switchView('riwayat-inspeksi');return false;">
+        <span class="nav-icon">🧭</span> <span class="nav-label">Peta Riwayat Inspeksi</span>
       </a>
       <a class="nav-item" id="nav-akun" href="#" title="Akun Regu" onclick="switchView('akun');return false;" style="display:none">
         <span class="nav-icon">🔑</span> <span class="nav-label">Akun Regu</span>
@@ -1758,10 +1771,10 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
             <div style="margin-bottom:12px">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
                 <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2)">Gardu <span style="font-weight:400;color:var(--text-3);text-transform:none">(bisa pilih lebih dari 1)</span></label>
-                <button type="button" onclick="tambahGarduBaru()" style="background:var(--pln-blue-light,#0057b8);border:none;color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;padding:6px 12px;border-radius:999px;display:inline-flex;align-items:center;gap:4px;box-shadow:0 1px 3px rgba(0,87,184,0.35);transition:filter .15s,transform .1s" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='none'" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">➕ Tambah Gardu</button>
+                <button type="button" onclick="tambahGarduBaru('rp')" style="background:var(--pln-blue-light,#0057b8);border:none;color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;padding:6px 12px;border-radius:999px;display:inline-flex;align-items:center;gap:4px;box-shadow:0 1px 3px rgba(0,87,184,0.35);transition:filter .15s,transform .1s" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='none'" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">➕ Tambah Gardu</button>
               </div>
               <div style="position:relative">
-                <div id="rp-gardu-box" onclick="toggleRpGarduDropdown()" style="width:100%;min-height:38px;border:1px solid var(--line);border-radius:var(--radius-xs);padding:6px 10px;font-size:13px;background:var(--surface);cursor:pointer;display:flex;align-items:center;flex-wrap:wrap;gap:5px">
+                <div id="rp-gardu-box" onclick="toggleGarduDropdown('rp')" style="width:100%;min-height:38px;border:1px solid var(--line);border-radius:var(--radius-xs);padding:6px 10px;font-size:13px;background:var(--surface);cursor:pointer;display:flex;align-items:center;flex-wrap:wrap;gap:5px">
                   <span style="color:var(--text-3)">— Pilih Gardu —</span>
                 </div>
                 <div id="rp-gardu-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--radius-xs);box-shadow:var(--shadow);max-height:200px;overflow-y:auto;z-index:50;padding:4px"></div>
@@ -2026,18 +2039,31 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
               <select id="vf-rincian" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:13px;outline:none;height:36px;background:var(--surface)"></select>
             </div>
 
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
               <div>
                 <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Penyulang</label>
-                <input id="vf-penyulang" type="text" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:13px;outline:none">
+                <select id="vf-penyulang" onchange="onVfPenyulangChange()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:13px;outline:none;height:36px;background:var(--surface)">
+                  <option value="">— Pilih Penyulang —</option>
+                </select>
               </div>
               <div>
                 <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Section</label>
-                <input id="vf-section" type="text" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:13px;outline:none">
+                <select id="vf-section" onchange="onVfSectionChange()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:13px;outline:none;height:36px;background:var(--surface)">
+                  <option value="">— Pilih Penyulang dulu —</option>
+                </select>
               </div>
-              <div>
-                <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Gardu</label>
-                <input id="vf-gardu" type="text" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:13px;outline:none">
+            </div>
+
+            <div style="margin-bottom:10px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+                <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2)">Gardu <span style="font-weight:400;color:var(--text-3);text-transform:none">(bisa pilih lebih dari 1)</span></label>
+                <button type="button" onclick="tambahGarduBaru('vf')" style="background:var(--pln-blue-light,#0057b8);border:none;color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;padding:5px 11px;border-radius:999px;display:inline-flex;align-items:center;gap:4px;box-shadow:0 1px 3px rgba(0,87,184,0.35);transition:filter .15s,transform .1s" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='none'" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">➕ Tambah Gardu</button>
+              </div>
+              <div style="position:relative">
+                <div id="vf-gardu-box" onclick="toggleGarduDropdown('vf')" style="width:100%;min-height:36px;border:1px solid var(--line);border-radius:var(--radius-xs);padding:6px 10px;font-size:13px;background:var(--surface);cursor:pointer;display:flex;align-items:center;flex-wrap:wrap;gap:5px">
+                  <span style="color:var(--text-3)">— Pilih Gardu —</span>
+                </div>
+                <div id="vf-gardu-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--radius-xs);box-shadow:var(--shadow);max-height:200px;overflow-y:auto;z-index:50;padding:4px"></div>
               </div>
             </div>
 
@@ -2178,6 +2204,87 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
 
       <div id="hasilVerifikasiContent" style="margin-top:14px;">
         <div style="text-align:center;color:var(--text-muted);padding:40px;font-size:13px;">Menunggu data Firebase...</div>
+      </div>
+    </div>
+
+    <!-- ══ PETA RIWAYAT INSPEKSI VIEW — laporan pekerjaan (node 'laporan') disajikan
+         sebagai peta + daftar, dengan status verifikasi sebagai sinyal utama.
+         Data sama persis dengan Rekap Laporan / Hasil Verifikasi (reuse verifikasiRawEntries),
+         hanya cara sajinya berbeda. Peta punya layer opsional "Temuan Inspeksi (Sheets)"
+         dari Peta Inspeksi lama supaya bisa dilihat berdampingan tanpa mencampur skema data. ══ -->
+    <div id="viewRiwayatInspeksi" style="display:none;" class="firebase-view">
+      <div class="fb-header">
+        <div>
+          <div class="card-title" style="font-size:16px">🧭 Peta Riwayat Inspeksi</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:3px">Sebaran lokasi &amp; status verifikasi seluruh laporan pekerjaan (HAR/ROW/PDKB dkk) — data sama dengan Rekap Laporan, disajikan sebagai peta + daftar</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span id="riCount" class="card-count">0 laporan</span>
+          <div style="display:flex;border:1px solid var(--line);border-radius:var(--radius-xs);overflow:hidden">
+            <button id="ri-btn-peta" onclick="riSwitchMode('peta')" style="border:none;padding:9px 16px;font-size:12.5px;font-weight:700;cursor:pointer;background:var(--pln-blue);color:#fff">🗺 Peta</button>
+            <button id="ri-btn-list" onclick="riSwitchMode('list')" style="border:none;padding:9px 16px;font-size:12.5px;font-weight:700;cursor:pointer;background:var(--surface-2);color:var(--text-2)">📋 Daftar</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="riStatsRow" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px"></div>
+
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;margin-bottom:4px;align-items:flex-end">
+        <div>
+          <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Periode</label>
+          <select id="ri-filter-periode" onchange="renderRiwayatInspeksi()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:150px">
+            <option value="7">7 Hari Terakhir</option>
+            <option value="30" selected>30 Hari Terakhir</option>
+            <option value="90">90 Hari Terakhir</option>
+            <option value="all">Semua</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Status Verifikasi</label>
+          <select id="ri-filter-status" onchange="renderRiwayatInspeksi()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:180px">
+            <option value="">Semua Status</option>
+            <option value="pending">⏳ Menunggu Verifikasi</option>
+            <option value="Terverifikasi">✓ Terverifikasi</option>
+            <option value="Perlu Revisi">⚠ Perlu Revisi</option>
+            <option value="Ditolak">✕ Ditolak</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">ULP</label>
+          <select id="ri-filter-ulp" onchange="renderRiwayatInspeksi()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:150px">
+            <option value="">Semua ULP</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Regu</label>
+          <select id="ri-filter-regu" onchange="renderRiwayatInspeksi()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:150px">
+            <option value="">Semua Regu</option>
+          </select>
+        </div>
+        <div style="flex:1;min-width:180px">
+          <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Cari</label>
+          <input id="ri-filter-search" type="text" placeholder="Cari regu, tiket, pekerjaan..." oninput="renderRiwayatInspeksi()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none">
+        </div>
+        <div>
+          <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Urutkan</label>
+          <select id="ri-filter-sort" onchange="renderRiwayatInspeksi()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:190px">
+            <option value="terbaru">Terbaru Dulu</option>
+            <option value="menunggu-lama">Menunggu Terlama Dulu</option>
+          </select>
+        </div>
+        <div>
+          <button onclick="resetRiwayatInspeksiFilter()" style="background:none;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--text-2)">↺ Reset Filter</button>
+        </div>
+      </div>
+
+      <div id="ri-mode-peta">
+        <div id="riMap" style="height:540px;border-radius:var(--radius);overflow:hidden;margin-top:6px;border:1px solid var(--line)"></div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:8px">📍 biru = menunggu verifikasi · 🟢 hijau = terverifikasi · 🟠 oranye = perlu revisi · 🔴 merah = ditolak. Nyalakan layer <b>"Temuan Inspeksi (Sheets)"</b> dari ikon layer di pojok peta untuk melihat berdampingan dengan Peta Inspeksi lama.</div>
+      </div>
+      <div id="ri-mode-list" style="display:none;margin-top:14px">
+        <div id="riListContent">
+          <div style="text-align:center;color:var(--text-muted);padding:40px;font-size:13px;">Menunggu data Firebase...</div>
+        </div>
       </div>
     </div>
 
@@ -3093,11 +3200,11 @@ window.dbvExportCsv = function() {
 };
 
 function switchView(view) {
-  const allViews = ['viewBeranda','viewMap','viewTable','viewPetugas','viewAbsensi','viewLogAbsensi','viewLaporan','viewTiket','viewVerifikasi','viewHasilVerifikasi','viewRekap','viewAkun','viewDbViewer'];
+  const allViews = ['viewBeranda','viewMap','viewTable','viewPetugas','viewAbsensi','viewLogAbsensi','viewLaporan','viewTiket','viewVerifikasi','viewHasilVerifikasi','viewRiwayatInspeksi','viewRekap','viewAkun','viewDbViewer'];
   allViews.forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
   document.getElementById('filterBar').style.display = 'none';
 
-  const allNavIds = ['nav-beranda','nav-map','nav-table','nav-petugas','nav-absensi','nav-log-absensi','nav-laporan','nav-tiket','nav-verifikasi','nav-hasil-verifikasi','nav-rekap','nav-akun','nav-db-viewer'];
+  const allNavIds = ['nav-beranda','nav-map','nav-table','nav-petugas','nav-absensi','nav-log-absensi','nav-laporan','nav-tiket','nav-verifikasi','nav-hasil-verifikasi','nav-riwayat-inspeksi','nav-rekap','nav-akun','nav-db-viewer'];
   allNavIds.forEach(id => { const el = document.getElementById(id); if(el) el.classList.remove('active'); });
 
   if (view === 'beranda') {
@@ -3157,6 +3264,15 @@ function switchView(view) {
     document.getElementById('viewHasilVerifikasi').style.display = '';
     document.getElementById('nav-hasil-verifikasi').classList.add('active');
     initFirebase().then(ok => { if (ok) listenVerifikasi(); });
+  } else if (view === 'riwayat-inspeksi') {
+    document.getElementById('viewRiwayatInspeksi').style.display = '';
+    document.getElementById('nav-riwayat-inspeksi').classList.add('active');
+    initFirebase().then(ok => {
+      if (!ok) return;
+      listenVerifikasi(); // reuse listener yang sama dgn Verifikasi/Hasil Verifikasi — sumber data node 'laporan' sama persis
+      renderRiwayatInspeksi(); // render langsung dari cache kalau listener sudah aktif sebelumnya (data tidak hilang)
+    });
+    if (riViewMode === 'peta') setTimeout(() => { if (riMapInstance) { riMapInstance.invalidateSize(); riFitMapToData(); } }, 150);
   } else if (view === 'akun') {
     if (!isAdminMode) { showToast('Kelola Akun Regu hanya bisa diakses dalam Mode Admin.', 'warn'); switchView('beranda'); return; }
     if (!isSuperadmin()) { showToast('Kelola Akun Regu hanya bisa diakses oleh Superadmin.', 'warn'); switchView('beranda'); return; }
@@ -3634,9 +3750,9 @@ try { localStorage.removeItem('rpGarduTambahan'); } catch (e) {}
 // Daftar Gardu resmi mengikuti Section yang sedang dipilih di form Rencana
 // Pekerjaan (Penyulang → Section → Gardu). HANYA data resmi — tidak ada lagi
 // sumber tambahan dari localStorage.
-function daftarGarduGabungan() {
-  const pen = document.getElementById('rp-penyulang')?.value || '';
-  const sec = document.getElementById('rp-section')?.value || '';
+function daftarGarduGabungan(prefix) {
+  const pen = document.getElementById(prefix + '-penyulang')?.value || '';
+  const sec = document.getElementById(prefix + '-section')?.value || '';
   const resmi = (pen && sec && PLN_PENYULANG_HIERARCHY[pen] && PLN_PENYULANG_HIERARCHY[pen][sec]) || [];
   return [...new Set(resmi)].sort((a, b) => a.localeCompare(b, 'id'));
 }
@@ -3666,17 +3782,33 @@ function perbaruiPilihanSection(prefix) {
 // Gardu yang sudah tidak sesuai (kecuali Gardu tambahan manual).
 window.onRpPenyulangChange = function() {
   perbaruiPilihanSection('rp');
-  const valid = daftarGarduGabungan();
-  rpGarduSelected = rpGarduSelected.filter(g => valid.includes(g));
-  populateRpGarduSelect();
+  const valid = daftarGarduGabungan('rp');
+  garduSelectedMap.rp = garduSelectedMap.rp.filter(g => valid.includes(g));
+  populateGarduSelect('rp');
 };
 
 // Saat Section berganti: buang pilihan Gardu yang sudah tidak sesuai
 // (kecuali Gardu tambahan manual).
 window.onRpSectionChange = function() {
-  const valid = daftarGarduGabungan();
-  rpGarduSelected = rpGarduSelected.filter(g => valid.includes(g));
-  populateRpGarduSelect();
+  const valid = daftarGarduGabungan('rp');
+  garduSelectedMap.rp = garduSelectedMap.rp.filter(g => valid.includes(g));
+  populateGarduSelect('rp');
+};
+
+// Sama seperti Rencana Pekerjaan: field Penyulang/Section pada modal
+// Verifikasi Laporan / Ubah Hasil Verifikasi juga cascading & membatasi
+// pilihan Gardu ke yang resmi sesuai Section terpilih.
+window.onVfPenyulangChange = function() {
+  perbaruiPilihanSection('vf');
+  const valid = daftarGarduGabungan('vf');
+  garduSelectedMap.vf = garduSelectedMap.vf.filter(g => valid.includes(g));
+  populateGarduSelect('vf');
+};
+
+window.onVfSectionChange = function() {
+  const valid = daftarGarduGabungan('vf');
+  garduSelectedMap.vf = garduSelectedMap.vf.filter(g => valid.includes(g));
+  populateGarduSelect('vf');
 };
 
 
@@ -4125,16 +4257,37 @@ function buildPetugasPopup(p) {
   const ulpColor = getUlpColor(p.ulp);
   const teamIcon = getTeamIcon(p.regu);
   const badgeTxt = teamIcon.badge ? ` <span style="font-size:10px;font-weight:700;opacity:0.65">(${teamIcon.badge})</span>` : '';
+  // Nama anggota dipisah per baris (koma/·) supaya tiap orang jelas
+  // sebagai satu item, bukan satu blok teks panjang yang rapat ke kanan.
+  const anggotaList = (p.anggotaHadir || '').split(/\s*[,•]\s*/).filter(Boolean);
+  const anggotaHtml = anggotaList.length
+    ? anggotaList.map(nm => `<div>${esc(nm)}</div>`).join('')
+    : '—';
+  const waktuTxt = p.ts ? new Date(p.ts).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '—';
   return `
     <div class="popup-card" style="border-left:4px solid ${ulpColor}">
       <div class="popup-head" style="background:${hexToRgba(ulpColor,0.08)}">
         <div class="popup-title">${teamIcon.icon} ${esc(p.regu)||'—'}${badgeTxt}</div>
         <span class="popup-jenis" style="background:${ulpColor};color:#fff">${esc(p.ulp)||'—'}</span>
       </div>
-      <div class="popup-row"><span class="popup-key">Anggota Hadir</span><span class="popup-val">${esc(p.anggotaHadir)||'—'}</span></div>
-      <div class="popup-row"><span class="popup-key">Status</span><span class="popup-val"><span class="popup-urgensi" style="background:${statusColor(p.status)}">${p.status||'—'}</span></span></div>
-      <div class="popup-row"><span class="popup-key">Akurasi</span><span class="popup-val">${p.acc||'—'} m</span></div>
-      <div class="popup-row"><span class="popup-key">Update Terakhir</span><span class="popup-val">${p.ts ? new Date(p.ts).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '—'}</span></div>
+      <div class="popup-block">
+        <span class="popup-label">Anggota Hadir</span>
+        <div class="popup-anggota">${anggotaHtml}</div>
+      </div>
+      <div class="popup-stats">
+        <div class="popup-stat">
+          <span class="popup-label">Status</span>
+          <span class="popup-urgensi" style="background:${statusColor(p.status)}">${p.status||'—'}</span>
+        </div>
+        <div class="popup-stat">
+          <span class="popup-label">Akurasi</span>
+          <div class="popup-stat-val">${p.acc||'—'} m</div>
+        </div>
+        <div class="popup-stat">
+          <span class="popup-label">Update</span>
+          <div class="popup-stat-val">${waktuTxt}</div>
+        </div>
+      </div>
     </div>
   `;
 }
@@ -4153,7 +4306,7 @@ function renderPetugasMapMarkers(entries) {
       petugasMarkers[id].setPopupContent(buildPetugasPopup(p));
     } else {
       const m = L.marker([p.lat, p.lng], { icon: createPetugasIcon(p.status, p.ulp, p.regu) }).addTo(mapPetugas);
-      m.bindPopup(buildPetugasPopup(p), { maxWidth: 250 });
+      m.bindPopup(buildPetugasPopup(p), { maxWidth: 270 });
       petugasMarkers[id] = m;
     }
   });
@@ -5440,92 +5593,98 @@ function populateTiketUlpSelect() {
   }
 }
 
-// ── Gardu — MULTI-SELECT ──
+// ── Gardu — MULTI-SELECT (generik, dipakai form Rencana Pekerjaan "rp-*"
+//    maupun modal Verifikasi Laporan / Ubah Hasil Verifikasi "vf-*") ──
 // Field Gardu bisa diisi lebih dari 1 (rencana pekerjaan sering mencakup
-// beberapa gardu sekaligus). Diganti dari <select> tunggal menjadi kotak
-// chip + dropdown checklist. Nilai yang disimpan tetap STRING dipisah koma
-// (field "rpGardu") supaya semua kode lama yang membaca t.rpGardu sebagai
-// teks (tabel, popup peta, lokasi default, dsb) tetap jalan tanpa diubah.
-let rpGarduSelected = [];
+// beberapa gardu sekaligus). Kotak chip + dropdown checklist, bukan <select>
+// tunggal. Nilai yang disimpan tetap STRING dipisah koma (field "rpGardu" /
+// "lapGardu") supaya semua kode lama yang membaca field itu sebagai teks
+// (tabel, popup peta, lokasi default, dsb) tetap jalan tanpa diubah.
+const garduSelectedMap = { rp: [], vf: [] };
 
-function renderRpGarduBox() {
-  const box = document.getElementById('rp-gardu-box');
+function renderGarduBox(prefix) {
+  const box = document.getElementById(prefix + '-gardu-box');
   if (!box) return;
-  box.innerHTML = rpGarduSelected.length
-    ? rpGarduSelected.map(g => `<span style="background:var(--info-bg);color:var(--info);border-radius:999px;padding:3px 9px;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:5px">${g}<span onclick="event.stopPropagation();hapusRpGardu('${g.replace(/'/g,"\\'")}')" style="cursor:pointer;font-weight:800;line-height:1">×</span></span>`).join('')
+  const selected = garduSelectedMap[prefix] || [];
+  box.innerHTML = selected.length
+    ? selected.map(g => `<span style="background:var(--info-bg);color:var(--info);border-radius:999px;padding:3px 9px;font-size:11.5px;font-weight:600;display:inline-flex;align-items:center;gap:5px">${g}<span onclick="event.stopPropagation();hapusGardu('${prefix}','${g.replace(/'/g,"\\'")}')" style="cursor:pointer;font-weight:800;line-height:1">×</span></span>`).join('')
     : '<span style="color:var(--text-3)">— Pilih Gardu —</span>';
 }
 
 // Render ulang HANYA daftar checkbox-nya (dipanggil ulang tiap kali user
 // mengetik di kotak cari, tanpa membuang/reset kotak carinya sendiri).
-function renderRpGarduList(query) {
-  const listEl = document.getElementById('rp-gardu-list');
+function renderGarduList(prefix, query) {
+  const listEl = document.getElementById(prefix + '-gardu-list');
   if (!listEl) return;
   const q = (query || '').toLowerCase().trim();
-  const list = daftarGarduGabungan().filter(v => !q || v.toLowerCase().includes(q));
+  const selected = garduSelectedMap[prefix] || [];
+  const list = daftarGarduGabungan(prefix).filter(v => !q || v.toLowerCase().includes(q));
   listEl.innerHTML = list.length
-    ? list.map(v => `<label style="display:flex;align-items:center;gap:8px;padding:7px 8px;font-size:12.5px;cursor:pointer;border-radius:6px" onmouseover="this.style.background='var(--surface-2)'" onmouseout="this.style.background=''"><input type="checkbox" ${rpGarduSelected.includes(v)?'checked':''} onchange="toggleRpGarduPilih('${v.replace(/'/g,"\\'")}', this.checked)">${v}</label>`).join('')
+    ? list.map(v => `<label style="display:flex;align-items:center;gap:8px;padding:7px 8px;font-size:12.5px;cursor:pointer;border-radius:6px" onmouseover="this.style.background='var(--surface-2)'" onmouseout="this.style.background=''"><input type="checkbox" ${selected.includes(v)?'checked':''} onchange="toggleGarduPilih('${prefix}','${v.replace(/'/g,"\\'")}', this.checked)">${v}</label>`).join('')
     : `<div style="padding:8px;font-size:12px;color:var(--text-3)">${q ? 'Gardu tidak ditemukan.' : 'Belum ada data Gardu.'} Pakai "+ Tambah Gardu".</div>`;
 }
 
 // Bungkus ulang isi dropdown: kotak cari ("ketik dulu baru cari") di atas,
 // daftar checkbox di bawahnya. Kotak cari difokuskan otomatis saat dibuka
 // supaya usher/petugas bisa langsung ketik nama/kode gardu.
-function renderRpGarduDropdown() {
-  const dd = document.getElementById('rp-gardu-dropdown');
+function renderGarduDropdownFor(prefix) {
+  const dd = document.getElementById(prefix + '-gardu-dropdown');
   if (!dd) return;
   dd.innerHTML = `
-    <input type="text" id="rp-gardu-search" placeholder="Ketik untuk cari gardu..." autocomplete="off"
-      oninput="renderRpGarduList(this.value)"
+    <input type="text" id="${prefix}-gardu-search" placeholder="Ketik untuk cari gardu..." autocomplete="off"
+      oninput="renderGarduList('${prefix}', this.value)"
       style="width:100%;border:1px solid var(--line);border-radius:6px;padding:7px 9px;font-size:12.5px;outline:none;margin-bottom:5px;box-sizing:border-box">
-    <div id="rp-gardu-list"></div>`;
-  renderRpGarduList('');
-  const searchEl = document.getElementById('rp-gardu-search');
+    <div id="${prefix}-gardu-list"></div>`;
+  renderGarduList(prefix, '');
+  const searchEl = document.getElementById(prefix + '-gardu-search');
   if (searchEl) setTimeout(() => searchEl.focus(), 0);
 }
 
-window.toggleRpGarduDropdown = function() {
-  const dd = document.getElementById('rp-gardu-dropdown');
+window.toggleGarduDropdown = function(prefix) {
+  const dd = document.getElementById(prefix + '-gardu-dropdown');
   if (!dd) return;
   const isOpen = dd.style.display === 'block';
   if (isOpen) { dd.style.display = 'none'; return; }
-  renderRpGarduDropdown();
+  renderGarduDropdownFor(prefix);
   dd.style.display = 'block';
 };
 
-window.toggleRpGarduPilih = function(nama, checked) {
-  if (checked) { if (!rpGarduSelected.includes(nama)) rpGarduSelected.push(nama); }
-  else { rpGarduSelected = rpGarduSelected.filter(g => g !== nama); }
-  renderRpGarduBox();
+window.toggleGarduPilih = function(prefix, nama, checked) {
+  const selected = garduSelectedMap[prefix] || (garduSelectedMap[prefix] = []);
+  if (checked) { if (!selected.includes(nama)) selected.push(nama); }
+  else { garduSelectedMap[prefix] = selected.filter(g => g !== nama); }
+  renderGarduBox(prefix);
 };
 
-window.hapusRpGardu = function(nama) {
-  rpGarduSelected = rpGarduSelected.filter(g => g !== nama);
-  renderRpGarduBox();
-  const dd = document.getElementById('rp-gardu-dropdown');
-  if (dd && dd.style.display === 'block') renderRpGarduDropdown();
+window.hapusGardu = function(prefix, nama) {
+  garduSelectedMap[prefix] = (garduSelectedMap[prefix] || []).filter(g => g !== nama);
+  renderGarduBox(prefix);
+  const dd = document.getElementById(prefix + '-gardu-dropdown');
+  if (dd && dd.style.display === 'block') renderGarduDropdownFor(prefix);
 };
 
-// Tutup dropdown Gardu kalau klik di luar kotaknya.
+// Tutup dropdown Gardu (rp/vf) kalau klik di luar kotaknya.
 document.addEventListener('click', (e) => {
-  const dd = document.getElementById('rp-gardu-dropdown');
-  const box = document.getElementById('rp-gardu-box');
-  if (dd && dd.style.display === 'block' && !dd.contains(e.target) && !box.contains(e.target)) dd.style.display = 'none';
+  ['rp', 'vf'].forEach(prefix => {
+    const dd = document.getElementById(prefix + '-gardu-dropdown');
+    const box = document.getElementById(prefix + '-gardu-box');
+    if (dd && box && dd.style.display === 'block' && !dd.contains(e.target) && !box.contains(e.target)) dd.style.display = 'none';
+  });
 });
 
 // Isi ulang pilihan Gardu. selectedValue boleh berupa string "GarduA, GarduB"
 // (format tersimpan di Firebase) ATAU array. Beda dari dropdown lain di bawah
 // — daftar opsinya BOLEH diisi ulang kapan saja karena tombol "+ Tambah
 // Gardu" bisa nambah opsi baru selagi modal masih terbuka.
-function populateRpGarduSelect(selectedValue) {
+function populateGarduSelect(prefix, selectedValue) {
   if (selectedValue !== undefined) {
-    if (Array.isArray(selectedValue)) rpGarduSelected = selectedValue.filter(Boolean);
-    else if (typeof selectedValue === 'string' && selectedValue.trim()) rpGarduSelected = selectedValue.split(',').map(s => s.trim()).filter(Boolean);
-    else rpGarduSelected = [];
+    if (Array.isArray(selectedValue)) garduSelectedMap[prefix] = selectedValue.filter(Boolean);
+    else if (typeof selectedValue === 'string' && selectedValue.trim()) garduSelectedMap[prefix] = selectedValue.split(',').map(s => s.trim()).filter(Boolean);
+    else garduSelectedMap[prefix] = [];
   }
-  renderRpGarduBox();
-  const dd = document.getElementById('rp-gardu-dropdown');
-  if (dd && dd.style.display === 'block') renderRpGarduDropdown();
+  renderGarduBox(prefix);
+  const dd = document.getElementById(prefix + '-gardu-dropdown');
+  if (dd && dd.style.display === 'block') renderGarduDropdownFor(prefix);
 }
 
 // Tombol "+ Tambah Gardu" — Gardu yang ditambahkan TL/Admin/petugas di sini
@@ -5534,16 +5693,18 @@ function populateRpGarduSelect(selectedValue) {
 // daftar dropdown, supaya tidak otomatis muncul lagi jadi opsi permanen di
 // pencarian Gardu untuk laporan-laporan berikutnya.
 // Penulisan kode Gardu otomatis dipaksa huruf besar (CAPSLOCK), cth: "ABE123".
-window.tambahGarduBaru = async function() {
+window.tambahGarduBaru = async function(prefix) {
+  prefix = prefix || 'rp';
   const nama = await promptDialog('Nama / kode Gardu baru:', { title: 'Tambah Gardu', okLabel: 'Tambah', inputType: 'text', placeholder: 'cth: ABE123', uppercase: true });
   if (!nama) return;
   const namaBersih = nama.trim().toUpperCase();
   if (!namaBersih) return;
   // Tidak disimpan ke RP_GARDU_LOCAL_KEY / localStorage — hanya dipakai
   // untuk laporan yang sedang berjalan ini saja, bukan jadi dropdown permanen.
-  if (!rpGarduSelected.includes(namaBersih)) rpGarduSelected.push(namaBersih);
-  renderRpGarduBox();
-  renderRpGarduDropdown();
+  const selected = garduSelectedMap[prefix] || (garduSelectedMap[prefix] = []);
+  if (!selected.includes(namaBersih)) selected.push(namaBersih);
+  renderGarduBox(prefix);
+  renderGarduDropdownFor(prefix);
 };
 
 // Ubah sebuah <select> biasa menjadi combobox yang bisa diketik untuk mencari
@@ -5811,7 +5972,7 @@ function populateRpDropdowns() {
   perbaruiPilihanSection('rp');
   enhanceSearchableSelect('rp-penyulang');
   enhanceSearchableSelect('rp-section');
-  populateRpGarduSelect('');
+  populateGarduSelect('rp', '');
   fillSimple('rp-health-index', RP_HEALTH_INDEX_LIST, true);
   fillSimple('rp-kategori', RP_KATEGORI_LIST, true);
   fillSimple('rp-jenis-pekerjaan', RP_JENIS_PEKERJAAN_LIST, true);
@@ -5943,7 +6104,7 @@ window.bukaModalTiket = function(id, data) {
   document.getElementById('rp-penyulang').value         = data?.rpPenyulang      || '';
   perbaruiPilihanSection('rp');
   document.getElementById('rp-section').value           = data?.rpSection        || '';
-  populateRpGarduSelect(data?.rpGardu || '');
+  populateGarduSelect('rp', data?.rpGardu || '');
   document.getElementById('rp-health-index').value      = data?.rpHealthIndex    || '';
   document.getElementById('rp-kategori').value           = data?.rpKategori       || '';
   document.getElementById('rp-jenis-pekerjaan').value    = data?.rpJenisPekerjaan || '';
@@ -6013,7 +6174,7 @@ window.simpanTiket = async function() {
   const rpWaktu            = document.getElementById('rp-waktu').value.trim() || null;
   const rpPenyulang         = document.getElementById('rp-penyulang').value.trim() || null;
   const rpSection           = document.getElementById('rp-section').value.trim() || null;
-  const rpGardu             = rpGarduSelected.length ? rpGarduSelected.join(', ') : null;
+  const rpGardu             = garduSelectedMap.rp.length ? garduSelectedMap.rp.join(', ') : null;
   const rpHealthIndex      = document.getElementById('rp-health-index').value || null;
   const rpKategori          = document.getElementById('rp-kategori').value;
   const rpJenisPekerjaan   = document.getElementById('rp-jenis-pekerjaan').value || null;
@@ -6268,6 +6429,12 @@ function populateVerifRincianDropdowns() {
   fillSimple('vf-metode', RP_METODE_LIST, false);
   fillSimple('vf-jenispemadaman', RP_JENIS_PEMADAMAN_LIST, false);
 
+  isiPilihanPenyulang('vf');
+  perbaruiPilihanSection('vf');
+  enhanceSearchableSelect('vf-penyulang');
+  enhanceSearchableSelect('vf-section');
+  populateGarduSelect('vf', '');
+
   const rincianSel = document.getElementById('vf-rincian');
   if (rincianSel && !rincianSel.dataset.filled) {
     rincianSel.innerHTML = '<option value="">— Pilih Rincian Pekerjaan —</option>' +
@@ -6325,8 +6492,9 @@ window.bukaModalVerifikasi = function(id, laporan, mode) {
   document.getElementById('vf-jenis').value            = laporan.jenisPekerjaan || '';
   document.getElementById('vf-rincian').value          = laporan.rincian || '';
   document.getElementById('vf-penyulang').value        = laporan.lapPenyulang || '';
+  perbaruiPilihanSection('vf');
   document.getElementById('vf-section').value          = laporan.lapSection || '';
-  document.getElementById('vf-gardu').value            = laporan.lapGardu || '';
+  populateGarduSelect('vf', laporan.lapGardu || '');
   document.getElementById('vf-healthindex').value      = laporan.lapHealthIndex || '';
   document.getElementById('vf-pdkb').value             = laporan.lapPdkb || '';
   document.getElementById('vf-metode').value           = laporan.lapMetode || '';
@@ -6416,7 +6584,7 @@ window.submitVerifikasi = async function() {
       jenisPekerjaan: document.getElementById('vf-jenis').value || null,
       lapPenyulang: document.getElementById('vf-penyulang').value.trim() || null,
       lapSection: document.getElementById('vf-section').value.trim() || null,
-      lapGardu: document.getElementById('vf-gardu').value.trim() || null,
+      lapGardu: garduSelectedMap.vf.length ? garduSelectedMap.vf.join(', ') : null,
       lapHealthIndex: document.getElementById('vf-healthindex').value || null,
       lapPdkb: document.getElementById('vf-pdkb').value || null,
       lapMetode: document.getElementById('vf-metode').value || null,
@@ -6627,6 +6795,7 @@ function listenVerifikasi() {
     hasilVerifikasiEntries = entries;
     populateHasilVerifikasiFilters(entries);
     renderHasilVerifikasiGrid();
+    renderRiwayatInspeksi(); // sama sumber (verifikasiRawEntries) — tidak perlu listener Firebase baru
   });
 }
 
@@ -6803,6 +6972,289 @@ async function hvSiapkanGambar(src) {
   } catch (e) {
     return null; // gagal ambil (offline/CORS) — dilewati, PDF tetap jalan tanpa foto itu
   }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PETA RIWAYAT INSPEKSI — laporan pekerjaan (node 'laporan') disajikan
+// sebagai peta + daftar, dengan status verifikasi sbg sinyal utama.
+// SENGAJA REUSE verifikasiRawEntries (diisi oleh listenVerifikasi()) —
+// bukan bikin listener Firebase baru ke 'laporan', supaya tidak dobel
+// query untuk data yang sama persis dgn Rekap Laporan/Hasil Verifikasi.
+// Marker & popup peta reuse createCheckpointIcon()/buildCheckpointPopup()
+// yang sudah dipakai di peta "Petugas Aktif" (posisi laporan, bukan
+// posisi petugas real-time) — warnanya sudah dikodekan by statusVerifikasi.
+// ══════════════════════════════════════════════════════════════════
+let riMapInstance   = null;
+let riMarkersLayer  = null;
+let riSheetLayer    = null;   // layer opsional: Temuan Inspeksi lama (Google Sheets), toggle lewat kontrol layer
+let riMapBoundsCache= null;
+let riMarkersById   = {};
+let riViewMode      = 'peta';
+
+function riSwitchMode(mode) {
+  riViewMode = mode;
+  const showPeta = mode === 'peta';
+  document.getElementById('ri-mode-peta').style.display = showPeta ? '' : 'none';
+  document.getElementById('ri-mode-list').style.display = showPeta ? 'none' : '';
+  document.getElementById('ri-btn-peta').style.background = showPeta ? 'var(--pln-blue)' : 'var(--surface-2)';
+  document.getElementById('ri-btn-peta').style.color      = showPeta ? '#fff' : 'var(--text-2)';
+  document.getElementById('ri-btn-list').style.background = showPeta ? 'var(--surface-2)' : 'var(--pln-blue)';
+  document.getElementById('ri-btn-list').style.color      = showPeta ? 'var(--text-2)' : '#fff';
+  if (showPeta) setTimeout(() => { if (riMapInstance) { riMapInstance.invalidateSize(); riFitMapToData(); } }, 150);
+}
+
+// Umur (hari) laporan yang BELUM diverifikasi — null kalau sudah ada hasil verifikasi
+function riAgeDays(l) {
+  if (l.statusVerifikasi || !l.waktu) return null;
+  return Math.floor((Date.now() - l.waktu) / 86400000);
+}
+
+function riStatusKey(l) {
+  if (l.statusVerifikasi === 'Terverifikasi') return 'Terverifikasi';
+  if (l.statusVerifikasi === 'Perlu Revisi')  return 'Perlu Revisi';
+  if (l.statusVerifikasi === 'Ditolak')       return 'Ditolak';
+  return 'pending';
+}
+
+function riStatusBadge(l) {
+  const cfg = {
+    'Terverifikasi': ['var(--ok)',  'var(--ok-bg)',   '✓ Terverifikasi'],
+    'Perlu Revisi':  ['var(--warn)','var(--warn-bg)', '⚠ Perlu Revisi'],
+    'Ditolak':       ['var(--crit)','var(--crit-bg)', '✕ Ditolak'],
+    'pending':       ['var(--info)','var(--info-bg)', '⏳ Menunggu Verifikasi'],
+  }[riStatusKey(l)];
+  return `<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;background:${cfg[1]};color:${cfg[0]}">${cfg[2]}</span>`;
+}
+
+function populateRiwayatInspeksiFilters(entries) {
+  const ulpSel  = document.getElementById('ri-filter-ulp');
+  const reguSel = document.getElementById('ri-filter-regu');
+  if (!ulpSel || !reguSel) return;
+  const keepUlp = ulpSel.value, keepRegu = reguSel.value;
+  const ulpSet  = [...new Set(entries.map(([, l]) => l.ulp).filter(Boolean))].sort();
+  const reguSet = [...new Set(entries.map(([, l]) => l.regu).filter(Boolean))].sort();
+  ulpSel.innerHTML  = '<option value="">Semua ULP</option>'  + ulpSet.map(u  => `<option value="${esc(u)}">${esc(u)}</option>`).join('');
+  reguSel.innerHTML = '<option value="">Semua Regu</option>' + reguSet.map(r => `<option value="${esc(r)}">${esc(r)}</option>`).join('');
+  if (ulpSet.includes(keepUlp))   ulpSel.value  = keepUlp;
+  if (reguSet.includes(keepRegu)) reguSel.value = keepRegu;
+}
+
+function riPeriodeStart(val) {
+  if (val === 'all') return 0;
+  return Date.now() - (parseInt(val, 10) || 30) * 86400000;
+}
+
+window.resetRiwayatInspeksiFilter = function() {
+  document.getElementById('ri-filter-periode').value = '30';
+  document.getElementById('ri-filter-status').value  = '';
+  document.getElementById('ri-filter-ulp').value     = '';
+  document.getElementById('ri-filter-regu').value    = '';
+  document.getElementById('ri-filter-search').value  = '';
+  document.getElementById('ri-filter-sort').value    = 'terbaru';
+  renderRiwayatInspeksi();
+};
+
+function getRiwayatInspeksiFilteredEntries() {
+  const start   = riPeriodeStart(document.getElementById('ri-filter-periode')?.value || '30');
+  const fStatus = document.getElementById('ri-filter-status')?.value || '';
+  const fUlp    = document.getElementById('ri-filter-ulp')?.value || '';
+  const fRegu   = document.getElementById('ri-filter-regu')?.value || '';
+  const fSearch = (document.getElementById('ri-filter-search')?.value || '').toLowerCase().trim();
+  const sortBy  = document.getElementById('ri-filter-sort')?.value || 'terbaru';
+
+  let entries = (verifikasiRawEntries || []).filter(([, l]) => (l.waktu||0) >= start);
+  if (fStatus) entries = entries.filter(([, l]) => riStatusKey(l) === fStatus);
+  if (fUlp)    entries = entries.filter(([, l]) => l.ulp === fUlp);
+  if (fRegu)   entries = entries.filter(([, l]) => l.regu === fRegu);
+  if (fSearch) entries = entries.filter(([, l]) => `${l.regu||''} ${l.ulp||''} ${l.nomorTiket||''} ${l.rincian||''} ${l.jenisPekerjaan||''}`.toLowerCase().includes(fSearch));
+
+  entries = entries.slice().sort((a, b) => {
+    if (sortBy === 'menunggu-lama') {
+      const ageA = riAgeDays(a[1]), ageB = riAgeDays(b[1]);
+      if (ageA === null && ageB === null) return (b[1].waktu||0) - (a[1].waktu||0);
+      if (ageA === null) return 1;
+      if (ageB === null) return -1;
+      return ageB - ageA;
+    }
+    return (b[1].waktu||0) - (a[1].waktu||0);
+  });
+  return entries;
+}
+
+function renderRiwayatInspeksiStats(entries) {
+  const el = document.getElementById('riStatsRow');
+  if (!el) return;
+  const total    = entries.length;
+  const verif    = entries.filter(([, l]) => l.statusVerifikasi === 'Terverifikasi').length;
+  const revisi   = entries.filter(([, l]) => l.statusVerifikasi === 'Perlu Revisi').length;
+  const ditolak  = entries.filter(([, l]) => l.statusVerifikasi === 'Ditolak').length;
+  const pending  = entries.filter(([, l]) => !l.statusVerifikasi);
+  const tanpaGps = entries.filter(([, l]) => !l.lat || !l.lng).length;
+  const avgAge   = pending.length ? Math.round(pending.reduce((s, [, l]) => s + (riAgeDays(l)||0), 0) / pending.length) : 0;
+
+  const chip = (label, value, color, bg) => `
+    <div style="flex:1;min-width:140px;background:${bg};border-radius:var(--radius-xs);padding:10px 14px">
+      <div style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;color:${color}">${label}</div>
+      <div style="font-size:20px;font-weight:800;color:var(--text-1);margin-top:2px">${value}</div>
+    </div>`;
+
+  el.innerHTML =
+    chip('Total Laporan', total.toLocaleString('id-ID'), 'var(--text-2)', 'var(--surface-2)') +
+    chip('Menunggu Verifikasi', pending.length.toLocaleString('id-ID'), 'var(--info)', 'var(--info-bg)') +
+    chip('Terverifikasi', verif.toLocaleString('id-ID'), 'var(--ok)', 'var(--ok-bg)') +
+    chip('Perlu Revisi', revisi.toLocaleString('id-ID'), 'var(--warn)', 'var(--warn-bg)') +
+    chip('Ditolak', ditolak.toLocaleString('id-ID'), 'var(--crit)', 'var(--crit-bg)') +
+    chip('Rata² Umur Menunggu', pending.length ? avgAge + ' hari' : '—', 'var(--info)', 'var(--info-bg)') +
+    (tanpaGps ? chip('Tanpa Koordinat GPS', tanpaGps.toLocaleString('id-ID'), 'var(--text-3)', 'var(--surface-2)') : '');
+}
+
+function renderRiwayatInspeksi() {
+  if (!document.getElementById('viewRiwayatInspeksi')) return;
+  populateRiwayatInspeksiFilters(verifikasiRawEntries || []);
+  const entries = getRiwayatInspeksiFilteredEntries();
+  const countEl = document.getElementById('riCount');
+  if (countEl) countEl.textContent = entries.length.toLocaleString('id-ID') + ' laporan';
+  renderRiwayatInspeksiStats(entries);
+  riUpdateMap(entries);
+  riRenderList(entries);
+}
+
+// ── PETA ──
+function riUpdateMap(entries) {
+  if (!document.getElementById('riMap')) return;
+  if (!riMapInstance) {
+    riMapInstance = L.map('riMap', { zoomControl: true }).setView(PAPUA_DEFAULT_CENTER, PAPUA_DEFAULT_ZOOM);
+    const { layers: baseLayers, defaultLayer } = buildBaseLayers();
+    defaultLayer.addTo(riMapInstance);
+    riSheetLayer = L.layerGroup();
+    L.control.layers(baseLayers, { '📄 Temuan Inspeksi (Sheets)': riSheetLayer }).addTo(riMapInstance);
+    setTimeout(() => riMapInstance.invalidateSize(), 200);
+  }
+  if (riMarkersLayer) riMapInstance.removeLayer(riMarkersLayer);
+  riMarkersLayer = L.markerClusterGroup({ maxClusterRadius: 50 });
+  riMarkersById = {};
+
+  let validCount = 0, minLat=90, maxLat=-90, minLng=180, maxLng=-180;
+  entries.forEach(([id, l]) => {
+    if (!l.lat || !l.lng) return;
+    validCount++;
+    if (l.lat < minLat) minLat = l.lat; if (l.lat > maxLat) maxLat = l.lat;
+    if (l.lng < minLng) minLng = l.lng; if (l.lng > maxLng) maxLng = l.lng;
+    const m = L.marker([l.lat, l.lng], { icon: createCheckpointIcon(l) });
+    m.bindPopup(buildCheckpointPopup(l), { maxWidth: 260 });
+    m.addTo(riMarkersLayer);
+    riMarkersById[id] = m;
+  });
+  riMarkersLayer.addTo(riMapInstance);
+  riMapBoundsCache = { validCount, minLat, maxLat, minLng, maxLng };
+
+  riRefreshSheetOverlay();
+  if (riViewMode === 'peta') setTimeout(riFitMapToData, 50);
+}
+
+// Layer opsional Temuan Inspeksi (Peta Inspeksi lama, dari Google Sheets) — dipetakan
+// berdampingan (bukan digabung datanya) karena skema Urgensi/status beda dgn statusVerifikasi.
+function riRefreshSheetOverlay() {
+  if (!riSheetLayer) return;
+  riSheetLayer.clearLayers();
+  (allData || []).forEach(r => {
+    const coord = parseCoord(r['Koordinat']);
+    if (!coord) return;
+    const [lat, lng] = coord;
+    const marker = L.marker([lat, lng], { icon: createMarkerIcon(getUrgensiColor(r['Urgensi'])) });
+    const temuan = String(r['Temuan'] || r['Jenis Temuan Konstruksi'] || '—').slice(0, 80);
+    marker.bindPopup(`<div class="popup-card">
+        <div class="popup-head"><div class="popup-title">${esc(r['Penyulang']||'—')}</div></div>
+        <div class="popup-row"><span class="popup-key">ULP</span><span class="popup-val">${esc(r['ULP']||'—')}</span></div>
+        <div class="popup-row"><span class="popup-key">Urgensi</span><span class="popup-val">${esc(r['Urgensi']||'—')}</span></div>
+        <div class="popup-row"><span class="popup-key">Temuan</span><span class="popup-val">${esc(temuan)}</span></div>
+      </div>`, { maxWidth: 240 });
+    marker.addTo(riSheetLayer);
+  });
+}
+
+function riFitMapToData() {
+  if (!riMapInstance || !riMapBoundsCache) return;
+  const size = riMapInstance.getSize();
+  if (!size.x || !size.y) { requestAnimationFrame(() => { if (riMapInstance) { riMapInstance.invalidateSize(); riFitMapToData(); } }); return; }
+  const { validCount, minLat, maxLat, minLng, maxLng } = riMapBoundsCache;
+  if (validCount > 0) {
+    const padLat = (maxLat-minLat)*0.1 || 0.1;
+    const padLng = (maxLng-minLng)*0.1 || 0.1;
+    try { riMapInstance.fitBounds([[minLat-padLat,minLng-padLng],[maxLat+padLat,maxLng+padLng]],{maxZoom:12}); }
+    catch(e) { riMapInstance.setView(PAPUA_DEFAULT_CENTER, PAPUA_DEFAULT_ZOOM); }
+  } else {
+    riMapInstance.setView(PAPUA_DEFAULT_CENTER, PAPUA_DEFAULT_ZOOM);
+  }
+}
+
+// Dipanggil dari tombol "📍 Lihat di Peta" pada kartu daftar — pindah ke mode peta
+// lalu buka popup marker terkait (pakai zoomToShowLayer supaya marker yang lagi
+// tersembunyi di dalam cluster ikut "dibuka" dulu sebelum popup muncul).
+window.riFocusMarker = function(id) {
+  riSwitchMode('peta');
+  setTimeout(() => {
+    const m = riMarkersById[id];
+    if (!m || !riMapInstance) { showToast('Titik lokasi tidak ada di filter/periode saat ini.', 'warn'); return; }
+    if (riMarkersLayer && riMarkersLayer.zoomToShowLayer) {
+      riMarkersLayer.zoomToShowLayer(m, () => { riMapInstance.setView(m.getLatLng(), 15); m.openPopup(); });
+    } else {
+      riMapInstance.setView(m.getLatLng(), 15);
+      m.openPopup();
+    }
+  }, 200);
+};
+
+// ── DAFTAR ──
+function riRenderList(entries) {
+  const el = document.getElementById('riListContent');
+  if (!el) return;
+  if (!entries.length) { el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px;font-size:13px;">Tidak ada laporan sesuai filter</div>'; return; }
+  el.innerHTML = entries.map(([id, l]) => riRenderCard(id, l)).join('');
+}
+
+function riRenderCard(id, l) {
+  const waktu   = l.waktu ? new Date(l.waktu).toLocaleString('id-ID') : '—';
+  const before  = l.fotoBeforeBase64  || l.fotoBeforeUrl  || l.fotoBefore  || '';
+  const progres = l.fotoProgresBase64 || l.fotoProgresUrl || l.fotoProgres || '';
+  const after   = l.fotoAfterBase64   || l.fotoAfterUrl   || l.fotoAfter   || '';
+  const fotoTrio = [['SEBELUM', before], ['PROGRES', progres], ['SESUDAH', after]];
+  const photos = (before || progres || after) ? `
+    <div class="laporan-photos" style="grid-template-columns:repeat(3,1fr)">
+      ${fotoTrio.map(([label, src]) => `<div>
+        ${src ? `<img src="${src}" onclick="bukaFotoFullscreen(this)" style="cursor:pointer">` : '<div style="background:#f1f5f9;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:24px">📷</div>'}
+        <div class="photo-label">${label}</div>
+      </div>`).join('')}
+    </div>` : '';
+
+  const age = riAgeDays(l);
+  const ageBadge = age !== null
+    ? `<span style="font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:99px;background:${age>3?'var(--crit-bg)':'var(--info-bg)'};color:${age>3?'var(--crit)':'var(--info)'}">⏳ ${age} hari menunggu</span>`
+    : '';
+  const lokasiBtn = (l.lat && l.lng)
+    ? `<button onclick="riFocusMarker('${id}')" style="background:none;border:1px solid var(--line);border-radius:var(--radius-xs);padding:6px 12px;font-size:11.5px;font-weight:700;cursor:pointer;color:var(--pln-blue)">📍 Lihat di Peta</button>`
+    : `<span style="font-size:10.5px;color:var(--text-3)">Tanpa koordinat GPS</span>`;
+  const verifBtn = `<button onclick="bukaModalVerifikasiById('${id}','hasil')" style="background:var(--pln-blue);color:#fff;border:1px solid var(--pln-blue);border-radius:var(--radius-xs);padding:6px 12px;font-size:11.5px;font-weight:700;cursor:pointer">${l.statusVerifikasi ? '✏️ Ubah Hasil Verifikasi' : '✅ Verifikasi Sekarang'}</button>`;
+  const verifInfo = l.statusVerifikasi ? `<div style="padding:10px 15px;border-top:1px solid var(--line);font-size:11.5px;color:var(--text-2)">
+      <b>Diverifikasi oleh:</b> ${esc(l.verifOleh)||'TL/Admin'} · ${l.verifWaktu ? new Date(l.verifWaktu).toLocaleString('id-ID') : '—'}
+      ${l.verifCatatan ? `<br><b>Catatan:</b> ${esc(l.verifCatatan)}` : ''}
+    </div>` : '';
+
+  return `<div class="laporan-card" style="margin-bottom:10px">
+    <div class="laporan-card-header">
+      <div style="flex:1;min-width:0">
+        <div class="laporan-card-name">👷 ${esc(l.regu)||'—'} <span style="font-weight:400;color:var(--text-3);font-size:11px">${esc(l.ulp)||''}${l.anggotaHadir ? ' · ' + esc(l.anggotaHadir) : ''}</span></div>
+        <div class="laporan-card-meta" style="margin-top:4px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">${riStatusBadge(l)} ${ageBadge}</div>
+        <div class="laporan-card-meta">${waktu}</div>
+      </div>
+    </div>
+    ${photos}
+    <div class="laporan-card-body">
+      ${laporanDetailFieldsHtml(l)}
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center">${lokasiBtn}${verifBtn}</div>
+    </div>
+    ${verifInfo}
+  </div>`;
 }
 
 // Ambil ukuran asli (lebar x tinggi) sebuah foto dari dataURL-nya — dipakai
