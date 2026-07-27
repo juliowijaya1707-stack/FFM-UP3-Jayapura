@@ -6331,15 +6331,26 @@ function koordinatValidOrEmpty(raw) {
   return parts.length === 2 && !parts.some(isNaN);
 }
 
-// Generate Nomor Penugasan otomatis & atomik: KODE_ULP-0001, urut per ULP,
-// tidak pernah reset. Pakai Firebase transaction supaya aman walau 2
-// TL/Admin menyimpan penugasan di ULP yang sama pada saat bersamaan.
+// Generate Nomor Penugasan otomatis & atomik: KODE_ULP-DD/MM-0001.
+// Urut per ULP, TIDAK PERNAH RESET (tanggal cuma ditempel sebagai info kapan
+// dibuat, bukan penentu urutan) — supaya tetap 1 sumber angka yang sama persis
+// dengan sebelumnya, hanya tampilannya yang dibuat beda dari Nomor Gardu
+// (Nomor Gardu formatnya "JPR007" tanpa pemisah; Nomor Penugasan pakai "/" dan
+// "-" supaya sekilas mata langsung kelihatan beda, tidak tertukar di lapangan).
+// Nomor penugasan LAMA (format JYP-0001) sengaja TIDAK diubah/dimigrasi — nomor
+// itu dicocokkan sebagai teks ke laporan.nomorTiket di beberapa tempat (auto-
+// selesai tugas saat verifikasi, dst), jadi mengubahnya bisa memutus laporan
+// lama yang sudah menunjuk ke nomor tersebut. Pakai Firebase transaction supaya
+// aman walau 2 TL/Admin menyimpan penugasan di ULP yang sama pada saat bersamaan.
 async function generateNomorPenugasan(ulp) {
   const kode = KODE_ULP[ulp] || 'GEN';
   const counterRef = window._fbRef(fbDb, 'penugasanCounter/' + kode);
   const result = await window._fbRunTransaction(counterRef, curr => (curr || 0) + 1);
   const seq = result.snapshot.val();
-  return kode + '-' + String(seq).padStart(4, '0');
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, '0');
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  return kode + '-' + dd + '/' + mm + '-' + String(seq).padStart(4, '0');
 }
 
 window.simpanTiket = async function() {
