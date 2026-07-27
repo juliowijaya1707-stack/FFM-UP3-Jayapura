@@ -551,6 +551,18 @@ body {
 #viewMap .side-panel { overflow-y: auto; min-height: 0; }
 
 /* ══════════════════════════════════════
+   RIWAYAT INSPEKSI — peta penuh 1 layar tanpa scroll ganda;
+   mode Daftar scroll internal saja (header/filter tetap diam)
+══════════════════════════════════════ */
+#viewRiwayatInspeksi { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+#viewRiwayatInspeksi .fb-header,
+#viewRiwayatInspeksi #riStatsRow,
+#viewRiwayatInspeksi #riFilterRow { flex-shrink: 0; }
+#ri-mode-peta { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+#ri-mode-list { flex: 1; min-height: 0; overflow-y: auto; }
+#riMap { flex: 1; min-height: 0; height: auto !important; width: 100%; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); margin-top: 6px; }
+
+/* ══════════════════════════════════════
    TABLE
 ══════════════════════════════════════ */
 .table-wrap { overflow-x: auto; }
@@ -762,7 +774,7 @@ tbody tr:hover td { background: var(--surface-2); }
 .popup-row     { display: flex; align-items: baseline; gap: 10px; padding: 3px 0; }
 .popup-key     { color: var(--text-3); font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; min-width: 56px; flex-shrink: 0; }
 .popup-val     { font-weight: 700; color: var(--text-1); text-align: right; flex: 1; }
-.popup-urgensi { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; color: #fff; }
+.popup-urgensi { display: inline-block; padding: 3px 11px; border-radius: 20px; font-size: 11px; font-weight: 800; color: #fff; white-space: nowrap; line-height: 1.4; }
 
 /* Kartu popup "Petugas Aktif" di peta — label di atas, nilai penuh di bawah
    (bukan sejajar kiri/kanan) supaya daftar anggota yang panjang tidak
@@ -780,7 +792,10 @@ tbody tr:hover td { background: var(--surface-2); }
 }
 .popup-anggota::-webkit-scrollbar { width: 5px; }
 .popup-anggota::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 99px; }
-.popup-stats     { display: flex; gap: 14px; padding-top: 10px; margin-top: 2px; border-top: 1px solid var(--line); }
+.popup-stats     { display: flex; flex-direction: column; gap: 10px; padding-top: 10px; margin-top: 2px; border-top: 1px solid var(--line); }
+.popup-stat-status-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.popup-stat-status-row .popup-label { margin-bottom: 0; }
+.popup-stat-grid { display: flex; gap: 14px; }
 .popup-stat      { flex: 1; min-width: 0; }
 .popup-stat-val  { font-weight: 700; font-size: 12.5px; color: var(--text-1); white-space: nowrap; }
 
@@ -900,7 +915,48 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
 
 /* ══════════════════════════════════════
    RESPONSIVE
+   Sebelumnya cuma ada SATU breakpoint (960px) yang langsung lompat ke mode
+   mobile (sidebar hilang total). Akibatnya laptop kecil/jendela browser
+   yang tidak full-width (≈1024–1366px, umum di laptop 13"–14") ikut kena
+   rasio layout yang sama persis dengan laptop lebar (1600–1920px+), jadi
+   panel-panel jadi sempit/berdesakan di satu ukuran tapi longgar berlebihan
+   di ukuran lain. Ditambah beberapa breakpoint antara supaya tampilannya
+   konsisten & tidak berantakan di berbagai ukuran laptop.
 ══════════════════════════════════════ */
+
+/* Laptop kompak (≈961–1279px, mis. layar 13" native 1280px atau jendela
+   browser yang di-resize tidak full-width) — sidebar dipadatkan & rasio
+   peta:panel-samping dibuat lebih longgar supaya panel kanan tidak
+   berdesakan seperti kalau pakai rasio laptop lebar. */
+@media (max-width: 1279px) and (min-width: 961px) {
+  :root { --sidebar-w: 220px; }
+  .content    { padding: 18px 20px 26px; }
+  .grid-2-3   { grid-template-columns: 1.6fr 1fr; gap: 14px; }
+  .grid-2     { gap: 14px; }
+  .kpi-row    { gap: 12px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .sidebar .nav-label { font-size: 12.5px; }
+}
+
+/* Layar dengan tinggi terbatas (mis. laptop 1366×768 / 1280×800) — padatkan
+   elemen vertikal (topbar, header section, jarak kpi) supaya konten utama
+   (peta/tabel/daftar) tetap kebagian tinggi yang cukup tanpa harus scroll
+   berlebihan. Berdasarkan tinggi viewport, bukan lebar, jadi tetap berlaku
+   di laptop lebar yang layarnya pendek. */
+@media (max-height: 800px) {
+  .topbar       { height: 56px; }
+  .content      { padding-top: 16px; }
+  .kpi-row      { margin-bottom: 18px; }
+  .fb-header    { padding: 2px 0 0; }
+  .card-header  { padding: 12px 16px; }
+}
+
+/* Laptop/monitor besar (≥1680px) — batasi lebar konten & simetriskan di
+   tengah supaya kartu/peta tidak melebar berlebihan dan renggang di layar
+   lebar (mis. laptop 16"/17" 1920px atau external monitor). */
+@media (min-width: 1680px) {
+  .content > * { max-width: 1760px; margin-left: auto; margin-right: auto; width: 100%; }
+}
+
 @media (max-width: 960px) {
   .sidebar { display: none; }
   .grid-2-3 { grid-template-columns: 1fr; }
@@ -912,6 +968,9 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
   #map { height: 400px !important; }
   #viewPetugas .grid-2-3 { height: auto; }
   #map-petugas { height: 400px !important; }
+  #viewRiwayatInspeksi { overflow: visible !important; }
+  #ri-mode-list { overflow: visible !important; }
+  #riMap { height: 400px !important; }
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1989,29 +2048,29 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
       <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;margin-bottom:4px;align-items:flex-end">
         <div>
           <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">ULP</label>
-          <select id="verif-filter-ulp" onchange="renderVerifikasiGrid()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:150px">
+          <select id="verif-filter-ulp" onchange="onVerifikasiFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:150px">
             <option value="">Semua ULP</option>
           </select>
         </div>
         <div>
           <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Regu</label>
-          <select id="verif-filter-regu" onchange="renderVerifikasiGrid()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:150px">
+          <select id="verif-filter-regu" onchange="onVerifikasiFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:150px">
             <option value="">Semua Regu</option>
           </select>
         </div>
         <div>
           <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Tanggal</label>
-          <input id="verif-filter-tanggal" type="date" onchange="renderVerifikasiGrid()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none">
+          <input id="verif-filter-tanggal" type="date" onchange="onVerifikasiFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none">
         </div>
         <div>
           <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Jenis Pekerjaan</label>
-          <select id="verif-filter-jenis" onchange="renderVerifikasiGrid()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:200px">
+          <select id="verif-filter-jenis" onchange="onVerifikasiFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:200px">
             <option value="">Semua Jenis Pekerjaan</option>
           </select>
         </div>
         <div style="flex:1;min-width:180px">
           <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Cari</label>
-          <input id="verif-filter-search" type="text" placeholder="Cari regu, ULP, tiket, pekerjaan..." oninput="renderVerifikasiGrid()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none">
+          <input id="verif-filter-search" type="text" placeholder="Cari regu, ULP, tiket, pekerjaan..." oninput="onVerifikasiFilterChange()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none">
         </div>
         <div>
           <button onclick="resetVerifikasiFilter()" style="background:none;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--text-2)">↺ Reset Filter</button>
@@ -2020,6 +2079,16 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
 
       <div id="verifikasiGrid" style="margin-top:14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;">
         <div style="text-align:center;color:var(--text-muted);padding:40px;font-size:13px;grid-column:1/-1">Menunggu data Firebase...</div>
+      </div>
+      <div class="pagination-bar" id="verifikasiPagination" style="display:none;margin-top:14px;border-top:none;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow-xs);">
+        <div class="pagination-info" id="verifikasiPgInfo">—</div>
+        <div class="pagination-controls">
+          <button class="pg-btn" id="verifikasiPgFirst" onclick="goToVerifikasiPage(1)" title="Halaman pertama">«</button>
+          <button class="pg-btn" id="verifikasiPgPrev" onclick="goToVerifikasiPage(verifikasiPage-1)" title="Sebelumnya">‹</button>
+          <span id="verifikasiPgNumbers" style="display:flex;gap:6px"></span>
+          <button class="pg-btn" id="verifikasiPgNext" onclick="goToVerifikasiPage(verifikasiPage+1)" title="Berikutnya">›</button>
+          <button class="pg-btn" id="verifikasiPgLast" onclick="goToVerifikasiPage(verifikasiPageTotalPages)" title="Halaman terakhir">»</button>
+        </div>
       </div>
     </div>
 
@@ -2242,10 +2311,10 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
 
       <div id="riStatsRow" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px"></div>
 
-      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;margin-bottom:4px;align-items:flex-end">
+      <div id="riFilterRow" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;margin-bottom:4px;align-items:flex-end">
         <div>
           <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Periode</label>
-          <select id="ri-filter-periode" onchange="renderRiwayatInspeksi()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:150px">
+          <select id="ri-filter-periode" onchange="onRiwayatInspeksiFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:150px">
             <option value="7">7 Hari Terakhir</option>
             <option value="30" selected>30 Hari Terakhir</option>
             <option value="90">90 Hari Terakhir</option>
@@ -2254,7 +2323,7 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
         </div>
         <div>
           <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Status Verifikasi</label>
-          <select id="ri-filter-status" onchange="renderRiwayatInspeksi()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:180px">
+          <select id="ri-filter-status" onchange="onRiwayatInspeksiFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:180px">
             <option value="">Semua Status</option>
             <option value="pending">⏳ Menunggu Verifikasi</option>
             <option value="Terverifikasi">✓ Terverifikasi</option>
@@ -2264,23 +2333,23 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
         </div>
         <div>
           <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">ULP</label>
-          <select id="ri-filter-ulp" onchange="renderRiwayatInspeksi()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:150px">
+          <select id="ri-filter-ulp" onchange="onRiwayatInspeksiFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:150px">
             <option value="">Semua ULP</option>
           </select>
         </div>
         <div>
           <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Regu</label>
-          <select id="ri-filter-regu" onchange="renderRiwayatInspeksi()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:150px">
+          <select id="ri-filter-regu" onchange="onRiwayatInspeksiFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:150px">
             <option value="">Semua Regu</option>
           </select>
         </div>
         <div style="flex:1;min-width:180px">
           <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Cari</label>
-          <input id="ri-filter-search" type="text" placeholder="Cari regu, tiket, pekerjaan..." oninput="renderRiwayatInspeksi()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none">
+          <input id="ri-filter-search" type="text" placeholder="Cari regu, tiket, pekerjaan..." oninput="onRiwayatInspeksiFilterChange()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none">
         </div>
         <div>
           <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Urutkan</label>
-          <select id="ri-filter-sort" onchange="renderRiwayatInspeksi()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:190px">
+          <select id="ri-filter-sort" onchange="onRiwayatInspeksiFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:190px">
             <option value="terbaru">Terbaru Dulu</option>
             <option value="menunggu-lama">Menunggu Terlama Dulu</option>
           </select>
@@ -2291,12 +2360,20 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
       </div>
 
       <div id="ri-mode-peta">
-        <div id="riMap" style="height:540px;border-radius:var(--radius);overflow:hidden;margin-top:6px;border:1px solid var(--line)"></div>
-        <div style="font-size:11px;color:var(--text-3);margin-top:8px">📍 biru = menunggu verifikasi · 🟢 hijau = terverifikasi · 🟠 oranye = perlu revisi · 🔴 merah = ditolak. Nyalakan layer <b>"Temuan Inspeksi (Sheets)"</b> dari ikon layer di pojok peta untuk melihat berdampingan dengan Peta Inspeksi lama.</div>
+        <div id="riMap"></div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:8px;flex-shrink:0">📍 biru = menunggu verifikasi · 🟢 hijau = terverifikasi · 🟠 oranye = perlu revisi · 🔴 merah = ditolak. Nyalakan layer <b>"Temuan Inspeksi (Sheets)"</b> dari ikon layer di pojok peta untuk melihat berdampingan dengan Peta Inspeksi lama.</div>
       </div>
-      <div id="ri-mode-list" style="display:none;margin-top:14px">
-        <div id="riListContent">
-          <div style="text-align:center;color:var(--text-muted);padding:40px;font-size:13px;">Menunggu data Firebase...</div>
+      <div id="ri-mode-list" style="display:none;">
+        <div id="riListContent" style="display:flex;flex-direction:column;gap:10px;padding-top:6px"></div>
+        <div class="pagination-bar" id="riListPagination" style="display:none;margin-top:4px;border-top:none;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow-xs);flex-shrink:0;">
+          <div class="pagination-info" id="riListPgInfo">—</div>
+          <div class="pagination-controls">
+            <button class="pg-btn" id="riListPgFirst" onclick="goToRiListPage(1)" title="Halaman pertama">«</button>
+            <button class="pg-btn" id="riListPgPrev" onclick="goToRiListPage(riListPage-1)" title="Sebelumnya">‹</button>
+            <span id="riListPgNumbers" style="display:flex;gap:6px"></span>
+            <button class="pg-btn" id="riListPgNext" onclick="goToRiListPage(riListPage+1)" title="Berikutnya">›</button>
+            <button class="pg-btn" id="riListPgLast" onclick="goToRiListPage(riListPageTotalPages)" title="Halaman terakhir">»</button>
+          </div>
         </div>
       </div>
     </div>
@@ -4309,17 +4386,19 @@ function buildPetugasPopup(p) {
         <div class="popup-anggota">${anggotaHtml}</div>
       </div>
       <div class="popup-stats">
-        <div class="popup-stat">
+        <div class="popup-stat-status-row">
           <span class="popup-label">Status</span>
           <span class="popup-urgensi" style="background:${statusColor(p.status)}">${p.status||'—'}</span>
         </div>
-        <div class="popup-stat">
-          <span class="popup-label">Akurasi</span>
-          <div class="popup-stat-val">${p.acc||'—'} m</div>
-        </div>
-        <div class="popup-stat">
-          <span class="popup-label">Update</span>
-          <div class="popup-stat-val">${waktuTxt}</div>
+        <div class="popup-stat-grid">
+          <div class="popup-stat">
+            <span class="popup-label">Akurasi</span>
+            <div class="popup-stat-val">${p.acc||'—'} m</div>
+          </div>
+          <div class="popup-stat">
+            <span class="popup-label">Update</span>
+            <div class="popup-stat-val">${waktuTxt}</div>
+          </div>
         </div>
       </div>
     </div>
@@ -6734,8 +6813,21 @@ window.resetVerifikasiFilter = function() {
   document.getElementById('verif-filter-tanggal').value = '';
   document.getElementById('verif-filter-jenis').value = '';
   document.getElementById('verif-filter-search').value = '';
+  verifikasiPage = 1;
   renderVerifikasiGrid();
 };
+
+// Filter berubah -> selalu kembali ke halaman 1 supaya user tidak "nyasar"
+// di halaman lama yang mungkin sudah kosong / berbeda datanya.
+window.onVerifikasiFilterChange = function() {
+  verifikasiPage = 1;
+  renderVerifikasiGrid();
+};
+
+// ── Verifikasi Laporan: state pagination ──
+let verifikasiPage = 1;
+const verifikasiPageSize = 9; // 3 kolom x 3 baris pada layar lebar, cukup enak di-scan
+let verifikasiPageTotalPages = 1;
 
 function renderVerifikasiGrid() {
   const entries = getVerifikasiFilteredEntries();
@@ -6753,11 +6845,13 @@ function renderVerifikasiGrid() {
   entries.forEach(([id, l]) => { window._verifDataCache[id] = l; });
 
   const grid = document.getElementById('verifikasiGrid');
+  const pagBar = document.getElementById('verifikasiPagination');
   if (entries.length === 0) {
     const msg = (verifikasiRawEntries && verifikasiRawEntries.length > 0)
       ? 'Tidak ada laporan yang cocok dengan filter ini'
       : 'Belum ada laporan pekerjaan';
     grid.innerHTML = `<div style="text-align:center;color:var(--text-muted);padding:40px;font-size:13px;grid-column:1/-1">${msg}</div>`;
+    pagBar.style.display = 'none';
     return;
   }
   // sort: belum diverifikasi dulu, lalu by waktu
@@ -6768,7 +6862,17 @@ function renderVerifikasiGrid() {
     return (b[1].waktu||0) - (a[1].waktu||0);
   });
 
-  grid.innerHTML = entries.map(([id, l]) => {
+  // Pagination: hitung total halaman & jaga halaman aktif tetap valid
+  // (misalnya saat filter baru bikin hasil lebih sedikit dari sebelumnya).
+  verifikasiPageTotalPages = Math.max(1, Math.ceil(entries.length / verifikasiPageSize));
+  verifikasiPage = Math.min(Math.max(1, verifikasiPage), verifikasiPageTotalPages);
+  const pageStart = (verifikasiPage - 1) * verifikasiPageSize;
+  const pageEntries = entries.slice(pageStart, pageStart + verifikasiPageSize);
+
+  pagBar.style.display = verifikasiPageTotalPages > 1 ? 'flex' : 'none';
+  renderVerifikasiPaginationControls(entries.length);
+
+  grid.innerHTML = pageEntries.map(([id, l]) => {
     const waktu = l.waktu ? new Date(l.waktu).toLocaleString('id-ID') : '—';
     const before  = l.fotoBeforeUrl  || l.fotoBeforeBase64  || '';
     const progres = l.fotoProgresUrl || l.fotoProgresBase64 || '';
@@ -6816,6 +6920,39 @@ function renderVerifikasiGrid() {
     </div>`;
   }).join('');
 }
+
+function renderVerifikasiPaginationControls(totalEntries) {
+  const start = (verifikasiPage - 1) * verifikasiPageSize + 1;
+  const end   = Math.min(verifikasiPage * verifikasiPageSize, totalEntries);
+  document.getElementById('verifikasiPgInfo').innerHTML =
+    `<b>${start}–${end}</b> dari <b>${totalEntries}</b>`;
+
+  document.getElementById('verifikasiPgFirst').disabled = verifikasiPage <= 1;
+  document.getElementById('verifikasiPgPrev').disabled  = verifikasiPage <= 1;
+  document.getElementById('verifikasiPgNext').disabled  = verifikasiPage >= verifikasiPageTotalPages;
+  document.getElementById('verifikasiPgLast').disabled  = verifikasiPage >= verifikasiPageTotalPages;
+
+  const nums = [];
+  const windowStart = Math.max(1, verifikasiPage - 2);
+  const windowEnd   = Math.min(verifikasiPageTotalPages, verifikasiPage + 2);
+  if (windowStart > 1) { nums.push(1); if (windowStart > 2) nums.push('…'); }
+  for (let n = windowStart; n <= windowEnd; n++) nums.push(n);
+  if (windowEnd < verifikasiPageTotalPages) { if (windowEnd < verifikasiPageTotalPages - 1) nums.push('…'); nums.push(verifikasiPageTotalPages); }
+
+  document.getElementById('verifikasiPgNumbers').innerHTML = nums.map(n =>
+    n === '…'
+      ? `<span style="padding:0 4px;color:var(--text-3);font-size:12px">…</span>`
+      : `<button class="pg-btn${n===verifikasiPage?' active':''}" onclick="goToVerifikasiPage(${n})">${n}</button>`
+  ).join('');
+}
+
+window.goToVerifikasiPage = function(n) {
+  n = Math.min(Math.max(1, n), verifikasiPageTotalPages);
+  if (n === verifikasiPage) return;
+  verifikasiPage = n;
+  renderVerifikasiGrid();
+  document.getElementById('verifikasiGrid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
 
 function listenVerifikasi() {
   if (fbListeners.verifikasi) return;
@@ -7025,7 +7162,7 @@ let riMapBoundsCache= null;
 let riMarkersById   = {};
 let riViewMode      = 'peta';
 
-function riSwitchMode(mode) {
+function riSwitchMode(mode, afterShow) {
   riViewMode = mode;
   const showPeta = mode === 'peta';
   document.getElementById('ri-mode-peta').style.display = showPeta ? '' : 'none';
@@ -7034,7 +7171,14 @@ function riSwitchMode(mode) {
   document.getElementById('ri-btn-peta').style.color      = showPeta ? '#fff' : 'var(--text-2)';
   document.getElementById('ri-btn-list').style.background = showPeta ? 'var(--surface-2)' : 'var(--pln-blue)';
   document.getElementById('ri-btn-list').style.color      = showPeta ? 'var(--text-2)' : '#fff';
-  if (showPeta) setTimeout(() => { if (riMapInstance) { riMapInstance.invalidateSize(); riFitMapToData(); } }, 150);
+  // afterShow (opsional): dijalankan sekali peta selesai invalidateSize, dipakai
+  // riFocusMarker supaya fokus-ke-checkpoint tidak balapan dengan riFitMapToData
+  // bawaan (dulu dua setTimeout terpisah bisa saling menimpa hasil zoom).
+  if (showPeta) setTimeout(() => {
+    if (!riMapInstance) return;
+    riMapInstance.invalidateSize();
+    if (afterShow) afterShow(); else riFitMapToData();
+  }, 150);
 }
 
 // Umur (hari) laporan yang BELUM diverifikasi — null kalau sudah ada hasil verifikasi
@@ -7085,6 +7229,13 @@ window.resetRiwayatInspeksiFilter = function() {
   document.getElementById('ri-filter-regu').value    = '';
   document.getElementById('ri-filter-search').value  = '';
   document.getElementById('ri-filter-sort').value    = 'terbaru';
+  riListPage = 1;
+  renderRiwayatInspeksi();
+};
+
+// Filter berubah -> kembali ke halaman 1 di mode Daftar
+window.onRiwayatInspeksiFilterChange = function() {
+  riListPage = 1;
   renderRiwayatInspeksi();
 };
 
@@ -7222,12 +7373,12 @@ function riFitMapToData() {
   }
 }
 
-// Dipanggil dari tombol "📍 Lihat di Peta" pada kartu daftar — pindah ke mode peta
-// lalu buka popup marker terkait (pakai zoomToShowLayer supaya marker yang lagi
-// tersembunyi di dalam cluster ikut "dibuka" dulu sebelum popup muncul).
+// Dipanggil dari kartu/tombol "📍 Lihat di Peta" pada daftar — pindah ke mode
+// peta lalu langsung fokus & buka popup marker terkait begitu peta selesai
+// invalidateSize (pakai zoomToShowLayer supaya marker yang lagi tersembunyi di
+// dalam cluster ikut "dibuka" dulu sebelum popup muncul).
 window.riFocusMarker = function(id) {
-  riSwitchMode('peta');
-  setTimeout(() => {
+  riSwitchMode('peta', () => {
     const m = riMarkersById[id];
     if (!m || !riMapInstance) { showToast('Titik lokasi tidak ada di filter/periode saat ini.', 'warn'); return; }
     if (riMarkersLayer && riMarkersLayer.zoomToShowLayer) {
@@ -7236,16 +7387,70 @@ window.riFocusMarker = function(id) {
       riMapInstance.setView(m.getLatLng(), 15);
       m.openPopup();
     }
-  }, 200);
+  });
 };
 
-// ── DAFTAR ──
+// ── DAFTAR ── (pagination: konsisten dgn pola di Verifikasi/Petugas)
+let riListPage = 1;
+const riListPageSize = 8;
+let riListPageTotalPages = 1;
+let lastRiListEntries = [];
+
 function riRenderList(entries) {
+  lastRiListEntries = entries;
   const el = document.getElementById('riListContent');
+  const pagBar = document.getElementById('riListPagination');
   if (!el) return;
-  if (!entries.length) { el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px;font-size:13px;">Tidak ada laporan sesuai filter</div>'; return; }
-  el.innerHTML = entries.map(([id, l]) => riRenderCard(id, l)).join('');
+  if (!entries.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px;font-size:13px;">Tidak ada laporan sesuai filter</div>';
+    if (pagBar) pagBar.style.display = 'none';
+    return;
+  }
+  riListPageTotalPages = Math.max(1, Math.ceil(entries.length / riListPageSize));
+  riListPage = Math.min(Math.max(1, riListPage), riListPageTotalPages);
+  const start = (riListPage - 1) * riListPageSize;
+  const pageEntries = entries.slice(start, start + riListPageSize);
+
+  el.innerHTML = pageEntries.map(([id, l]) => riRenderCard(id, l)).join('');
+
+  if (pagBar) {
+    pagBar.style.display = riListPageTotalPages > 1 ? 'flex' : 'none';
+    renderRiListPaginationControls(entries.length);
+  }
 }
+
+function renderRiListPaginationControls(totalEntries) {
+  const start = (riListPage - 1) * riListPageSize + 1;
+  const end   = Math.min(riListPage * riListPageSize, totalEntries);
+  document.getElementById('riListPgInfo').innerHTML =
+    `<b>${start}–${end}</b> dari <b>${totalEntries}</b>`;
+
+  document.getElementById('riListPgFirst').disabled = riListPage <= 1;
+  document.getElementById('riListPgPrev').disabled  = riListPage <= 1;
+  document.getElementById('riListPgNext').disabled  = riListPage >= riListPageTotalPages;
+  document.getElementById('riListPgLast').disabled  = riListPage >= riListPageTotalPages;
+
+  const nums = [];
+  const windowStart = Math.max(1, riListPage - 2);
+  const windowEnd   = Math.min(riListPageTotalPages, riListPage + 2);
+  if (windowStart > 1) { nums.push(1); if (windowStart > 2) nums.push('…'); }
+  for (let n = windowStart; n <= windowEnd; n++) nums.push(n);
+  if (windowEnd < riListPageTotalPages) { if (windowEnd < riListPageTotalPages - 1) nums.push('…'); nums.push(riListPageTotalPages); }
+
+  document.getElementById('riListPgNumbers').innerHTML = nums.map(n =>
+    n === '…'
+      ? `<span style="padding:0 4px;color:var(--text-3);font-size:12px">…</span>`
+      : `<button class="pg-btn${n===riListPage?' active':''}" onclick="goToRiListPage(${n})">${n}</button>`
+  ).join('');
+}
+
+window.goToRiListPage = function(n) {
+  n = Math.min(Math.max(1, n), riListPageTotalPages);
+  if (n === riListPage) return;
+  riListPage = n;
+  riRenderList(lastRiListEntries || []);
+  document.getElementById('ri-mode-list')?.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
 function riRenderCard(id, l) {
   const waktu   = l.waktu ? new Date(l.waktu).toLocaleString('id-ID') : '—';
@@ -7265,16 +7470,23 @@ function riRenderCard(id, l) {
   const ageBadge = age !== null
     ? `<span style="font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:99px;background:${age>3?'var(--crit-bg)':'var(--info-bg)'};color:${age>3?'var(--crit)':'var(--info)'}">⏳ ${age} hari menunggu</span>`
     : '';
-  const lokasiBtn = (l.lat && l.lng)
-    ? `<button onclick="riFocusMarker('${id}')" style="background:none;border:1px solid var(--line);border-radius:var(--radius-xs);padding:6px 12px;font-size:11.5px;font-weight:700;cursor:pointer;color:var(--pln-blue)">📍 Lihat di Peta</button>`
+  const adaKoordinat = !!(l.lat && l.lng);
+  const lokasiBtn = adaKoordinat
+    ? `<button onclick="event.stopPropagation();riFocusMarker('${id}')" style="background:none;border:1px solid var(--line);border-radius:var(--radius-xs);padding:6px 12px;font-size:11.5px;font-weight:700;cursor:pointer;color:var(--pln-blue)">📍 Lihat di Peta</button>`
     : `<span style="font-size:10.5px;color:var(--text-3)">Tanpa koordinat GPS</span>`;
-  const verifBtn = `<button onclick="bukaModalVerifikasiById('${id}','hasil')" style="background:var(--pln-blue);color:#fff;border:1px solid var(--pln-blue);border-radius:var(--radius-xs);padding:6px 12px;font-size:11.5px;font-weight:700;cursor:pointer">${l.statusVerifikasi ? '✏️ Ubah Hasil Verifikasi' : '✅ Verifikasi Sekarang'}</button>`;
+  const verifBtn = `<button onclick="event.stopPropagation();bukaModalVerifikasiById('${id}','hasil')" style="background:var(--pln-blue);color:#fff;border:1px solid var(--pln-blue);border-radius:var(--radius-xs);padding:6px 12px;font-size:11.5px;font-weight:700;cursor:pointer">${l.statusVerifikasi ? '✏️ Ubah Hasil Verifikasi' : '✅ Verifikasi Sekarang'}</button>`;
   const verifInfo = l.statusVerifikasi ? `<div style="padding:10px 15px;border-top:1px solid var(--line);font-size:11.5px;color:var(--text-2)">
       <b>Diverifikasi oleh:</b> ${esc(l.verifOleh)||'TL/Admin'} · ${l.verifWaktu ? new Date(l.verifWaktu).toLocaleString('id-ID') : '—'}
       ${l.verifCatatan ? `<br><b>Catatan:</b> ${esc(l.verifCatatan)}` : ''}
     </div>` : '';
 
-  return `<div class="laporan-card" style="margin-bottom:10px">
+  // Klik di mana saja pada kartu (kecuali foto/tombol, yang stopPropagation
+  // sendiri) langsung lompat & fokus ke checkpoint laporan ini di peta —
+  // tombol "📍 Lihat di Peta" tetap ada sebagai penanda eksplisit + jangkauan
+  // sentuh yang jelas untuk pengguna yang belum sadar seluruh kartu bisa diklik.
+  const cardClickAttr = adaKoordinat ? ` onclick="riFocusMarker('${id}')" style="margin-bottom:10px;cursor:pointer" title="Klik untuk melihat checkpoint ini di peta"` : ` style="margin-bottom:10px"`;
+
+  return `<div class="laporan-card"${cardClickAttr}>
     <div class="laporan-card-header">
       <div style="flex:1;min-width:0">
         <div class="laporan-card-name">👷 ${esc(l.regu)||'—'} <span style="font-weight:400;color:var(--text-3);font-size:11px">${esc(l.ulp)||''}${l.anggotaHadir ? ' · ' + esc(l.anggotaHadir) : ''}</span></div>
@@ -7282,8 +7494,8 @@ function riRenderCard(id, l) {
         <div class="laporan-card-meta">${waktu}</div>
       </div>
     </div>
-    ${photos}
-    <div class="laporan-card-body">
+    <div onclick="event.stopPropagation()">${photos}</div>
+    <div class="laporan-card-body" onclick="event.stopPropagation()">
       ${laporanDetailFieldsHtml(l)}
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center">${lokasiBtn}${verifBtn}</div>
     </div>
