@@ -1541,6 +1541,7 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
             <input type="date" id="logAbsensiRefDate" onchange="onLogAbsensiDateChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:6px 10px;font-size:12px;background:var(--surface);color:var(--text-1);outline:none">
             <button class="pg-btn" onclick="navLogAbsensiDate(1)" title="Berikutnya">›</button>
             <button class="pg-btn" onclick="goToTodayLogAbsensi()" title="Kembali ke hari ini">Hari Ini</button>
+            <button class="pg-btn" onclick="loadLogAbsensiRange()" title="Muat ulang data periode ini">🔄</button>
           </div>
           <div id="logAbsensiRangeLabel" style="font-size:12px;font-weight:700;color:var(--text-2)"></div>
           <select id="logAbsensiFilterRegu" onchange="renderLogAbsensi()" style="margin-left:auto;border:1px solid var(--line);border-radius:var(--radius-xs);padding:7px 10px;font-size:12px;background:var(--surface);color:var(--text-1);outline:none">
@@ -3290,6 +3291,7 @@ window.dbvExportCsv = function() {
 };
 
 function switchView(view) {
+  lepaskanListenerTidakAktif(view);
   const allViews = ['viewBeranda','viewMap','viewTable','viewPetugas','viewAbsensi','viewLogAbsensi','viewLaporan','viewTiket','viewVerifikasi','viewHasilVerifikasi','viewRiwayatInspeksi','viewRekap','viewAkun','viewDbViewer'];
   allViews.forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
   document.getElementById('filterBar').style.display = 'none';
@@ -3333,7 +3335,7 @@ function switchView(view) {
     if (!document.getElementById('logAbsensiRefDate').value) {
       document.getElementById('logAbsensiRefDate').value = todayLocalKey();
     }
-    initFirebase().then(ok => { if (ok) listenLogAbsensi(); });
+    initFirebase().then(ok => { if (ok) loadLogAbsensiRange(); });
   } else if (view === 'laporan') {
     document.getElementById('viewLaporan').style.display = '';
     document.getElementById('nav-laporan').classList.add('active');
@@ -3489,6 +3491,38 @@ let fbApp = null, fbDb = null;
 let petugasMarkers = {}; // id -> leaflet marker
 let mapPetugas = null;
 let fbListeners = {};
+
+// ── Lepas listener Firebase yang tidak relevan dengan tab tujuan ──────
+// Kenapa perlu: setiap listen*() memasang onValue() permanen dan baru lepas
+// kalau dipanggil manual. Tanpa ini, listener lama tetap menyala walau user
+// sudah pindah tab, sehingga Firebase terus mengirim update ke listener yang
+// tidak dipakai siapa-siapa.
+// listener yang dipakai bersama beberapa tab (rekap dipakai beranda/rekap/tiket,
+// verifikasi dipakai verifikasi/hasil-verifikasi/riwayat-inspeksi) hanya dilepas
+// kalau SEMUA tab pemakainya sedang ditinggalkan — supaya pindah antar tab yang
+// masih 1 grup tidak memutus & memasang ulang listener secara sia-sia.
+// 'petugasBadge' sengaja TIDAK dimasukkan — itu listener global badge sidebar
+// yang memang harus menyala terus di semua tab (lihat komentar di listenPetugasBadge()).
+const LISTENER_VIEW_MAP = {
+  akun:              ['akun'],
+  petugas:           ['petugas'],
+  laporanCheckpoint: ['petugas'],
+  absensi:           ['absensi'],
+  laporan:           ['laporan'],
+  tiket:             ['beranda', 'tiket'],
+  verifikasi:        ['verifikasi', 'hasil-verifikasi', 'riwayat-inspeksi'],
+  rekap:             ['beranda', 'rekap', 'tiket']
+};
+
+function lepaskanListenerTidakAktif(viewTujuan) {
+  Object.keys(LISTENER_VIEW_MAP).forEach(key => {
+    const masihDipakai = LISTENER_VIEW_MAP[key].includes(viewTujuan);
+    if (!masihDipakai && typeof fbListeners[key] === 'function') {
+      fbListeners[key]();     // panggil unsubscribe yang dikembalikan onValue()
+      fbListeners[key] = null;
+    }
+  });
+}
 let checkpointLayerGroup = null;   // grup layer checkpoint laporan di peta petugas
 let checkpointMarkers = {};        // laporanId -> leaflet marker checkpoint
 
@@ -3994,19 +4028,39 @@ function cariTargetKerja(ulp, regu, tipePeriode, periodeKey) {
   return { targetVolume: cocok.reduce((s, t) => s + (+t.targetVolume || 0), 0) };
 }
 
+// ── Agregasi realisasi 1x jalan (bukan reduce() ulang tiap pasangan ULP+Regu) ──
+// Sebelumnya hitungCapaian() mereduce ULANG seluruh laporanEntries untuk SETIAP
+// pasangan ULP+Regu (O(n × jumlah_pasangan)). Fungsi ini menjumlahkan realisasi
+// per (ulp, regu) dalam SATU kali lintasan array, lalu hitungCapaian tinggal
+// lookup dari hasilnya (O(1) per pasangan). Cache-nya key-kan ke identitas array
+// (laporanEntries) + tipePeriode + periodeKey supaya otomatis tidak "basi" kalau
+// allLaporanCache berganti referensi (data baru dari Firebase).
+let _realisasiLookupCache = null; // { srcRef, tipePeriode, periodeKey, map }
+function buildRealisasiLookup(tipePeriode, periodeKey, laporanEntries) {
+  const cached = _realisasiLookupCache;
+  if (cached && cached.srcRef === laporanEntries && cached.tipePeriode === tipePeriode && cached.periodeKey === periodeKey) {
+    return cached.map;
+  }
+  const { start, end } = getPeriodeRange(tipePeriode, periodeKey);
+  const map = new Map();
+  (laporanEntries || []).forEach(([, l]) => {
+    if (l.statusVerifikasi !== 'Terverifikasi') return;
+    if (!l.waktu || l.waktu < start || l.waktu >= end) return;
+    const key = l.ulp + '|||' + l.regu;
+    map.set(key, (map.get(key) || 0) + (+l.realisasi || 0));
+  });
+  _realisasiLookupCache = { srcRef: laporanEntries, tipePeriode, periodeKey, map };
+  return map;
+}
+
 // Hitung % capaian 1 regu untuk 1 periode: realisasi (laporan terverifikasi,
 // dalam rentang tanggal periode) ÷ targetVolume × 100. null kalau target
 // belum diatur untuk regu+periode itu (supaya UI bisa tampilkan "Target
 // belum diatur" dan TIDAK menampilkan 0% yang menyesatkan).
 function hitungCapaian(ulp, regu, tipePeriode, periodeKey, laporanEntries) {
   const target = cariTargetKerja(ulp, regu, tipePeriode, periodeKey);
-  const { start, end } = getPeriodeRange(tipePeriode, periodeKey);
-  const realisasi = (laporanEntries || []).reduce((sum, [, l]) => {
-    if (l.ulp !== ulp || l.regu !== regu) return sum;
-    if (l.statusVerifikasi !== 'Terverifikasi') return sum;
-    if (!l.waktu || l.waktu < start || l.waktu >= end) return sum;
-    return sum + (+l.realisasi || 0);
-  }, 0);
+  const lookup = buildRealisasiLookup(tipePeriode, periodeKey, laporanEntries);
+  const realisasi = lookup.get(ulp + '|||' + regu) || 0;
   if (!target) return { realisasi, target: null, pct: null, belumDiatur: true };
   const pct = target.targetVolume > 0 ? Math.round(realisasi / target.targetVolume * 100) : 0;
   return { realisasi, target: target.targetVolume, pct, belumDiatur: false };
@@ -4966,14 +5020,27 @@ function localDateKey(ts) {
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
 
-function listenLogAbsensi() {
-  if (fbListeners.logAbsensi) { renderLogAbsensi(); return; }
-  const ref = window._fbRef(fbDb, 'absensi');
-  fbListeners.logAbsensi = window._fbOnValue(ref, snap => {
+// Log Absensi = data historis (tidak berubah setelah tersimpan), jadi tidak perlu
+// onValue permanen di seluruh node 'absensi'. Cukup get() sekali, dan hanya untuk
+// rentang tanggal yang sedang dilihat (orderByChild('waktu') + startAt/endAt) —
+// bukan download seluruh riwayat lalu dipotong di JS dengan .slice().
+async function loadLogAbsensiRange() {
+  const range = getLogAbsensiRange(logAbsensiPeriode, logAbsensiRefDate);
+  const cardsEl = document.getElementById('logabsensi-cards');
+  if (cardsEl) cardsEl.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px;font-size:13px">Memuat data...</div>';
+  try {
+    const canQuery = window._fbQuery && window._fbOrderByChild && window._fbStartAt && window._fbEndAt;
+    const target = canQuery
+      ? window._fbQuery(window._fbRef(fbDb, 'absensi'), window._fbOrderByChild('waktu'), window._fbStartAt(range.start), window._fbEndAt(range.end - 1))
+      : window._fbRef(fbDb, 'absensi'); // fallback kalau modul query gagal dimuat
+    const snap = await window._fbGet(target);
     const data = snap.val() || {};
     logAbsensiAllEntries = scopeFilterEntries(Object.entries(data).filter(([, v]) => v && v.waktu));
-    renderLogAbsensi();
-  });
+  } catch (e) {
+    showToast('Gagal memuat log absensi: ' + e.message, 'err');
+    logAbsensiAllEntries = [];
+  }
+  renderLogAbsensi();
 }
 
 // Rentang tanggal [start,end] berdasarkan periode & tanggal acuan (bisa dinavigasi maju/mundur)
@@ -5048,7 +5115,7 @@ window.setLogAbsensiPeriode = function(p, btn) {
   document.querySelectorAll('#viewLogAbsensi .tab-bar .tab-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
   logAbsensiPage = 1;
-  renderLogAbsensi();
+  loadLogAbsensiRange();
 };
 
 window.navLogAbsensiDate = function(delta) {
@@ -5059,7 +5126,7 @@ window.navLogAbsensiDate = function(delta) {
   logAbsensiRefDate = d;
   document.getElementById('logAbsensiRefDate').value = localDateKey(d.getTime());
   logAbsensiPage = 1;
-  renderLogAbsensi();
+  loadLogAbsensiRange();
 };
 
 window.onLogAbsensiDateChange = function() {
@@ -5067,14 +5134,14 @@ window.onLogAbsensiDateChange = function() {
   if (!val) return;
   logAbsensiRefDate = new Date(val + 'T00:00:00');
   logAbsensiPage = 1;
-  renderLogAbsensi();
+  loadLogAbsensiRange();
 };
 
 window.goToTodayLogAbsensi = function() {
   logAbsensiRefDate = new Date();
   document.getElementById('logAbsensiRefDate').value = todayLocalKey();
   logAbsensiPage = 1;
-  renderLogAbsensi();
+  loadLogAbsensiRange();
 };
 
 function renderLogAbsensi() {
