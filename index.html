@@ -1061,27 +1061,20 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
 
     <div class="login-field">
       <label for="login-username">Akun</label>
-      <select id="login-username">
-        <option value="">Pilih akun...</option>
-        <option value="UP3 Jayapura">Superadmin — UP3 Jayapura</option>
-        <option value="ULP Jayapura">Admin ULP — ULP Jayapura</option>
-        <option value="ULP Abepura">Admin ULP — ULP Abepura</option>
-        <option value="ULP Sentani">Admin ULP — ULP Sentani</option>
-        <option value="ULP Arso">Admin ULP — ULP Arso</option>
-        <option value="ULP Genyem">Admin ULP — ULP Genyem</option>
-        <option value="ULP Sarmi">Admin ULP — ULP Sarmi</option>
+      <select id="login-username" disabled>
+        <option value="">Memuat akun...</option>
       </select>
     </div>
     <div class="login-field">
       <label for="login-password">Password</label>
-      <input id="login-password" type="password" placeholder="••••" autocomplete="current-password" onkeydown="if(event.key==='Enter') doLoginTLAdmin();">
+      <input id="login-password" type="password" placeholder="••••" autocomplete="current-password" disabled onkeydown="if(event.key==='Enter') doLoginTLAdmin();">
     </div>
 
     <div id="login-err"></div>
 
-    <button id="login-submit-btn" onclick="doLoginTLAdmin()">Masuk</button>
+    <button id="login-submit-btn" onclick="doLoginTLAdmin()" disabled>Menghubungkan...</button>
 
-    <div class="login-hint">Superadmin dapat mengakses seluruh ULP &amp; PT MITRA.<br>Admin ULP hanya mengakses data petugas ULP-nya sendiri.</div>
+    <div class="login-hint">Superadmin dapat mengakses seluruh ULP &amp; PT MITRA.<br>Admin ULP mengakses data ULP-nya sendiri &amp; PT MITRA.</div>
   </div>
 </div>
 
@@ -1150,6 +1143,9 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
       </a>
       <a class="nav-item" id="nav-akun" href="#" title="Akun Regu" onclick="switchView('akun');return false;" style="display:none">
         <span class="nav-icon">🔑</span> <span class="nav-label">Akun Regu</span>
+      </a>
+      <a class="nav-item" id="nav-akun-usher" href="#" title="Akun Usher (Login TL/Admin)" onclick="switchView('akun-usher');return false;" style="display:none">
+        <span class="nav-icon">🛡️</span> <span class="nav-label">Akun Usher</span>
       </a>
       <a class="nav-item" id="nav-db-viewer" href="#" title="Database Viewer" onclick="switchView('db-viewer');return false;" style="display:none">
         <span class="nav-icon">🗄</span> <span class="nav-label">Database Viewer</span>
@@ -2248,7 +2244,7 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
       <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;margin-bottom:4px;align-items:flex-end">
         <div>
           <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Status</label>
-          <select id="hv-filter-status" onchange="renderHasilVerifikasiGrid()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:170px">
+          <select id="hv-filter-status" onchange="onHasilVerifikasiFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:170px">
             <option value="">Semua Status</option>
             <option value="Terverifikasi">✓ Terverifikasi</option>
             <option value="Perlu Revisi">⚠ Perlu Revisi</option>
@@ -2257,23 +2253,23 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
         </div>
         <div>
           <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">ULP</label>
-          <select id="hv-filter-ulp" onchange="renderHasilVerifikasiGrid()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:150px">
+          <select id="hv-filter-ulp" onchange="onHasilVerifikasiFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:150px">
             <option value="">Semua ULP</option>
           </select>
         </div>
         <div>
           <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Jenis Pekerjaan</label>
-          <select id="hv-filter-jenis" onchange="renderHasilVerifikasiGrid()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:200px">
+          <select id="hv-filter-jenis" onchange="onHasilVerifikasiFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:200px">
             <option value="">Semua Jenis Pekerjaan</option>
           </select>
         </div>
         <div style="flex:1;min-width:180px">
           <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Cari</label>
-          <input id="hv-filter-search" type="text" placeholder="Cari regu, tiket, catatan..." oninput="renderHasilVerifikasiGrid()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none">
+          <input id="hv-filter-search" type="text" placeholder="Cari regu, tiket, catatan..." oninput="onHasilVerifikasiFilterChange()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none">
         </div>
         <div>
           <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Kelompokkan</label>
-          <select id="hv-groupby" onchange="renderHasilVerifikasiGrid()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:150px">
+          <select id="hv-groupby" onchange="onHasilVerifikasiFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:150px">
             <option value="none">Tanpa Kelompok</option>
             <option value="ulp" selected>Per ULP</option>
             <option value="jenis">Per Jenis Pekerjaan</option>
@@ -2287,6 +2283,16 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
 
       <div id="hasilVerifikasiContent" style="margin-top:14px;">
         <div style="text-align:center;color:var(--text-muted);padding:40px;font-size:13px;">Menunggu data Firebase...</div>
+      </div>
+      <div class="pagination-bar" id="hasilVerifikasiPagination" style="display:none;margin-top:14px;border-top:none;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow-xs);">
+        <div class="pagination-info" id="hasilVerifikasiPgInfo">—</div>
+        <div class="pagination-controls">
+          <button class="pg-btn" id="hasilVerifikasiPgFirst" onclick="goToHasilVerifikasiPage(1)" title="Halaman pertama">«</button>
+          <button class="pg-btn" id="hasilVerifikasiPgPrev" onclick="goToHasilVerifikasiPage(hasilVerifikasiPage-1)" title="Sebelumnya">‹</button>
+          <span id="hasilVerifikasiPgNumbers" style="display:flex;gap:6px"></span>
+          <button class="pg-btn" id="hasilVerifikasiPgNext" onclick="goToHasilVerifikasiPage(hasilVerifikasiPage+1)" title="Berikutnya">›</button>
+          <button class="pg-btn" id="hasilVerifikasiPgLast" onclick="goToHasilVerifikasiPage(hasilVerifikasiPageTotalPages)" title="Halaman terakhir">»</button>
+        </div>
       </div>
     </div>
 
@@ -2445,6 +2451,98 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
               </thead>
               <tbody id="akunBody">
                 <tr><td colspan="4" class="empty">Menunggu data Firebase...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ AKUN USHER — Login TL/Admin (Superadmin & Admin ULP), gantikan AUTH_ACCOUNTS hardcode ══ -->
+    <div id="viewAkunUsher" style="display:none;" class="firebase-view">
+      <div class="fb-header">
+        <div>
+          <div class="card-title" style="font-size:16px">🛡️ Akun Usher (Login TL/Admin)</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:3px">Akun untuk masuk ke dashboard ini (bukan akun regu petugas) — username, password &amp; PIN Admin per-akun disimpan di Firebase, bukan hardcode lagi</div>
+        </div>
+        <button class="topbar-btn-yellow" onclick="bukaModalAkunUsher()" style="font-size:13px;padding:9px 18px">+ Tambah Akun Usher</button>
+      </div>
+
+      <!-- Modal Tambah/Edit Akun Usher -->
+      <div id="modal-akun-usher" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(10,20,36,0.55);align-items:center;justify-content:center;">
+        <div style="background:var(--surface);border-radius:var(--radius-lg);padding:28px;width:100%;max-width:460px;box-shadow:var(--shadow-lg);margin:16px;max-height:calc(100vh - 32px);overflow-y:auto;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+            <div id="akun-usher-modal-title" style="font-family:var(--font-display);font-size:16px;font-weight:800">Tambah Akun Usher</div>
+            <button onclick="tutupModalAkunUsher()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-3);padding:4px">✕</button>
+          </div>
+          <div style="margin-bottom:12px">
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Username *</label>
+            <input id="au-username" type="text" placeholder="cth: ulp_genyem" autocapitalize="none" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;font-family:var(--mono);outline:none">
+          </div>
+          <div style="margin-bottom:12px">
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Password *</label>
+            <input id="au-password" type="text" placeholder="cth: 1234" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;font-family:var(--mono);outline:none">
+          </div>
+          <div style="margin-bottom:12px">
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Hak Akses / Role *</label>
+            <select id="au-role" onchange="onAkunUsherRoleChange()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
+              <option value="superadmin">Superadmin (Semua ULP &amp; PT MITRA)</option>
+              <option value="admin_ulp">Admin ULP (satu ULP tertentu)</option>
+            </select>
+          </div>
+          <div id="au-ulp-wrap" style="margin-bottom:12px;display:none">
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">ULP *</label>
+            <select id="au-ulp" onchange="onAkunUsherUlpChange()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
+              <option value="">— Pilih ULP —</option>
+              <option value="ULP Jayapura">ULP Jayapura</option>
+              <option value="ULP Abepura">ULP Abepura</option>
+              <option value="ULP Sentani">ULP Sentani</option>
+              <option value="ULP Arso">ULP Arso</option>
+              <option value="ULP Genyem">ULP Genyem</option>
+              <option value="ULP Sarmi">ULP Sarmi</option>
+            </select>
+          </div>
+          <div style="margin-bottom:12px">
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Unit Kerja *</label>
+            <input id="au-unitkerja" type="text" placeholder="cth: ULP Genyem" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
+          </div>
+          <div style="margin-bottom:12px">
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Hak Akses (teks tampilan) *</label>
+            <input id="au-hakakses" type="text" placeholder="cth: ULP Genyem & PT MITRA" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none">
+          </div>
+          <div style="margin-bottom:16px">
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">PIN Admin *</label>
+            <input id="au-pin" type="text" placeholder="cth: 1234" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;font-family:var(--mono);outline:none">
+            <div style="font-size:11px;color:var(--text-3);margin-top:5px">PIN ini dipakai untuk membuka "Mode Admin" (tombol hapus data dll) saat login pakai akun ini.</div>
+          </div>
+          <div id="akun-usher-err" style="display:none;background:var(--crit-bg);color:var(--crit);padding:9px 13px;border-radius:var(--radius-xs);font-size:12px;margin-bottom:12px;border:1px solid rgba(220,53,69,0.2)"></div>
+          <div style="display:flex;gap:10px">
+            <button onclick="tutupModalAkunUsher()" style="flex:1;padding:11px;border:1px solid var(--line);border-radius:var(--radius-xs);background:none;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-2)">Batal</button>
+            <button onclick="simpanAkunUsher()" style="flex:2;padding:11px;border:none;border-radius:var(--radius-xs);background:linear-gradient(135deg,var(--pln-yellow),var(--pln-yellow-deep));color:var(--ink-900);font-size:13px;font-weight:800;cursor:pointer;box-shadow:var(--shadow-glow-yellow)">✓ Simpan Akun</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <div class="card-header">
+          <div class="card-title">Data Akun Usher NUMBAY</div>
+          <span class="card-count" id="akunUsherCount">0 akun</span>
+        </div>
+        <div class="table-container" style="max-height:none;">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Password</th>
+                  <th>Unit Kerja</th>
+                  <th>Hak Akses</th>
+                  <th>PIN Admin</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="akunUsherBody">
+                <tr><td colspan="6" class="empty">Menunggu data Firebase...</td></tr>
               </tbody>
             </table>
           </div>
@@ -3292,12 +3390,17 @@ window.dbvExportCsv = function() {
 
 function switchView(view) {
   lepaskanListenerTidakAktif(view);
-  const allViews = ['viewBeranda','viewMap','viewTable','viewPetugas','viewAbsensi','viewLogAbsensi','viewLaporan','viewTiket','viewVerifikasi','viewHasilVerifikasi','viewRiwayatInspeksi','viewRekap','viewAkun','viewDbViewer'];
+  const allViews = ['viewBeranda','viewMap','viewTable','viewPetugas','viewAbsensi','viewLogAbsensi','viewLaporan','viewTiket','viewVerifikasi','viewHasilVerifikasi','viewRiwayatInspeksi','viewRekap','viewAkun','viewAkunUsher','viewDbViewer'];
   allViews.forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
   document.getElementById('filterBar').style.display = 'none';
 
-  const allNavIds = ['nav-beranda','nav-map','nav-table','nav-petugas','nav-absensi','nav-log-absensi','nav-laporan','nav-tiket','nav-verifikasi','nav-hasil-verifikasi','nav-riwayat-inspeksi','nav-rekap','nav-akun','nav-db-viewer'];
+  const allNavIds = ['nav-beranda','nav-map','nav-table','nav-petugas','nav-absensi','nav-log-absensi','nav-laporan','nav-tiket','nav-verifikasi','nav-hasil-verifikasi','nav-riwayat-inspeksi','nav-rekap','nav-akun','nav-akun-usher','nav-db-viewer'];
   allNavIds.forEach(id => { const el = document.getElementById(id); if(el) el.classList.remove('active'); });
+
+  // Tiap kali pindah/masuk (lagi) ke suatu halaman, scroll selalu dikembalikan
+  // ke paling atas — supaya tidak "nyangkut" di posisi scroll terakhir waktu
+  // user meninggalkan halaman itu sebelumnya.
+  document.querySelector('.content')?.scrollTo(0, 0);
 
   if (view === 'beranda') {
     document.getElementById('viewBeranda').style.display = '';
@@ -3308,11 +3411,13 @@ function switchView(view) {
       listenTiket();        // isi targetKerjaCache (dari node 'penugasan')
     });
   } else if (view === 'map') {
+    resetFilters(); // filter Peta Inspeksi selalu mulai bersih tiap kali halaman ini dibuka
     document.getElementById('filterBar').style.display = '';
     document.getElementById('viewMap').style.display   = '';
     document.getElementById('nav-map').classList.add('active');
     setTimeout(() => { if (mapInstance) { mapInstance.invalidateSize(); fitMapToData(); } }, 150);
   } else if (view === 'table') {
+    resetFilters(); // sama sumber filter dengan Peta (fSheet/fULP/fPenyulang/fUrgensi/fSearch)
     document.getElementById('filterBar').style.display  = '';
     document.getElementById('viewTable').style.display  = '';
     document.getElementById('nav-table').classList.add('active');
@@ -3332,18 +3437,18 @@ function switchView(view) {
   } else if (view === 'log-absensi') {
     document.getElementById('viewLogAbsensi').style.display = '';
     document.getElementById('nav-log-absensi').classList.add('active');
-    if (!document.getElementById('logAbsensiRefDate').value) {
-      document.getElementById('logAbsensiRefDate').value = todayLocalKey();
-    }
+    document.getElementById('logAbsensiRefDate').value = todayLocalKey(); // selalu balik ke hari ini tiap kali halaman ini dibuka
     initFirebase().then(ok => { if (ok) loadLogAbsensiRange(); });
   } else if (view === 'laporan') {
     document.getElementById('viewLaporan').style.display = '';
     document.getElementById('nav-laporan').classList.add('active');
     initFirebase().then(ok => { if (ok) listenLaporan(); });
+    if (typeof resetLaporanFilter === 'function') resetLaporanFilter();
   } else if (view === 'rekap') {
     document.getElementById('viewRekap').style.display = '';
     document.getElementById('nav-rekap').classList.add('active');
     initFirebase().then(ok => { if (ok) listenRekap(); });
+    if (typeof resetRekapFilter === 'function') resetRekapFilter();
   } else if (view === 'tiket') {
     document.getElementById('viewTiket').style.display = '';
     document.getElementById('nav-tiket').classList.add('active');
@@ -3352,10 +3457,12 @@ function switchView(view) {
     document.getElementById('viewVerifikasi').style.display = '';
     document.getElementById('nav-verifikasi').classList.add('active');
     initFirebase().then(ok => { if (ok) listenVerifikasi(); });
+    if (typeof resetVerifikasiFilter === 'function') resetVerifikasiFilter();
   } else if (view === 'hasil-verifikasi') {
     document.getElementById('viewHasilVerifikasi').style.display = '';
     document.getElementById('nav-hasil-verifikasi').classList.add('active');
     initFirebase().then(ok => { if (ok) listenVerifikasi(); });
+    if (typeof resetHasilVerifikasiFilter === 'function') resetHasilVerifikasiFilter();
   } else if (view === 'riwayat-inspeksi') {
     document.getElementById('viewRiwayatInspeksi').style.display = '';
     document.getElementById('nav-riwayat-inspeksi').classList.add('active');
@@ -3364,6 +3471,7 @@ function switchView(view) {
       listenVerifikasi(); // reuse listener yang sama dgn Verifikasi/Hasil Verifikasi — sumber data node 'laporan' sama persis
       renderRiwayatInspeksi(); // render langsung dari cache kalau listener sudah aktif sebelumnya (data tidak hilang)
     });
+    if (typeof resetRiwayatInspeksiFilter === 'function') resetRiwayatInspeksiFilter();
     if (riViewMode === 'peta') setTimeout(() => { if (riMapInstance) { riMapInstance.invalidateSize(); riFitMapToData(); } }, 150);
   } else if (view === 'akun') {
     if (!isAdminMode) { showToast('Kelola Akun Regu hanya bisa diakses dalam Mode Admin.', 'warn'); switchView('beranda'); return; }
@@ -3371,6 +3479,12 @@ function switchView(view) {
     document.getElementById('viewAkun').style.display = '';
     document.getElementById('nav-akun').classList.add('active');
     initFirebase().then(ok => { if (ok) listenAkunRegu(); });
+  } else if (view === 'akun-usher') {
+    if (!isAdminMode) { showToast('Kelola Akun Usher hanya bisa diakses dalam Mode Admin.', 'warn'); switchView('beranda'); return; }
+    if (!isSuperadmin()) { showToast('Kelola Akun Usher hanya bisa diakses oleh Superadmin.', 'warn'); switchView('beranda'); return; }
+    document.getElementById('viewAkunUsher').style.display = '';
+    document.getElementById('nav-akun-usher').classList.add('active');
+    initFirebase().then(ok => { if (ok) listenUsherAkun(); });
   } else if (view === 'db-viewer') {
     if (!isAdminMode) { showToast('Database Viewer hanya bisa diakses dalam Mode Admin.', 'warn'); switchView('beranda'); return; }
     if (!isSuperadmin()) { showToast('Database Viewer hanya bisa diakses oleh Superadmin.', 'warn'); switchView('beranda'); return; }
@@ -3388,22 +3502,26 @@ function switchTab(tab) { switchView(tab); }
 // ══════════════════════════════════════
 // CATATAN: ini gerbang akses level-aplikasi (siapa yang boleh MEMBUKA
 // dashboard & data ULP mana yang dia lihat), TERPISAH dari "Mode Admin"
-// (ADMIN_PIN di bawah) yang tetap dipertahankan sebagai gerbang khusus
+// (PIN Admin di bawah) yang tetap dipertahankan sebagai gerbang khusus
 // tombol hapus data — dua lapis ini sengaja tidak digabung.
 //
-// Password sama untuk semua akun (1111) sesuai permintaan TL/Admin —
-// disimpan plain di sini karena ini kredensial internal level-role
-// (bukan per-orang), sama semangatnya dengan ADMIN_PIN yang sudah ada.
-const AUTH_ACCOUNTS = {
-  'up3 jayapura': { role: 'superadmin', password: '1111', label: 'UP3 Jayapura', ulp: null },
-  'ulp jayapura': { role: 'admin_ulp',  password: '1111', label: 'ULP Jayapura', ulp: 'ULP Jayapura' },
-  'ulp abepura':  { role: 'admin_ulp',  password: '1111', label: 'ULP Abepura',  ulp: 'ULP Abepura' },
-  'ulp sentani':  { role: 'admin_ulp',  password: '1111', label: 'ULP Sentani', ulp: 'ULP Sentani' },
-  'ulp arso':     { role: 'admin_ulp',  password: '1111', label: 'ULP Arso',    ulp: 'ULP Arso' },
-  'ulp genyem':   { role: 'admin_ulp',  password: '1111', label: 'ULP Genyem',  ulp: 'ULP Genyem' },
-  'ulp sarmi':    { role: 'admin_ulp',  password: '1111', label: 'ULP Sarmi',   ulp: 'ULP Sarmi' },
+// Akun login (username/password/PIN Admin) TIDAK lagi hardcode di sini —
+// sekarang disimpan di Firebase node 'usherAkun' dan bisa diatur lewat
+// halaman "Kelola Akun Usher" (khusus Superadmin, lihat listenUsherAkun()
+// & bukaModalAkunUsher() di bawah). USHER_AKUN_SEED_DEFAULT di bawah HANYA
+// dipakai SEKALI untuk mengisi node 'usherAkun' kalau masih kosong (migrasi
+// awal) — lihat seedUsherAkunIfEmpty().
+const USHER_AKUN_SEED_DEFAULT = {
+  'plnup3jayapura': { username: 'plnup3jayapura', password: '1111', unitKerja: 'PLN UP3 Jayapura', role: 'superadmin', ulp: null,           hakAkses: 'Semua ULP & PT MITRA',        pinAdmin: '1111' },
+  'ulp_jayapura':   { username: 'ulp_jayapura',   password: '1234', unitKerja: 'ULP Jayapura',      role: 'admin_ulp',  ulp: 'ULP Jayapura', hakAkses: 'ULP Jayapura & PT MITRA',      pinAdmin: '1234' },
+  'ulp_abepura':    { username: 'ulp_abepura',    password: '1234', unitKerja: 'ULP Abepura',       role: 'admin_ulp',  ulp: 'ULP Abepura',  hakAkses: 'ULP Abepura & PT MITRA',       pinAdmin: '1234' },
+  'ulp_sentani':    { username: 'ulp_sentani',    password: '1234', unitKerja: 'ULP Sentani',       role: 'admin_ulp',  ulp: 'ULP Sentani',  hakAkses: 'ULP Sentani & PT MITRA',       pinAdmin: '1234' },
+  'ulp_arso':       { username: 'ulp_arso',       password: '1234', unitKerja: 'ULP Arso',          role: 'admin_ulp',  ulp: 'ULP Arso',     hakAkses: 'ULP Arso & PT MITRA',          pinAdmin: '1234' },
+  'ulp_genyem':     { username: 'ulp_genyem',     password: '1234', unitKerja: 'ULP Genyem',        role: 'admin_ulp',  ulp: 'ULP Genyem',   hakAkses: 'ULP Genyem & PT MITRA',        pinAdmin: '1234' },
+  'ulp_sarmi':      { username: 'ulp_sarmi',      password: '1234', unitKerja: 'ULP Sarmi',         role: 'admin_ulp',  ulp: 'ULP Sarmi',    hakAkses: 'ULP Sarmi & PT MITRA',         pinAdmin: '1234' },
 };
 const AUTH_SESSION_KEY = 'ffm_auth_session'; // localStorage → sengaja bukan sessionStorage, supaya login bertahan sampai klik Logout manual (sesuai permintaan)
+const DEFAULT_ADMIN_PIN = '1111'; // fallback kalau akun yang login belum punya pinAdmin tersimpan (mis. sebelum data usherAkun selesai dimuat)
 
 function normalizeAuthKey(s) {
   return String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
@@ -3412,10 +3530,19 @@ function normalizeUlp(s) {
   return String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
-let currentAuth = null; // { username, role: 'superadmin'|'admin_ulp', ulp, label } atau null kalau belum login
+// Cache akun usher dari Firebase (username -> data). Diisi oleh listenUsherAkun(),
+// dipakai doLoginTLAdmin() untuk validasi login & populateLoginUsernameDropdown()
+// untuk isi dropdown "Akun" di layar login.
+let usherAkunCache = {};
+
+let currentAuth = null; // { username, role: 'superadmin'|'admin_ulp', ulp, label, pinAdmin } atau null kalau belum login
 try {
   const saved = JSON.parse(localStorage.getItem(AUTH_SESSION_KEY) || 'null');
-  if (saved && saved.role && AUTH_ACCOUNTS[normalizeAuthKey(saved.username)]) currentAuth = saved;
+  // Tidak lagi divalidasi terhadap AUTH_ACCOUNTS di sini (data sekarang di Firebase,
+  // belum tentu sudah dimuat sinkron di titik ini) — validasi ulang & sinkronisasi
+  // field (role/ulp/label/pinAdmin) dilakukan di syncCurrentAuthFromUsherAkunCache()
+  // begitu listener 'usherAkun' pertama kali menerima data.
+  if (saved && saved.role && saved.username) currentAuth = saved;
 } catch (e) { currentAuth = null; }
 
 // Scope ULP aktif untuk akun yang sedang login: null = tanpa batasan (Superadmin,
@@ -3426,29 +3553,39 @@ function getScopeUlp() {
 function isSuperadmin() {
   return !currentAuth || currentAuth.role === 'superadmin';
 }
+// Daftar ULP yang boleh diakses akun yang sedang login, sesuai kolom "Hak Akses"
+// di Kelola Akun Usher (mis. "ULP Genyem & PT MITRA"): Superadmin = null (tanpa
+// batasan, semua ULP + PT MITRA ikut lolos), Admin ULP = [ULP-nya sendiri, 'PT MITRA']
+// — BUKAN cuma ULP-nya sendiri saja. PT MITRA memang bekerja lintas-ULP (mitra
+// konstruksi bersama), jadi semua Admin ULP tetap perlu bisa melihat & mengelola
+// data PT MITRA selain data ULP-nya sendiri.
+function getScopeUlpList() {
+  const scope = getScopeUlp();
+  return scope ? [scope, 'PT MITRA'] : null;
+}
 // Filter generik untuk array [id, obj] hasil Object.entries(snapshot) dari node
 // yang membawa field `ulp` (petugas, absensi, laporan, penugasan). Kalau akun
-// yang login adalah Admin ULP, hanya baris dengan ulp yang sama persis yang
-// diloloskan — otomatis membuat PT MITRA (ulp berbeda) tidak pernah tampil
-// untuk Admin ULP mana pun, karena tidak pernah cocok dengan ulp mereka sendiri.
+// yang login adalah Admin ULP, hanya baris dengan ulp yang ada di getScopeUlpList()
+// (ULP-nya sendiri ATAU PT MITRA) yang diloloskan — ULP lain (bukan miliknya,
+// bukan PT MITRA) tetap tidak pernah tampil untuk Admin ULP mana pun.
 function scopeFilterEntries(entries) {
-  const scope = getScopeUlp();
-  if (!scope) return entries;
-  const scopeKey = normalizeUlp(scope);
-  return entries.filter(([, v]) => normalizeUlp(v && v.ulp) === scopeKey);
+  const scopeList = getScopeUlpList();
+  if (!scopeList) return entries;
+  const scopeKeys = scopeList.map(normalizeUlp);
+  return entries.filter(([, v]) => scopeKeys.includes(normalizeUlp(v && v.ulp)));
 }
 
 window.doLoginTLAdmin = function() {
   const usernameRaw = document.getElementById('login-username').value;
   const password     = document.getElementById('login-password').value;
   const errEl        = document.getElementById('login-err');
-  const acc = AUTH_ACCOUNTS[normalizeAuthKey(usernameRaw)];
+  const acc = usherAkunCache[normalizeAuthKey(usernameRaw)];
 
   if (!usernameRaw) { errEl.textContent = 'Pilih akun terlebih dahulu.'; errEl.style.display = 'block'; return; }
   if (!acc || acc.password !== password) { errEl.textContent = 'Username atau password salah.'; errEl.style.display = 'block'; return; }
 
   errEl.style.display = 'none';
-  currentAuth = { username: usernameRaw, role: acc.role, ulp: acc.ulp, label: acc.label };
+  currentAuth = { username: acc.username, role: acc.role, ulp: acc.ulp || null, label: acc.unitKerja, pinAdmin: acc.pinAdmin || DEFAULT_ADMIN_PIN };
   localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(currentAuth));
   document.getElementById('login-password').value = '';
   showAppAfterLogin();
@@ -3541,7 +3678,12 @@ let checkpointMarkers = {};        // laporanId -> leaflet marker checkpoint
 // membuka Mode Admin" (nyala dari sesi sebelumnya, lupa dimatikan). Sekarang
 // Mode Admin SELALU dimulai OFF setiap kali halaman dimuat/di-refresh, dan
 // PIN wajib dimasukkan ulang tiap kali mau mengaktifkannya.
-const ADMIN_PIN = '1111'; // ganti PIN ini sesuai keinginan Anda
+//
+// PIN Admin sekarang PER-AKUN (field `pinAdmin` di node Firebase 'usherAkun',
+// diatur lewat halaman Kelola Akun Usher) — bukan 1 PIN global lagi. Akun yang
+// sedang login memvalidasi lewat currentAuth.pinAdmin; DEFAULT_ADMIN_PIN
+// (didefinisikan di bagian AUTH di atas) hanya fallback kalau untuk suatu
+// alasan currentAuth.pinAdmin belum terisi (mis. akun lama sebelum migrasi).
 let isAdminMode = false;
 
 let _adminToggleBusy = false;
@@ -3555,7 +3697,8 @@ async function toggleAdminMode() {
     } else {
       const pin = await promptDialog('Masukkan PIN Admin untuk mengaktifkan tombol hapus data:', { title: 'Mode Admin', okLabel: 'Masuk', placeholder: '••••' });
       if (pin === null) return; // dibatalkan
-      if (pin !== ADMIN_PIN) { showToast('PIN salah.', 'err'); return; }
+      const pinValid = currentAuth?.pinAdmin || DEFAULT_ADMIN_PIN;
+      if (pin !== pinValid) { showToast('PIN salah.', 'err'); return; }
       isAdminMode = true;
       showToast('Mode Admin aktif.', 'ok');
     }
@@ -3573,8 +3716,11 @@ function applyAdminUI() {
   // tidak menyimpan field `ulp` per akun (lihat catatan di listenAkunRegu),
   // jadi tidak bisa difilter aman per ULP untuk Admin ULP.
   document.getElementById('nav-akun').style.display = (isAdminMode && isSuperadmin()) ? '' : 'none';
+  // Kelola Akun Usher (login TL/Admin) sama-sama Superadmin-only — akun ULP
+  // lain tidak boleh bisa mengubah/lihat password & PIN akun lain.
+  document.getElementById('nav-akun-usher').style.display = (isAdminMode && isSuperadmin()) ? '' : 'none';
   document.getElementById('nav-db-viewer').style.display = (isAdminMode && isSuperadmin()) ? '' : 'none';
-  if (!isAdminMode && (document.getElementById('viewAkun').style.display !== 'none' || document.getElementById('viewDbViewer').style.display !== 'none')) {
+  if (!isAdminMode && (document.getElementById('viewAkun').style.display !== 'none' || document.getElementById('viewAkunUsher').style.display !== 'none' || document.getElementById('viewDbViewer').style.display !== 'none')) {
     switchView('beranda');
   }
 
@@ -3714,6 +3860,205 @@ function listenAkunRegu() {
     const data = snap.val() || {};
     renderAkunTable(Object.entries(data));
   });
+}
+
+// ══════════════════════════════════════
+// AKUN USHER — Login TL/Admin (menggantikan AUTH_ACCOUNTS hardcode)
+// ══════════════════════════════════════
+// Node Firebase 'usherAkun', key = username (lowercase). Listener ini SENGAJA
+// selalu menyala sejak boot (dipanggil di initFirebase().then(...) di bagian
+// bawah file, sama seperti listenPetugasBadge()) — BUKAN cuma saat halaman
+// "Kelola Akun Usher" dibuka — karena dropdown akun di layar login & validasi
+// PIN Admin di Mode Admin butuh data ini kapan saja, bukan cuma pas TL/Admin
+// lagi buka halaman kelola akunnya.
+
+// Isi 'usherAkun' SEKALI dari USHER_AKUN_SEED_DEFAULT kalau node itu masih
+// kosong (migrasi awal dari AUTH_ACCOUNTS hardcode) — tidak pernah menimpa
+// data yang sudah ada.
+async function seedUsherAkunIfEmpty() {
+  try {
+    const snap = await window._fbGet(window._fbRef(fbDb, 'usherAkun'));
+    if (snap.exists()) return;
+    const { set } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+    await set(window._fbRef(fbDb, 'usherAkun'), USHER_AKUN_SEED_DEFAULT);
+  } catch (e) { console.error('Gagal seed usherAkun:', e); }
+}
+
+function listenUsherAkun() {
+  if (fbListeners.usherAkun) return;
+  const r = window._fbRef(fbDb, 'usherAkun');
+  fbListeners.usherAkun = window._fbOnValue(r, snap => {
+    const data = snap.val() || {};
+    usherAkunCache = data;
+    populateLoginUsernameDropdown(data);
+    syncCurrentAuthFromUsherAkunCache();
+    if (document.getElementById('viewAkunUsher')?.style.display !== 'none') renderAkunUsherTable(Object.entries(data));
+  });
+}
+
+// Isi ulang dropdown "Akun" di layar login dari data Firebase, supaya akun
+// baru/hapus di halaman Kelola Akun Usher langsung ikut muncul/hilang di
+// layar login tanpa perlu ubah kode. Juga bertanggung jawab MENGAKTIFKAN
+// form login (select/password/tombol) — form ini sengaja mulai dalam
+// keadaan disabled (lihat HTML #login-username/#login-password/#login-submit-btn)
+// supaya orang tidak bisa coba login sebelum data akun dari Firebase selesai
+// dimuat (kalau dibiarkan aktif dari awal, submit pertama bisa gagal/salah
+// karena usherAkunCache masih kosong — ini akar bug lama di layar login).
+function populateLoginUsernameDropdown(data) {
+  const sel = document.getElementById('login-username');
+  if (!sel) return;
+  const current = sel.value;
+  const entries = Object.entries(data || {}).sort((a, b) => {
+    if (a[1].role !== b[1].role) return a[1].role === 'superadmin' ? -1 : 1;
+    return (a[1].unitKerja || '').localeCompare(b[1].unitKerja || '');
+  });
+  sel.innerHTML = '<option value="">Pilih akun...</option>' + entries.map(([username, acc]) =>
+    `<option value="${esc(username)}">${acc.role === 'superadmin' ? 'Superadmin' : 'Admin ULP'} — ${esc(acc.unitKerja || username)}</option>`
+  ).join('');
+  if (current) sel.value = current;
+
+  sel.disabled = false;
+  const pwEl = document.getElementById('login-password');
+  const btnEl = document.getElementById('login-submit-btn');
+  if (pwEl) pwEl.disabled = false;
+  if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Masuk'; }
+}
+
+// Begitu data 'usherAkun' pertama kali (atau berubah) dimuat, samakan
+// role/ulp/label/pinAdmin currentAuth dengan sumber Firebase yang terbaru —
+// supaya kalau Superadmin mengubah data akun (mis. ganti PIN atau ULP) lewat
+// Kelola Akun Usher, sesi yang sedang login ikut ter-update tanpa perlu
+// logout/login ulang. Kalau akunnya sudah tidak ada lagi di Firebase (mis.
+// dihapus), currentAuth dibiarkan apa adanya (tidak logout paksa di sini).
+function syncCurrentAuthFromUsherAkunCache() {
+  if (!currentAuth) return;
+  const acc = usherAkunCache[normalizeAuthKey(currentAuth.username)];
+  if (!acc) return;
+  currentAuth.role     = acc.role;
+  currentAuth.ulp       = acc.ulp || null;
+  currentAuth.label     = acc.unitKerja || currentAuth.label;
+  currentAuth.pinAdmin  = acc.pinAdmin || currentAuth.pinAdmin || DEFAULT_ADMIN_PIN;
+  localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(currentAuth));
+  if (document.querySelector('.app')?.style.display !== 'none') applyAuthUI();
+}
+
+let currentEditAkunUsherUsername = null;
+
+window.onAkunUsherRoleChange = function() {
+  const role = document.getElementById('au-role').value;
+  document.getElementById('au-ulp-wrap').style.display = role === 'admin_ulp' ? '' : 'none';
+  if (role === 'superadmin') {
+    document.getElementById('au-unitkerja').value = 'PLN UP3 Jayapura';
+    document.getElementById('au-hakakses').value  = 'Semua ULP & PT MITRA';
+  } else {
+    onAkunUsherUlpChange();
+  }
+};
+
+window.onAkunUsherUlpChange = function() {
+  const ulp = document.getElementById('au-ulp').value;
+  if (!ulp) return;
+  document.getElementById('au-unitkerja').value = ulp;
+  document.getElementById('au-hakakses').value   = ulp + ' & PT MITRA';
+};
+
+window.bukaModalAkunUsher = function(username, data) {
+  currentEditAkunUsherUsername = username || null;
+  document.getElementById('akun-usher-modal-title').textContent = username ? 'Edit Akun Usher' : 'Tambah Akun Usher';
+  document.getElementById('au-username').value = username || '';
+  document.getElementById('au-username').disabled = !!username;
+  document.getElementById('au-password').value = data?.password || '';
+  document.getElementById('au-role').value = data?.role || 'superadmin';
+  document.getElementById('au-ulp').value = data?.ulp || '';
+  document.getElementById('au-unitkerja').value = data?.unitKerja || (data?.role === 'admin_ulp' ? '' : 'PLN UP3 Jayapura');
+  document.getElementById('au-hakakses').value = data?.hakAkses || (data?.role === 'admin_ulp' ? '' : 'Semua ULP & PT MITRA');
+  document.getElementById('au-pin').value = data?.pinAdmin || '';
+  document.getElementById('au-ulp-wrap').style.display = (data?.role || 'superadmin') === 'admin_ulp' ? '' : 'none';
+  document.getElementById('akun-usher-err').style.display = 'none';
+  document.getElementById('modal-akun-usher').style.display = 'flex';
+};
+
+window.tutupModalAkunUsher = function() {
+  document.getElementById('modal-akun-usher').style.display = 'none';
+  currentEditAkunUsherUsername = null;
+};
+
+window.simpanAkunUsher = async function() {
+  if (!isAdminMode || !isSuperadmin()) return;
+  const usernameRaw = document.getElementById('au-username').value.trim();
+  const username     = usernameRaw.toLowerCase();
+  const password     = document.getElementById('au-password').value.trim();
+  const role         = document.getElementById('au-role').value;
+  const ulp          = role === 'admin_ulp' ? document.getElementById('au-ulp').value : null;
+  const unitKerja    = document.getElementById('au-unitkerja').value.trim();
+  const hakAkses     = document.getElementById('au-hakakses').value.trim();
+  const pinAdmin     = document.getElementById('au-pin').value.trim();
+  const errEl        = document.getElementById('akun-usher-err');
+
+  if (!username || !password || !unitKerja || !hakAkses || !pinAdmin) { errEl.textContent = 'Semua field bertanda * wajib diisi.'; errEl.style.display = 'block'; return; }
+  if (!/^[a-z0-9_.-]+$/.test(username)) { errEl.textContent = 'Username hanya boleh huruf kecil, angka, titik, underscore, atau strip (tanpa spasi).'; errEl.style.display = 'block'; return; }
+  if (role === 'admin_ulp' && !ulp) { errEl.textContent = 'Pilih ULP untuk role Admin ULP.'; errEl.style.display = 'block'; return; }
+  errEl.style.display = 'none';
+
+  if (!fbDb) { showToast('Firebase belum terhubung.', 'err'); return; }
+
+  const payload = { username, password, unitKerja, role, ulp, hakAkses, pinAdmin };
+
+  try {
+    const { set, get } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js');
+    if (!currentEditAkunUsherUsername) {
+      const snap = await get(window._fbRef(fbDb, 'usherAkun/' + username));
+      if (snap.exists()) { errEl.textContent = 'Username sudah dipakai akun lain.'; errEl.style.display = 'block'; return; }
+      await set(window._fbRef(fbDb, 'usherAkun/' + username), payload);
+      showToast('Akun usher ' + username + ' berhasil dibuat.', 'ok');
+    } else {
+      await window._fbUpdate(window._fbRef(fbDb, 'usherAkun/' + currentEditAkunUsherUsername), payload);
+      showToast('Akun usher ' + currentEditAkunUsherUsername + ' berhasil diperbarui.', 'ok');
+    }
+    tutupModalAkunUsher();
+  } catch (e) {
+    errEl.textContent = 'Gagal menyimpan: ' + e.message;
+    errEl.style.display = 'block';
+  }
+};
+
+window.hapusAkunUsher = async function(username) {
+  if (!isAdminMode || !isSuperadmin()) return;
+  if (currentAuth && normalizeAuthKey(currentAuth.username) === normalizeAuthKey(username)) {
+    showToast('Tidak bisa menghapus akun yang sedang dipakai untuk login saat ini.', 'warn');
+    return;
+  }
+  if (!(await confirmDialog('Hapus akun usher "' + username + '" secara permanen? Akun ini tidak akan bisa login ke dashboard lagi.', { title: 'Hapus Akun Usher' }))) return;
+  try {
+    await window._fbRemove(window._fbRef(fbDb, 'usherAkun/' + username));
+    showToast('Akun usher dihapus.', 'ok');
+  } catch (e) { showToast('Gagal menghapus: ' + e.message, 'err'); }
+};
+
+function renderAkunUsherTable(entries) {
+  document.getElementById('akunUsherCount').textContent = entries.length + ' akun';
+  const tbody = document.getElementById('akunUsherBody');
+  if (entries.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">Belum ada akun usher. Tambah akun baru di atas.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = entries.sort((a, b) => {
+    if (a[1].role !== b[1].role) return a[1].role === 'superadmin' ? -1 : 1;
+    return (a[1].unitKerja || '').localeCompare(b[1].unitKerja || '');
+  }).map(([username, u]) => {
+    const dataAttr = JSON.stringify({ password: u.password, role: u.role, ulp: u.ulp, unitKerja: u.unitKerja, hakAkses: u.hakAkses, pinAdmin: u.pinAdmin }).replace(/"/g, '&quot;');
+    return `<tr>
+      <td style="font-family:var(--mono);font-weight:600">${esc(username)}</td>
+      <td style="font-family:var(--mono);color:var(--crit)">${esc(u.password)}</td>
+      <td>${esc(u.unitKerja)}</td>
+      <td>${esc(u.hakAkses)}</td>
+      <td style="font-family:var(--mono);color:var(--crit)">${esc(u.pinAdmin)}</td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn-edit" title="Edit akun" onclick='bukaModalAkunUsher("${username}", ${dataAttr})'>✏️</button>
+        <button class="btn-del" title="Hapus akun" onclick="hapusAkunUsher('${username}')">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
 }
 
 async function hapusPetugas(id) {
@@ -5758,9 +6103,11 @@ function populateTiketUlpSelect() {
   const sel = document.getElementById('tiket-ulp');
   if (!sel || sel.options.length > 1) return; // sudah pernah diisi
   const scope = getScopeUlp();
-  // Admin ULP hanya boleh membuat/menugaskan pekerjaan untuk ULP-nya sendiri
-  // (termasuk otomatis tidak pernah melihat "PT MITRA" di daftar ini).
-  const daftarUlp = scope ? [scope] : Object.keys(ROSTER_ULP_TEAMS);
+  // Admin ULP boleh membuat/menugaskan pekerjaan untuk ULP-nya sendiri ATAU
+  // PT MITRA (sesuai Hak Akses "ULP X & PT MITRA" — lihat getScopeUlpList()),
+  // jadi dropdown-nya diisi 2 opsi itu saja & TIDAK dikunci/disabled lagi
+  // supaya bisa pindah ke PT MITRA kalau memang sedang menugaskan tim mitra.
+  const daftarUlp = scope ? [scope, 'PT MITRA'] : Object.keys(ROSTER_ULP_TEAMS);
   daftarUlp.forEach(ulp => {
     const opt = document.createElement('option');
     opt.value = ulp; opt.textContent = ulp;
@@ -5768,7 +6115,6 @@ function populateTiketUlpSelect() {
   });
   if (scope) {
     sel.value = scope;
-    sel.disabled = true;
     onTiketUlpChange();
   }
 }
@@ -6262,6 +6608,15 @@ window.pilihTimAktif = function(regu, ulp) {
   renderTimAktif();
 };
 
+// Dipanggil dari tombol "Edit" di tabel Rencana Pekerjaan. Data diambil dari
+// cache lastTiketEntries (bukan disuntik lewat atribut HTML onclick) supaya
+// nilai apa pun yang mengandung tanda kutip (", ') tidak merusak markup.
+window.editTiketDariTabel = function(id) {
+  const entry = (lastTiketEntries || []).find(([eid]) => eid === id);
+  if (!entry) { showToast('Data penugasan tidak ditemukan (mungkin sudah dihapus/diperbarui). Coba refresh.', 'err'); return; }
+  bukaModalTiket(id, entry[1]);
+};
+
 window.bukaModalTiket = function(id, data) {
   currentEditTiketId = id || null;
   populateTiketUlpSelect();
@@ -6478,7 +6833,7 @@ function renderTiketTable(entries) {
   tbody.innerHTML = entries.sort((a,b)=>(b[1].waktu||0)-(a[1].waktu||0)).map(([id, t]) => {
     const waktu = t.waktu ? new Date(t.waktu).toLocaleDateString('id-ID') : '—';
     const statusCls = t.statusTiket === 'Selesai' ? 'badge-green' : 'badge-blue';
-    const editBtn = `<button onclick="bukaModalTiket('${id}',${JSON.stringify(t).replace(/'/g,"\\'")})" style="background:var(--info-bg);color:var(--info);border:none;border-radius:var(--radius-xs);padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;margin-right:4px">Edit</button>`;
+    const editBtn = `<button onclick="editTiketDariTabel('${id}')" style="background:var(--info-bg);color:var(--info);border:none;border-radius:var(--radius-xs);padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;margin-right:4px">Edit</button>`;
     const tutupBtn = t.statusTiket !== 'Selesai' ? `<button onclick="tutupTiketManual('${id}')" style="background:var(--ok-bg);color:var(--ok);border:none;border-radius:var(--radius-xs);padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;margin-right:4px" title="Tandai penugasan ini selesai secara manual">✓ Tutup</button>` : '';
     const delBtn = isAdminMode ? `<button class="btn-del" onclick="hapusTiket('${id}')">🗑</button>` : '';
     return `<tr>
@@ -6514,6 +6869,7 @@ function listenTiket() {
       }));
     refreshBerandaCharts();
     renderTiketProgres();
+    populateVfNomorPenugasanSelect(); // jaga dropdown "Penugasan" di modal Verifikasi tetap sinkron kalau kebetulan sedang terbuka
   });
 }
 
@@ -6715,7 +7071,13 @@ window.bukaModalVerifikasi = function(id, laporan, mode) {
     <div style="background:var(--surface-2);border-radius:var(--radius-sm);padding:14px;margin-bottom:14px;border:1px solid var(--line)">
       <div style="font-size:13px;font-weight:700;margin-bottom:8px">👷 ${esc(laporan.regu)||'—'} <span style="font-weight:400;color:var(--text-3);font-size:11px">${esc(laporan.ulp)||''}${laporan.anggotaHadir ? ' · ' + esc(laporan.anggotaHadir) : ''}</span></div>
       <div style="font-size:12px;color:var(--text-2);line-height:1.8">
-        <b>Penugasan:</b> ${laporan.nomorTiket ? '<span style="font-family:var(--mono);color:var(--pln-blue);font-weight:700">'+esc(laporan.nomorTiket)+'</span>' : '—'}<br>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <b>Penugasan:</b>
+          <select id="vf-nomor-penugasan" onchange="onVfNomorPenugasanChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:4px 8px;font-size:11.5px;font-family:var(--mono);outline:none;max-width:280px;background:var(--surface)">
+            <option value="">— Tanpa Penugasan —</option>
+          </select>
+        </div>
+        <div id="vf-nomor-penugasan-hint" style="font-size:11px;color:var(--text-3);margin-top:3px;display:none"></div>
         <b>Waktu Laporan:</b> ${waktu}
       </div>
     </div>
@@ -6724,6 +7086,61 @@ window.bukaModalVerifikasi = function(id, laporan, mode) {
     </div>` : ''}
   `;
   document.getElementById('modal-verifikasi').style.display = 'flex';
+
+  // Isi dropdown Nomor Penugasan dari daftar penugasan yang lagi berjalan
+  // (node 'penugasan'), supaya TL/Admin bisa pindahkan laporan ini ke nomor
+  // penugasan lain kalau salah pilih/salah regu — lihat populateVfNomorPenugasanSelect().
+  // listenTiket() aman dipanggil berulang (idempotent, cuma daftar sekali per sesi)
+  // dan memastikan lastTiketEntries terisi walau TL/Admin belum pernah buka tab
+  // Kelola Penugasan Pekerjaan.
+  initFirebase().then(ok => {
+    if (ok) listenTiket();
+    populateVfNomorPenugasanSelect(laporan.nomorTiket || '');
+    onVfNomorPenugasanChange();
+  });
+};
+
+// Isi ulang dropdown "Penugasan" di modal Verifikasi/Ubah Hasil Verifikasi
+// dari lastTiketEntries (node 'penugasan'). selectedNomor dipakai untuk
+// memilih opsi tsb setelah dropdown diisi; kalau dipanggil tanpa argumen
+// (mis. dari listener realtime saat data penugasan berubah ketika modal
+// sedang terbuka), pilihan yang sedang aktif di layar tetap dipertahankan
+// supaya tidak menimpa perubahan yang belum disimpan.
+window.populateVfNomorPenugasanSelect = function(selectedNomor) {
+  const sel = document.getElementById('vf-nomor-penugasan');
+  if (!sel) return;
+  const current = selectedNomor !== undefined ? selectedNomor : (sel.value || currentVerifLaporan?.nomorTiket || '');
+
+  const all = (lastTiketEntries || []).map(([, t]) => t).filter(t => t.nomor);
+  // Hanya penugasan yang masih "berjalan" (belum Selesai) yang ditawarkan sebagai
+  // tujuan pindah. Nomor lama yang sudah "Selesai" atau sudah tidak ada lagi di
+  // node 'penugasan' (terhapus) TIDAK ditampilkan di dropdown ini.
+  const aktif = all.filter(t => t.statusTiket !== 'Selesai');
+  aktif.sort((a, b) => (a.ulp||'').localeCompare(b.ulp||'') || (a.nomor||'').localeCompare(b.nomor||''));
+
+  const options = ['<option value="">— Tanpa Penugasan —</option>'].concat(
+    aktif.map(t => {
+      const label = `${t.nomor} — ${t.ulp||'—'} · ${t.assignedRegu||'Belum ditugaskan'}${t.jenis ? ' · ' + t.jenis : ''}`;
+      return `<option value="${esc(t.nomor)}">${esc(label)}</option>`;
+    })
+  );
+
+  sel.innerHTML = options.join('');
+  sel.value = current || '';
+};
+
+// Tampilkan info singkat (jenis pekerjaan/ULP/regu tujuan) tiap kali pilihan
+// nomor penugasan diganti, supaya TL/Admin bisa cek dulu sebelum disimpan.
+window.onVfNomorPenugasanChange = function() {
+  const sel  = document.getElementById('vf-nomor-penugasan');
+  const hint = document.getElementById('vf-nomor-penugasan-hint');
+  if (!sel || !hint) return;
+  const nomor = sel.value;
+  if (!nomor) { hint.style.display = 'none'; return; }
+  const found = (lastTiketEntries || []).map(([, t]) => t).find(t => t.nomor === nomor);
+  if (!found) { hint.style.display = 'none'; return; }
+  hint.innerHTML = `📌 ${esc(found.jenis||'—')} · ${esc(found.ulp||'—')} · ${esc(found.assignedRegu||'Belum ditugaskan')}`;
+  hint.style.display = 'block';
 };
 
 window.tutupModalVerifikasi = function() {
@@ -6783,6 +7200,10 @@ window.submitVerifikasi = async function() {
       lapDaerahPadam: document.getElementById('vf-daerahpadam').value.trim() || null,
       lapPic: document.getElementById('vf-pic').value.trim() || null,
       lapKeterangan: document.getElementById('vf-keterangan').value.trim() || null,
+      // Nomor Penugasan — bisa dipindahkan TL/Admin lewat dropdown "Penugasan"
+      // di atas kalau laporan ternyata salah tertaut ke nomor tiket yang bukan
+      // haknya (lihat populateVfNomorPenugasanSelect).
+      nomorTiket: document.getElementById('vf-nomor-penugasan')?.value || null,
       target: target || null,
       realisasi: realisasi || null,
       realisasiSatuan: document.getElementById('vf-satuan').value.trim() || null,
@@ -6802,7 +7223,11 @@ window.submitVerifikasi = async function() {
     // ── Auto-tutup tiket terkait ──
     // Begitu laporan yang terhubung ke nomor tiket dinyatakan "Terverifikasi", tiket P0/P1
     // otomatis ditandai "Selesai" supaya tidak menumpuk "Aktif" selamanya.
-    const nomorTiket = currentVerifLaporan?.nomorTiket;
+    // Pakai nomor tiket yang BARU (dari dropdown, upd.nomorTiket) — bukan nomor lama
+    // (currentVerifLaporan.nomorTiket) — supaya kalau TL/Admin baru saja memindahkan
+    // laporan ini ke penugasan lain, yang otomatis ditutup adalah penugasan tujuan
+    // yang benar, bukan penugasan lama yang sudah tidak relevan lagi.
+    const nomorTiket = upd.nomorTiket;
     if (hasil === 'Terverifikasi' && nomorTiket) {
       try {
         const tiketSnap = await get(window._fbRef(fbDb, 'penugasan'));
@@ -7080,8 +7505,21 @@ window.resetHasilVerifikasiFilter = function() {
   document.getElementById('hv-filter-jenis').value = '';
   document.getElementById('hv-filter-search').value = '';
   document.getElementById('hv-groupby').value = 'ulp';
+  hasilVerifikasiPage = 1;
   renderHasilVerifikasiGrid();
 };
+
+// Filter/kelompok berubah -> selalu kembali ke halaman 1 supaya user tidak
+// "nyasar" di halaman lama yang mungkin sudah kosong / beda datanya.
+window.onHasilVerifikasiFilterChange = function() {
+  hasilVerifikasiPage = 1;
+  renderHasilVerifikasiGrid();
+};
+
+// ── Hasil Verifikasi: state pagination ──
+let hasilVerifikasiPage = 1;
+const hasilVerifikasiPageSize = 9; // konsisten dengan halaman Verifikasi (3 kolom x 3 baris)
+let hasilVerifikasiPageTotalPages = 1;
 
 function hvStatusBadge(sv) {
   const color = sv === 'Terverifikasi' ? 'var(--ok)' : sv === 'Ditolak' ? 'var(--crit)' : 'var(--warn)';
@@ -7150,26 +7588,43 @@ function getHasilVerifikasiFilteredEntries() {
 window.renderHasilVerifikasiGrid = function() {
   const wrap = document.getElementById('hasilVerifikasiContent');
   const countEl = document.getElementById('hasilVerifikasiCount');
+  const pagBar = document.getElementById('hasilVerifikasiPagination');
   if (!wrap) return;
 
   const groupBy = document.getElementById('hv-groupby')?.value || 'ulp';
   const entries = getHasilVerifikasiFilteredEntries();
 
-  // Sama seperti di renderVerifikasiGrid(): cache laporan per id, jangan sisipkan
-  // objek laporan penuh ke atribut HTML onclick — lihat bukaModalVerifikasiById().
-  window._verifDataCache = window._verifDataCache || {};
-  entries.forEach(([id, l]) => { window._verifDataCache[id] = l; });
-
   if (countEl) countEl.textContent = entries.length + ' laporan';
 
   if (entries.length === 0) {
     wrap.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px;font-size:13px;">Tidak ada laporan yang cocok dengan filter ini</div>';
+    if (pagBar) pagBar.style.display = 'none';
     return;
   }
 
+  // Pagination: hitung total halaman & jaga halaman aktif tetap valid
+  // (mis. saat filter baru bikin hasil lebih sedikit dari sebelumnya) —
+  // sama seperti renderVerifikasiGrid(). Slicing dilakukan SEBELUM
+  // pengelompokan supaya jumlah kartu per halaman konsisten.
+  hasilVerifikasiPageTotalPages = Math.max(1, Math.ceil(entries.length / hasilVerifikasiPageSize));
+  hasilVerifikasiPage = Math.min(Math.max(1, hasilVerifikasiPage), hasilVerifikasiPageTotalPages);
+  const pageStart = (hasilVerifikasiPage - 1) * hasilVerifikasiPageSize;
+  const pageEntries = entries.slice(pageStart, pageStart + hasilVerifikasiPageSize);
+
+  if (pagBar) {
+    pagBar.style.display = hasilVerifikasiPageTotalPages > 1 ? 'flex' : 'none';
+    renderHasilVerifikasiPaginationControls(entries.length);
+  }
+
+  // Sama seperti di renderVerifikasiGrid(): cache laporan per id, jangan sisipkan
+  // objek laporan penuh ke atribut HTML onclick — lihat bukaModalVerifikasiById().
+  // Cukup untuk kartu yang benar-benar ditampilkan di halaman ini.
+  window._verifDataCache = window._verifDataCache || {};
+  pageEntries.forEach(([id, l]) => { window._verifDataCache[id] = l; });
+
   if (groupBy === 'none') {
     wrap.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;">
-      ${entries.map(([id, l]) => renderHasilVerifikasiCard(id, l)).join('')}
+      ${pageEntries.map(([id, l]) => renderHasilVerifikasiCard(id, l)).join('')}
     </div>`;
     return;
   }
@@ -7179,7 +7634,7 @@ window.renderHasilVerifikasiGrid = function() {
                     : (l => l.statusVerifikasi);
 
   const groups = {};
-  entries.forEach(([id, l]) => {
+  pageEntries.forEach(([id, l]) => {
     const key = groupKeyFn(l);
     (groups[key] = groups[key] || []).push([id, l]);
   });
@@ -7195,6 +7650,39 @@ window.renderHasilVerifikasiGrid = function() {
       </div>
     </div>
   `).join('');
+};
+
+function renderHasilVerifikasiPaginationControls(totalEntries) {
+  const start = (hasilVerifikasiPage - 1) * hasilVerifikasiPageSize + 1;
+  const end   = Math.min(hasilVerifikasiPage * hasilVerifikasiPageSize, totalEntries);
+  document.getElementById('hasilVerifikasiPgInfo').innerHTML =
+    `<b>${start}–${end}</b> dari <b>${totalEntries}</b>`;
+
+  document.getElementById('hasilVerifikasiPgFirst').disabled = hasilVerifikasiPage <= 1;
+  document.getElementById('hasilVerifikasiPgPrev').disabled  = hasilVerifikasiPage <= 1;
+  document.getElementById('hasilVerifikasiPgNext').disabled  = hasilVerifikasiPage >= hasilVerifikasiPageTotalPages;
+  document.getElementById('hasilVerifikasiPgLast').disabled  = hasilVerifikasiPage >= hasilVerifikasiPageTotalPages;
+
+  const nums = [];
+  const windowStart = Math.max(1, hasilVerifikasiPage - 2);
+  const windowEnd   = Math.min(hasilVerifikasiPageTotalPages, hasilVerifikasiPage + 2);
+  if (windowStart > 1) { nums.push(1); if (windowStart > 2) nums.push('…'); }
+  for (let n = windowStart; n <= windowEnd; n++) nums.push(n);
+  if (windowEnd < hasilVerifikasiPageTotalPages) { if (windowEnd < hasilVerifikasiPageTotalPages - 1) nums.push('…'); nums.push(hasilVerifikasiPageTotalPages); }
+
+  document.getElementById('hasilVerifikasiPgNumbers').innerHTML = nums.map(n =>
+    n === '…'
+      ? `<span style="padding:0 4px;color:var(--text-3);font-size:12px">…</span>`
+      : `<button class="pg-btn${n===hasilVerifikasiPage?' active':''}" onclick="goToHasilVerifikasiPage(${n})">${n}</button>`
+  ).join('');
+}
+
+window.goToHasilVerifikasiPage = function(n) {
+  n = Math.min(Math.max(1, n), hasilVerifikasiPageTotalPages);
+  if (n === hasilVerifikasiPage) return;
+  hasilVerifikasiPage = n;
+  renderHasilVerifikasiGrid();
+  document.getElementById('hasilVerifikasiContent')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 
 // ══════════════════════════════════════
@@ -7893,6 +8381,8 @@ function startAppAfterAuth() {
   initSidebarState(); // pulihkan status collapse/expand sidebar dari localStorage
 
   // Sambungkan ke Firebase & nyalakan badge "Petugas Aktif" SEJAK HALAMAN DIBUKA
+  // (initFirebase() sendiri idempotent — lihat guard `if (fbApp) return true;` —
+  // jadi aman dipanggil lagi di sini walau boot() di bawah sudah memanggilnya).
   initFirebase().then(ok => {
     if (ok) {
       // patch: expose set untuk tiket
@@ -7903,19 +8393,45 @@ function startAppAfterAuth() {
   });
 }
 
-// Kalau sesi login sudah tersimpan (localStorage, bertahan sampai Logout manual),
-// langsung masuk ke app tanpa perlu login ulang. Kalau belum, layar login (sudah
-// tampil secara default di HTML) yang menunggu submit dari doLoginTLAdmin().
+// ══════════════════════════════════════
+// BOOT — sambungkan Firebase & muat akun usher SEBELUM proses login
+// ══════════════════════════════════════
+// Ini perbaikan bug layar login: dulu (waktu masih AUTH_ACCOUNTS hardcode)
+// data akun selalu siap sinkron sejak awal, jadi tidak masalah. Begitu akun
+// dipindah ke Firebase (node 'usherAkun'), dropdown "Akun" & validasi
+// doLoginTLAdmin() butuh usherAkunCache SUDAH TERISI — kalau listener baru
+// dipasang SETELAH login berhasil (di startAppAfterAuth), maka percobaan
+// login pertama kali selalu gagal/kosong karena datanya belum ada sama
+// sekali. Makanya listener di sini dipasang di awal boot, TERPISAH dari
+// startAppAfterAuth() dan TIDAK bergantung pada currentAuth — supaya siap
+// dipakai sebelum siapa pun sempat login.
 //
-// SEMENTARA DINONAKTIFKAN (2026-07-21) atas permintaan — layar login masih ngebug.
-// Kode login TIDAK dihapus, hanya dilewati: langsung auto-login sebagai Superadmin
-// supaya seluruh app tetap jalan normal (scopeFilterEntries, applyAuthUI, dst tetap
-// butuh currentAuth terisi). Untuk mengaktifkan login lagi nanti, hapus blok
-// "AUTO-BYPASS" di bawah ini dan kembalikan ke `if (currentAuth) { showAppAfterLogin(); }`.
-if (!currentAuth) {
-  currentAuth = { username: 'up3 jayapura', role: 'superadmin', ulp: null, label: 'UP3 Jayapura' };
-}
-showAppAfterLogin(); // AUTO-BYPASS — lihat catatan di atas
+// Selama data belum siap, form login (select/password/tombol) sengaja
+// dalam keadaan disabled (lihat HTML #login-username dkk.) — begitu
+// listenUsherAkun() menerima data pertama kalinya, populateLoginUsernameDropdown()
+// yang mengaktifkannya kembali. Kalau sesi login sebelumnya masih tersimpan
+// (localStorage, bertahan sampai Logout manual), app langsung dibuka tanpa
+// perlu login ulang; kalau belum, layar login (tampil default di HTML)
+// betul-betul menunggu submit dari doLoginTLAdmin() — TIDAK ada auto-bypass lagi.
+initFirebase().then(async ok => {
+  if (!ok) {
+    const errEl = document.getElementById('login-err');
+    if (errEl) {
+      errEl.textContent = 'Gagal terhubung ke server. Coba muat ulang halaman.';
+      errEl.style.display = 'block';
+    }
+    return;
+  }
+  await seedUsherAkunIfEmpty();
+  listenUsherAkun();
+
+  if (currentAuth) {
+    showAppAfterLogin();
+  }
+  // Kalau belum login, tidak perlu lakukan apa-apa lagi di sini — layar login
+  // sudah tampil sejak awal dan sekarang formnya sudah aktif (via
+  // populateLoginUsernameDropdown), tinggal menunggu user submit.
+});
 
 function listenVerifikasiBadge() {
   const r = window._fbRef(fbDb, 'laporan');
@@ -7953,6 +8469,16 @@ window.setRekapPeriode = function(p, btn) {
   rekapPeriode = p;
   document.querySelectorAll('#viewRekap .tab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  renderRekap(allLaporanCache);
+};
+
+// Kembalikan tab periode Rekap ke default ("Hari Ini") — dipakai switchView()
+// supaya tiap kali TL/Admin masuk (lagi) ke halaman Rekap, tampilannya selalu
+// mulai dari kondisi awal, bukan melanjutkan periode terakhir yang dipilih.
+window.resetRekapFilter = function() {
+  rekapPeriode = 'hari';
+  document.querySelectorAll('#viewRekap .tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('rekap-tab-hari')?.classList.add('active');
   renderRekap(allLaporanCache);
 };
 

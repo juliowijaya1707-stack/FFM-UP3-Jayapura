@@ -4112,13 +4112,25 @@ window.bukaModalLaporUntuk = function(nomorTiket, revisiAsalId) {
 // #4 + #5: Listener realtime untuk laporan "Perlu Revisi" dan tiket yang
 // di-assign supervisor ke regu ini. Difilter di sisi client karena
 // data petugas/laporan/tiket tidak besar dan tidak perlu index khusus.
+// Normalisasi nama regu/ULP sebelum dibandingkan (trim + lowercase) supaya
+// perbedaan spasi/kapitalisasi tidak bikin pencocokan gagal ATAU (lebih
+// bahaya) tidak sengaja jadi cocok dengan regu/ULP lain.
+function normReguUlp(v) {
+  return (v || '').toString().trim().toLowerCase();
+}
+
 window.listenRevisiDanTugas = function() {
   if (!db || !currentUser) return;
 
   onValue(ref(db, 'laporan'), snap => {
     const data = snap.val() || {};
+    // Sama seperti penugasan: cocokkan regu DAN ULP supaya laporan "Perlu
+    // Revisi" milik regu lain (nama kebetulan sama di ULP berbeda) tidak
+    // ikut nongol & bisa "diambil alih" lewat tombol Lapor Ulang.
     const perluRevisi = Object.entries(data).filter(([, l]) =>
-      l.regu === currentUser.regu && l.statusVerifikasi === 'Perlu Revisi' && !l.ditindaklanjuti
+      normReguUlp(l.regu) === normReguUlp(currentUser.regu) &&
+      normReguUlp(l.ulp) === normReguUlp(currentUser.ulp) &&
+      l.statusVerifikasi === 'Perlu Revisi' && !l.ditindaklanjuti
     );
     const banner = document.getElementById('revisi-banner');
     const list   = document.getElementById('revisi-list');
@@ -4136,8 +4148,15 @@ window.listenRevisiDanTugas = function() {
 
   onValue(ref(db, 'penugasan'), snap => {
     const data = snap.val() || {};
+    // Cocokkan REGU **dan** ULP sekaligus — kalau cuma cocok nama regu,
+    // penugasan bisa "bocor" ke regu lain yang kebetulan punya nama sama
+    // di ULP berbeda (mis. nama tim generik "Tim Pemeliharaan" dipakai
+    // lebih dari satu ULP), sehingga muncul & bisa dipilih walau bukan
+    // regu yang sebenarnya ditugaskan.
     const tugasSaya = Object.entries(data).filter(([, t]) =>
-      t.assignedRegu === currentUser.regu && t.statusTiket !== 'Selesai'
+      normReguUlp(t.assignedRegu) === normReguUlp(currentUser.regu) &&
+      normReguUlp(t.ulp) === normReguUlp(currentUser.ulp) &&
+      t.statusTiket !== 'Selesai'
     );
     window._tugasAktifCache = tugasSaya;
     populateLaporTiketSelect(); // jaga dropdown tetap sinkron kalau modal Lapor sedang terbuka
