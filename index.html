@@ -3569,9 +3569,9 @@ function getScopeUlpList() {
 // (ULP-nya sendiri ATAU PT MITRA) yang diloloskan — ULP lain (bukan miliknya,
 // bukan PT MITRA) tetap tidak pernah tampil untuk Admin ULP mana pun.
 //
-// PENGECUALIAN — Tim ROW lintas-ULP: petugas.html punya field opsional "Asal
-// Tim ROW" yang diisi kalau sebuah Tim ROW hari itu sedang bantu tugas di ULP
-// lain (bukan ULP asalnya). Kalau field itu terisi, `v.asalTimRow` berisi nama
+// PENGECUALIAN — Tim ROW lintas-ULP: petugas.html punya field wajib "Asal
+// Tim ROW" (muncul & wajib diisi kalau nama regu mengandung kata "ROW") yang
+// diisi dengan ULP asal tim tsb. Kalau field itu terisi, `v.asalTimRow` berisi nama
 // ULP asal tim tsb. Baris itu WAJIB tetap lolos untuk Admin ULP asal juga —
 // bukan cuma Admin ULP tempat dia bertugas hari itu — supaya live GPS,
 // absensi, & laporan Tim ROW yang sedang dipinjam tetap kelihatan (akses
@@ -4124,7 +4124,15 @@ function listenPetugasBadge() {
   const ref = window._fbRef(fbDb, 'petugas');
   fbListeners.petugasBadge = window._fbOnValue(ref, snap => {
     const data = snap.val() || {};
-    const entries = scopeFilterEntries(Object.entries(data));
+    // FIX: harus filter "hari ini" juga (v.ts >= todayStart), persis seperti
+    // listenPetugas() di bawah — sebelum fix ini, badge menghitung SEMUA baris
+    // berstatus non-Offline tanpa peduli tanggal (termasuk log GPS hari
+    // sebelumnya yang lupa/belum ke-overwrite jadi Offline), sedangkan halaman
+    // "Petugas Aktif" sudah benar memfilter hari ini saja — makanya badge bisa
+    // menunjukkan angka jauh lebih besar (mis. 30) daripada jumlah yang
+    // sebenarnya tampil begitu halaman Petugas Aktif dibuka (mis. 2).
+    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+    const entries = scopeFilterEntries(Object.entries(data).filter(([,v]) => v.ts && v.ts >= todayStart.getTime()));
     const aktif = entries.filter(([, v]) => v.status !== 'Offline').length;
     document.getElementById('nav-badge-petugas').textContent = aktif;
   });

@@ -871,19 +871,19 @@ body {
     </div>
     <!-- Asal Tim ROW: field tambahan yang HANYA muncul kalau nama Regu/Tim yang
          dipilih/diketik mengandung kata "ROW" (Tim ROW = tim mitra pihak ketiga
-         yang kadang dipinjam/bantu ke ULP lain di luar ULP asalnya). OPSIONAL —
-         kalau hari itu Tim ROW ini kerja normal di ULP asalnya sendiri (tidak
-         sedang bantu ULP lain), field ini boleh dibiarkan kosong. Kalau diisi,
-         live GPS/absensi/laporan hari ini ikut tampil penuh (termasuk bisa
+         yang kadang dipinjam/bantu ke ULP lain di luar ULP asalnya). WAJIB
+         diisi begitu field ini muncul (lihat validasi di doLogin()) — placeholder-nya
+         adalah opsi disabled ("— Pilih Asal ULP —"), bukan opsi kosong yang bisa
+         dipilih, supaya petugas tidak bisa lolos tanpa memilih ULP asal. Live
+         GPS/absensi/laporan hari ini ikut tampil penuh (termasuk bisa
          diverifikasi) di dashboard ULP yang dipilih di sini MAUPUN di dashboard
          Unit Kerja di atas — mirip pola akses PT MITRA yang sudah ada (lihat
          scopeFilterEntries() di index.html). -->
     <div class="field" id="field-asal-timrow" style="display:none">
-      <label>Asal Tim ROW <span style="color:var(--text-3);font-weight:400">(opsional)</span></label>
+      <label>Asal Tim ROW</label>
       <select id="in-asal-timrow">
-        <option value="">— Tidak sedang bantu ULP lain —</option>
+        <option value="" disabled selected>— Pilih Asal ULP —</option>
       </select>
-      <div style="font-size:11px;color:var(--text-3);margin-top:6px">Isi kalau Tim ROW ini hari ini sedang bantu tugas di ULP lain, bukan ULP asalnya — supaya live GPS &amp; laporan tetap tampil di dashboard ULP asal juga.</div>
     </div>
   </div>
 
@@ -2660,7 +2660,7 @@ window.toggleAsalTimRowField = function() {
   if (!wrap || !sel) return;
   const show = reguMengandungRow(regu);
   wrap.style.display = show ? 'block' : 'none';
-  if (!show) sel.value = '';
+  if (!show) sel.selectedIndex = 0; // balik ke placeholder disabled "— Pilih Asal ULP —"
 };
 
 // Isi ulang dropdown Regu/Tim dengan daftar tim yang valid untuk sebuah
@@ -2814,15 +2814,18 @@ window.doLogin = function() {
     focusAnggotaFirstField();
     return;
   }
-  errEl.style.display = 'none';
-
-  // Asal Tim ROW — hanya relevan/terbaca kalau field-nya sedang ditampilkan
-  // (regu mengandung kata "ROW"); opsional, boleh dikosongkan kalau tim ROW
-  // ini hari ini kerja normal di ULP asalnya sendiri (tidak sedang bantu ULP lain).
+  // Asal Tim ROW — kalau field-nya sedang ditampilkan (regu mengandung kata
+  // "ROW"), WAJIB dipilih sebelum bisa lanjut login.
   const asalTimRowWrap = document.getElementById('field-asal-timrow');
-  const asalTimRow = (asalTimRowWrap && asalTimRowWrap.style.display !== 'none')
-    ? document.getElementById('in-asal-timrow').value.trim()
-    : '';
+  const asalTimRowVisible = !!(asalTimRowWrap && asalTimRowWrap.style.display !== 'none');
+  const asalTimRow = asalTimRowVisible ? document.getElementById('in-asal-timrow').value.trim() : '';
+  if (asalTimRowVisible && !asalTimRow) {
+    errEl.textContent = 'Asal ULP Tim ROW wajib dipilih.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  errEl.style.display = 'none';
 
   // "username" internal dibuat dari slug nama regu (dipakai untuk id sesi/laporan),
   // BUKAN akun login — cuma supaya path data tetap unik & konsisten.
