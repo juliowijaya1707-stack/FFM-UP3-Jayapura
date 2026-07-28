@@ -3520,7 +3520,6 @@ const USHER_AKUN_SEED_DEFAULT = {
   'ulp_genyem':     { username: 'ulp_genyem',     password: '1234', unitKerja: 'ULP Genyem',        role: 'admin_ulp',  ulp: 'ULP Genyem',   hakAkses: 'ULP Genyem & PT MITRA',        pinAdmin: '1234' },
   'ulp_sarmi':      { username: 'ulp_sarmi',      password: '1234', unitKerja: 'ULP Sarmi',         role: 'admin_ulp',  ulp: 'ULP Sarmi',    hakAkses: 'ULP Sarmi & PT MITRA',         pinAdmin: '1234' },
 };
-const AUTH_SESSION_KEY = 'ffm_auth_session'; // localStorage → sengaja bukan sessionStorage, supaya login bertahan sampai klik Logout manual (sesuai permintaan)
 const DEFAULT_ADMIN_PIN = '1111'; // fallback kalau akun yang login belum punya pinAdmin tersimpan (mis. sebelum data usherAkun selesai dimuat)
 
 function normalizeAuthKey(s) {
@@ -3535,15 +3534,15 @@ function normalizeUlp(s) {
 // untuk isi dropdown "Akun" di layar login.
 let usherAkunCache = {};
 
+// currentAuth SENGAJA TIDAK di-restore dari localStorage/sessionStorage —
+// sesuai permintaan: setiap kali web ditutup ATAU di-refresh, harus login
+// ulang dari nol (password wajib diketik lagi). currentAuth cuma hidup di
+// memori JS selama tab ini terbuka & belum di-refresh; begitu tab ditutup
+// atau halaman di-refresh, seluruh memori JS hilang otomatis sehingga
+// currentAuth otomatis kembali null saat halaman dimuat lagi — tanpa perlu
+// mekanisme storage apa pun. Ditambah: auto-logout kalau 30 menit tanpa
+// aktivitas sama sekali (lihat resetIdleTimer()/autoLogoutIdle() di bawah).
 let currentAuth = null; // { username, role: 'superadmin'|'admin_ulp', ulp, label, pinAdmin } atau null kalau belum login
-try {
-  const saved = JSON.parse(localStorage.getItem(AUTH_SESSION_KEY) || 'null');
-  // Tidak lagi divalidasi terhadap AUTH_ACCOUNTS di sini (data sekarang di Firebase,
-  // belum tentu sudah dimuat sinkron di titik ini) — validasi ulang & sinkronisasi
-  // field (role/ulp/label/pinAdmin) dilakukan di syncCurrentAuthFromUsherAkunCache()
-  // begitu listener 'usherAkun' pertama kali menerima data.
-  if (saved && saved.role && saved.username) currentAuth = saved;
-} catch (e) { currentAuth = null; }
 
 // Scope ULP aktif untuk akun yang sedang login: null = tanpa batasan (Superadmin,
 // termasuk bisa lihat PT MITRA), atau nama ULP persis seperti key di ROSTER_ULP_TEAMS.
@@ -3602,14 +3601,36 @@ window.doLoginTLAdmin = function() {
 
   errEl.style.display = 'none';
   currentAuth = { username: acc.username, role: acc.role, ulp: acc.ulp || null, label: acc.unitKerja, pinAdmin: acc.pinAdmin || DEFAULT_ADMIN_PIN };
-  localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(currentAuth));
   document.getElementById('login-password').value = '';
   showAppAfterLogin();
 };
 
+// ── Auto-logout idle 30 menit ─────────────────────────────────────────
+// Kalau tab dibiarkan terbuka tanpa ada interaksi sama sekali (mouse,
+// keyboard, klik, sentuh, scroll) selama 30 menit berturut-turut, paksa
+// logout & reload halaman supaya harus login ulang. Timer di-reset setiap
+// kali ada aktivitas apa pun, dan hanya berjalan selama currentAuth terisi
+// (sedang login) — dipasang/dilepas otomatis lewat resetIdleTimer().
+const IDLE_LOGOUT_MS = 30 * 60 * 1000; // 30 menit
+let idleLogoutTimer = null;
+function resetIdleTimer() {
+  if (!currentAuth) return; // belum login -> tidak perlu timer
+  clearTimeout(idleLogoutTimer);
+  idleLogoutTimer = setTimeout(autoLogoutIdle, IDLE_LOGOUT_MS);
+}
+function autoLogoutIdle() {
+  currentAuth = null;
+  alert('Sesi berakhir karena 30 menit tidak ada aktivitas. Silakan login kembali.');
+  location.reload();
+}
+['mousemove', 'keydown', 'mousedown', 'touchstart', 'scroll'].forEach(evt => {
+  document.addEventListener(evt, resetIdleTimer, { passive: true });
+});
+
 window.doLogoutTLAdmin = async function() {
   if (!(await confirmDialog('Keluar dari akun ini? Anda perlu login ulang untuk membuka dashboard lagi.', { title: 'Logout', okLabel: 'Ya, Keluar' }))) return;
-  localStorage.removeItem(AUTH_SESSION_KEY);
+  clearTimeout(idleLogoutTimer);
+  currentAuth = null;
   location.reload(); // cara paling aman untuk reset semua listener/cache Firebase di memori
 };
 
@@ -3625,6 +3646,7 @@ function showAppAfterLogin() {
   document.querySelector('.app').style.display = '';
   applyAuthUI();
   startAppAfterAuth();
+  resetIdleTimer(); // mulai hitung mundur 30 menit idle dari sekarang
 }
 
 // ══════════════════════════════════════
@@ -3954,7 +3976,6 @@ function syncCurrentAuthFromUsherAkunCache() {
   currentAuth.ulp       = acc.ulp || null;
   currentAuth.label     = acc.unitKerja || currentAuth.label;
   currentAuth.pinAdmin  = acc.pinAdmin || currentAuth.pinAdmin || DEFAULT_ADMIN_PIN;
-  localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(currentAuth));
   if (document.querySelector('.app')?.style.display !== 'none') applyAuthUI();
 }
 
@@ -8449,10 +8470,10 @@ function startAppAfterAuth() {
 // Selama data belum siap, form login (select/password/tombol) sengaja
 // dalam keadaan disabled (lihat HTML #login-username dkk.) — begitu
 // listenUsherAkun() menerima data pertama kalinya, populateLoginUsernameDropdown()
-// yang mengaktifkannya kembali. Kalau sesi login sebelumnya masih tersimpan
-// (localStorage, bertahan sampai Logout manual), app langsung dibuka tanpa
-// perlu login ulang; kalau belum, layar login (tampil default di HTML)
-// betul-betul menunggu submit dari doLoginTLAdmin() — TIDAK ada auto-bypass lagi.
+// yang mengaktifkannya kembali. currentAuth TIDAK PERNAH ter-restore di titik
+// ini (lihat catatan di deklarasi currentAuth) — jadi layar login SELALU
+// tampil & menunggu submit dari doLoginTLAdmin() setiap kali halaman ini
+// dimuat (baik pertama kali, refresh, maupun dibuka lagi setelah tab ditutup).
 initFirebase().then(async ok => {
   if (!ok) {
     const errEl = document.getElementById('login-err');
@@ -8464,13 +8485,8 @@ initFirebase().then(async ok => {
   }
   await seedUsherAkunIfEmpty();
   listenUsherAkun();
-
-  if (currentAuth) {
-    showAppAfterLogin();
-  }
-  // Kalau belum login, tidak perlu lakukan apa-apa lagi di sini — layar login
-  // sudah tampil sejak awal dan sekarang formnya sudah aktif (via
-  // populateLoginUsernameDropdown), tinggal menunggu user submit.
+  // Tidak ada lagi auto-bypass ke app di sini — layar login (tampil default
+  // di HTML) selalu menunggu login manual, sesuai permintaan.
 });
 
 function listenVerifikasiBadge() {
