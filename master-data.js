@@ -74,8 +74,14 @@ var RP_JENIS_PEMADAMAN_LIST = ['TM', 'TR', 'Tanpa Pemadaman'];
 
 var RP_JENIS_PEKERJAAN_LIST = [
   'Sempurna Proteksi', 'Sempurna Material', 'Sempurna Pembebanan',
-  'Sempurna Inspeksi', 'Sempurna Konstruksi', 'Sempurna ROW', 'Sempurna Gardu'
+  'Sempurna Inspeksi', 'Sempurna Konstruksi', 'Sempurna ROW', 'Sempurna Gardu',
+  'Grebek', 'Harian'
 ];
+
+// Dipakai field "Kelompok" pada Rencana Pekerjaan di index.html (sebelum
+// field Gardu) & field "Kelompok" pada form Laporan Pekerjaan di petugas.html
+// (juga sebelum field Gardu, dan auto-terisi dari Rencana Pekerjaan terkait).
+var RP_KELOMPOK_LIST = ['PHBTM', 'JTM', 'GARDU DIST', 'JTR', 'SR-APP'];
 
 var RP_RINCIAN_GROUPS = {
   'Umum / Bangunan / JTM Dasar': [

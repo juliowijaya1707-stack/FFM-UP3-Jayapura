@@ -1838,6 +1838,13 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
             </div>
 
             <div style="margin-bottom:12px">
+              <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Kelompok</label>
+              <select id="rp-kelompok" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none;height:38px;background:var(--surface)">
+                <option value="">— Pilih —</option>
+              </select>
+            </div>
+
+            <div style="margin-bottom:12px">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
                 <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2)">Gardu <span style="font-weight:400;color:var(--text-3);text-transform:none">(bisa pilih lebih dari 1)</span></label>
                 <button type="button" onclick="tambahGarduBaru('rp')" style="background:var(--pln-blue-light,#0057b8);border:none;color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;padding:6px 12px;border-radius:999px;display:inline-flex;align-items:center;gap:4px;box-shadow:0 1px 3px rgba(0,87,184,0.35);transition:filter .15s,transform .1s" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='none'" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">➕ Tambah Gardu</button>
@@ -1978,6 +1985,29 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
           <div class="card-title">Daftar Rencana Pekerjaan</div>
           <span class="card-count" id="tiketCount">0 rencana</span>
         </div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:10px;padding:0 0 14px;align-items:flex-end">
+          <div>
+            <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">ULP</label>
+            <select id="tiket-filter-ulp" onchange="onTiketFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:150px">
+              <option value="">Semua ULP</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Jenis Pekerjaan</label>
+            <select id="tiket-filter-jenis" onchange="onTiketFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:220px">
+              <option value="">Semua Jenis Pekerjaan</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Minggu</label>
+            <input id="tiket-filter-minggu" type="week" onchange="onTiketFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none">
+          </div>
+          <div>
+            <button onclick="resetTiketFilter()" style="background:none;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--text-2)">↺ Reset Filter</button>
+          </div>
+        </div>
+
         <div class="table-container" style="max-height:none;">
           <div class="table-wrap">
             <table>
@@ -1998,6 +2028,16 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
                 <tr><td colspan="9" class="empty">Belum ada penugasan. Buat penugasan baru di atas.</td></tr>
               </tbody>
             </table>
+          </div>
+        </div>
+        <div class="pagination-bar" id="tiketPagination" style="display:none;margin-top:14px;border-top:none;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow-xs);">
+          <div class="pagination-info" id="tiketPgInfo">—</div>
+          <div class="pagination-controls">
+            <button class="pg-btn" id="tiketPgFirst" onclick="goToTiketPage(1)" title="Halaman pertama">«</button>
+            <button class="pg-btn" id="tiketPgPrev" onclick="goToTiketPage(tiketPage-1)" title="Sebelumnya">‹</button>
+            <span id="tiketPgNumbers" style="display:flex;gap:6px"></span>
+            <button class="pg-btn" id="tiketPgNext" onclick="goToTiketPage(tiketPage+1)" title="Berikutnya">›</button>
+            <button class="pg-btn" id="tiketPgLast" onclick="goToTiketPage(tiketPageTotalPages)" title="Halaman terakhir">»</button>
           </div>
         </div>
       </div>
@@ -3772,7 +3812,7 @@ function applyAdminUI() {
   if (lastPetugasEntries) renderPetugasList(lastPetugasEntries);
   if (lastAbsensiEntries) renderAbsensiTable(lastAbsensiEntries);
   if (lastLaporanEntries) renderLaporanGrid(lastLaporanEntries);
-  if (lastTiketEntries) renderTiketTable(lastTiketEntries);
+  if (lastTiketEntries) renderTiketTable();
   if (verifikasiRawEntries && verifikasiRawEntries.length) renderVerifikasiGrid();
 }
 
@@ -4672,6 +4712,7 @@ function renderPetugasCardHtml(id, p) {
         ? `<div style="font-size:10.5px;color:var(--warn);font-weight:700;margin-top:3px">⚠ Sesi tidak aktif — GPS terakhir ${ago}, mohon dicek</div>`
         : '');
   const asalNote = p.asalTimRow ? ` <span style="color:var(--text-3)">↔ asal ${esc(p.asalTimRow)}</span>` : '';
+  const mitraNote = p.ulpMitra ? ` <span style="color:var(--text-3)">🏗️ untuk ${esc(p.ulpMitra)}</span>` : '';
   return `<div class="petugas-card">
       <div class="team-avatar-wrap">
         <div class="petugas-avatar" style="background:${ulpColor};box-shadow:0 2px 8px ${hexToRgba(ulpColor,0.35)}">${avatarEmoji}</div>
@@ -4679,7 +4720,7 @@ function renderPetugasCardHtml(id, p) {
       </div>
       <div style="flex:1;min-width:0">
         <div class="petugas-name">${esc(p.regu)||'—'}</div>
-        <div class="petugas-meta">${esc(p.ulp)||'—'}${asalNote}${p.anggotaHadir ? ' · ' + esc(p.anggotaHadir) : ''}</div>
+        <div class="petugas-meta">${esc(p.ulp)||'—'}${asalNote}${mitraNote}${p.anggotaHadir ? ' · ' + esc(p.anggotaHadir) : ''}</div>
         <div class="petugas-meta" style="margin-top:3px">📡 ${ago} · ${p.lat ? p.lat.toFixed(4)+', '+p.lng.toFixed(4) : 'GPS —'}</div>
         ${peringatan}
       </div>
@@ -4823,6 +4864,9 @@ function buildPetugasPopup(p) {
   const asalTimRowHtml = p.asalTimRow
     ? `<div style="font-size:10.5px;padding:5px 10px;color:var(--text-3);border-bottom:1px solid var(--line)">↔ Tim asal <b>${esc(p.asalTimRow)}</b> — sedang bantu tugas di ${esc(p.ulp)||'ULP ini'}</div>`
     : '';
+  const ulpMitraHtml = p.ulpMitra
+    ? `<div style="font-size:10.5px;padding:5px 10px;color:var(--text-3);border-bottom:1px solid var(--line)">🏗️ PT MITRA — sedang kerja untuk <b>${esc(p.ulpMitra)}</b></div>`
+    : '';
   return `
     <div class="popup-card" style="border-left:4px solid ${ulpColor}">
       <div class="popup-head" style="background:${hexToRgba(ulpColor,0.08)}">
@@ -4830,6 +4874,7 @@ function buildPetugasPopup(p) {
         <span class="popup-jenis" style="background:${ulpColor};color:#fff">${esc(p.ulp)||'—'}</span>
       </div>
       ${asalTimRowHtml}
+      ${ulpMitraHtml}
       <div class="popup-block">
         <span class="popup-label">Anggota Hadir</span>
         <div class="popup-anggota">${anggotaHtml}</div>
@@ -5855,7 +5900,7 @@ function renderLaporanCardHtml(id, l) {
   return `<div class="laporan-card">
     <div class="laporan-card-header">
       <div>
-        <div class="laporan-card-name">👷 ${esc(l.regu)||'—'} <span style="font-weight:400;color:var(--text-secondary);font-size:11px">${esc(l.ulp)||''}${l.asalTimRow ? ' · ↔ asal ' + esc(l.asalTimRow) : ''}${l.anggotaHadir ? ' · ' + esc(l.anggotaHadir) : ''}</span></div>
+        <div class="laporan-card-name">👷 ${esc(l.regu)||'—'} <span style="font-weight:400;color:var(--text-secondary);font-size:11px">${esc(l.ulp)||''}${l.asalTimRow ? ' · ↔ asal ' + esc(l.asalTimRow) : ''}${l.ulpMitra ? ' · 🏗️ untuk ' + esc(l.ulpMitra) : ''}${l.anggotaHadir ? ' · ' + esc(l.anggotaHadir) : ''}</span></div>
         <div class="laporan-card-meta">${waktu}</div>
         ${editedBadge}
       </div>
@@ -6559,6 +6604,7 @@ function populateRpDropdowns() {
   perbaruiPilihanSection('rp');
   enhanceSearchableSelect('rp-penyulang');
   enhanceSearchableSelect('rp-section');
+  fillSimple('rp-kelompok', RP_KELOMPOK_LIST, true);
   populateGarduSelect('rp', '');
   fillSimple('rp-health-index', RP_HEALTH_INDEX_LIST, true);
   fillSimple('rp-kategori', RP_KATEGORI_LIST, true);
@@ -6700,6 +6746,7 @@ window.bukaModalTiket = function(id, data) {
   document.getElementById('rp-penyulang').value         = data?.rpPenyulang      || '';
   perbaruiPilihanSection('rp');
   document.getElementById('rp-section').value           = data?.rpSection        || '';
+  document.getElementById('rp-kelompok').value          = data?.rpKelompok       || '';
   populateGarduSelect('rp', data?.rpGardu || '');
   document.getElementById('rp-health-index').value      = data?.rpHealthIndex    || '';
   document.getElementById('rp-kategori').value           = data?.rpKategori       || '';
@@ -6781,6 +6828,7 @@ window.simpanTiket = async function() {
   const rpWaktu            = document.getElementById('rp-waktu').value.trim() || null;
   const rpPenyulang         = document.getElementById('rp-penyulang').value.trim() || null;
   const rpSection           = document.getElementById('rp-section').value.trim() || null;
+  const rpKelompok          = document.getElementById('rp-kelompok').value || null;
   const rpGardu             = garduSelectedMap.rp.length ? garduSelectedMap.rp.join(', ') : null;
   const rpHealthIndex      = document.getElementById('rp-health-index').value || null;
   const rpKategori          = document.getElementById('rp-kategori').value;
@@ -6847,7 +6895,7 @@ window.simpanTiket = async function() {
     assignedRegu: regu,
     statusTiket: 'Aktif',
     dibuatOleh: 'TL/Admin',
-    rpTanggal, rpWaktu, rpPenyulang, rpSection, rpGardu, rpHealthIndex,
+    rpTanggal, rpWaktu, rpPenyulang, rpSection, rpKelompok, rpGardu, rpHealthIndex,
     rpKategori, rpJenisPekerjaan, rpRincian,
     rpVol: +rpVolRaw, rpSatuan,
     rpPdkb, rpMetode, rpDaerahPadam, rpJenisPemadaman, rpPic, rpKeterangan,
@@ -6883,15 +6931,104 @@ window.hapusTiket = async function(id) {
   catch(e) { showToast('Gagal menghapus: ' + e.message, 'err'); }
 };
 
-function renderTiketTable(entries) {
-  lastTiketEntries = entries;
+// ── Daftar Rencana Pekerjaan: filter (ULP, Jenis Pekerjaan, Minggu) & pagination ──
+let tiketPage = 1;
+const tiketPageSize = 10;
+let tiketPageTotalPages = 1;
+
+// Isi ulang dropdown ULP & Jenis Pekerjaan dari seluruh data (lastTiketEntries),
+// BUKAN dari hasil yang sudah difilter, supaya opsi tidak ikut menyusut/hilang
+// begitu salah satu filter lain sedang aktif. Nilai yang sedang dipilih tetap
+// dipertahankan kalau masih ada di daftar opsi baru.
+function populateTiketFilters(entries) {
+  const ulpSel   = document.getElementById('tiket-filter-ulp');
+  const jenisSel = document.getElementById('tiket-filter-jenis');
+  if (!ulpSel || !jenisSel) return;
+
+  const keepUlp = ulpSel.value, keepJenis = jenisSel.value;
+
+  const ulpSet   = [...new Set(entries.map(([, t]) => t.ulp).filter(Boolean))].sort();
+  const jenisSet = [...new Set(entries.map(([, t]) => t.jenis).filter(Boolean))].sort();
+
+  ulpSel.innerHTML = '<option value="">Semua ULP</option>' + ulpSet.map(u => `<option value="${u}">${u}</option>`).join('');
+  jenisSel.innerHTML = '<option value="">Semua Jenis Pekerjaan</option>' + jenisSet.map(j => `<option value="${j.replace(/"/g, '&quot;')}">${j}</option>`).join('');
+
+  if (ulpSet.includes(keepUlp)) ulpSel.value = keepUlp;
+  if (jenisSet.includes(keepJenis)) jenisSel.value = keepJenis;
+}
+
+// Ubah input type="week" (format "2026-W30") jadi rentang tanggal Senin—Minggu
+// (format YYYY-MM-DD) memakai aturan ISO week, supaya bisa dibandingkan
+// langsung (string compare) dengan rpTanggal yang juga tersimpan YYYY-MM-DD.
+function isoWeekRangeStrings(weekStr) {
+  const [yearStr, weekPart] = (weekStr || '').split('-W');
+  const year = +yearStr, week = +weekPart;
+  if (!year || !week) return null;
+  const simple = new Date(Date.UTC(year, 0, 1 + (week - 1) * 7));
+  const dow = simple.getUTCDay() || 7; // Senin=1 ... Minggu=7
+  const monday = new Date(simple); monday.setUTCDate(simple.getUTCDate() - dow + 1);
+  const sunday = new Date(monday); sunday.setUTCDate(monday.getUTCDate() + 6);
+  const fmt = d => d.toISOString().slice(0, 10);
+  return { start: fmt(monday), end: fmt(sunday) };
+}
+
+function getTiketFilteredEntries() {
+  let entries = lastTiketEntries || [];
+  const fUlp    = document.getElementById('tiket-filter-ulp')?.value || '';
+  const fJenis  = document.getElementById('tiket-filter-jenis')?.value || '';
+  const fMinggu = document.getElementById('tiket-filter-minggu')?.value || '';
+
+  if (fUlp)   entries = entries.filter(([, t]) => t.ulp === fUlp);
+  if (fJenis) entries = entries.filter(([, t]) => t.jenis === fJenis);
+  if (fMinggu) {
+    const range = isoWeekRangeStrings(fMinggu);
+    if (range) entries = entries.filter(([, t]) => t.rpTanggal && t.rpTanggal >= range.start && t.rpTanggal <= range.end);
+  }
+  return entries;
+}
+
+window.resetTiketFilter = function() {
+  document.getElementById('tiket-filter-ulp').value = '';
+  document.getElementById('tiket-filter-jenis').value = '';
+  document.getElementById('tiket-filter-minggu').value = '';
+  tiketPage = 1;
+  renderTiketTable();
+};
+
+// Filter berubah -> selalu kembali ke halaman 1 supaya user tidak "nyasar"
+// di halaman lama yang mungkin sudah kosong / berbeda datanya.
+window.onTiketFilterChange = function() {
+  tiketPage = 1;
+  renderTiketTable();
+};
+
+function renderTiketTable() {
+  const raw = lastTiketEntries || [];
+  populateTiketFilters(raw);
+  const entries = getTiketFilteredEntries();
+
   document.getElementById('tiketCount').textContent = entries.length + ' penugasan';
   const tbody = document.getElementById('tiketBody');
+  const pagBar = document.getElementById('tiketPagination');
   if (entries.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" class="empty">Belum ada penugasan. Buat penugasan baru di atas.</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="9" class="empty">${raw.length > 0 ? 'Tidak ada penugasan yang cocok dengan filter ini.' : 'Belum ada penugasan. Buat penugasan baru di atas.'}</td></tr>`;
+    pagBar.style.display = 'none';
     return;
   }
-  tbody.innerHTML = entries.sort((a,b)=>(b[1].waktu||0)-(a[1].waktu||0)).map(([id, t]) => {
+
+  const sorted = entries.sort((a,b)=>(b[1].waktu||0)-(a[1].waktu||0));
+
+  // Pagination: hitung total halaman & jaga halaman aktif tetap valid
+  // (misalnya saat filter baru bikin hasil lebih sedikit dari sebelumnya).
+  tiketPageTotalPages = Math.max(1, Math.ceil(sorted.length / tiketPageSize));
+  tiketPage = Math.min(Math.max(1, tiketPage), tiketPageTotalPages);
+  const pageStart = (tiketPage - 1) * tiketPageSize;
+  const pageEntries = sorted.slice(pageStart, pageStart + tiketPageSize);
+
+  pagBar.style.display = tiketPageTotalPages > 1 ? 'flex' : 'none';
+  renderTiketPaginationControls(sorted.length);
+
+  tbody.innerHTML = pageEntries.map(([id, t]) => {
     const waktu = t.waktu ? new Date(t.waktu).toLocaleDateString('id-ID') : '—';
     const statusCls = t.statusTiket === 'Selesai' ? 'badge-green' : 'badge-blue';
     const editBtn = `<button onclick="editTiketDariTabel('${id}')" style="background:var(--info-bg);color:var(--info);border:none;border-radius:var(--radius-xs);padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;margin-right:4px">Edit</button>`;
@@ -6911,6 +7048,39 @@ function renderTiketTable(entries) {
   }).join('');
 }
 
+function renderTiketPaginationControls(totalEntries) {
+  const start = (tiketPage - 1) * tiketPageSize + 1;
+  const end   = Math.min(tiketPage * tiketPageSize, totalEntries);
+  document.getElementById('tiketPgInfo').innerHTML =
+    `<b>${start}–${end}</b> dari <b>${totalEntries}</b>`;
+
+  document.getElementById('tiketPgFirst').disabled = tiketPage <= 1;
+  document.getElementById('tiketPgPrev').disabled  = tiketPage <= 1;
+  document.getElementById('tiketPgNext').disabled  = tiketPage >= tiketPageTotalPages;
+  document.getElementById('tiketPgLast').disabled  = tiketPage >= tiketPageTotalPages;
+
+  const nums = [];
+  const windowStart = Math.max(1, tiketPage - 2);
+  const windowEnd   = Math.min(tiketPageTotalPages, tiketPage + 2);
+  if (windowStart > 1) { nums.push(1); if (windowStart > 2) nums.push('…'); }
+  for (let n = windowStart; n <= windowEnd; n++) nums.push(n);
+  if (windowEnd < tiketPageTotalPages) { if (windowEnd < tiketPageTotalPages - 1) nums.push('…'); nums.push(tiketPageTotalPages); }
+
+  document.getElementById('tiketPgNumbers').innerHTML = nums.map(n =>
+    n === '…'
+      ? `<span style="padding:0 4px;color:var(--text-3);font-size:12px">…</span>`
+      : `<button class="pg-btn${n===tiketPage?' active':''}" onclick="goToTiketPage(${n})">${n}</button>`
+  ).join('');
+}
+
+window.goToTiketPage = function(n) {
+  n = Math.min(Math.max(1, n), tiketPageTotalPages);
+  if (n === tiketPage) return;
+  tiketPage = n;
+  renderTiketTable();
+  document.getElementById('tiketBody')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
 // Bangun tabel Penugasan DAN targetKerjaCache (dipakai hitung % capaian di
 // Beranda/Rekap/Progres) dari SATU node Firebase 'penugasan' yang sama —
 // itu titik gabungnya, bukan dua node/listener terpisah seperti sebelumnya.
@@ -6920,7 +7090,8 @@ function listenTiket() {
   fbListeners.tiket = window._fbOnValue(r, snap => {
     const data = snap.val() || {};
     const entries = scopeFilterEntries(Object.entries(data));
-    renderTiketTable(entries);
+    lastTiketEntries = entries;
+    renderTiketTable();
     targetKerjaCache = entries
       .filter(([, t]) => t.tipePeriode && t.periodeKey && t.targetVolume != null)
       .map(([, t]) => ({

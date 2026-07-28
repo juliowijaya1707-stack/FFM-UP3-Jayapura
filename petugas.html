@@ -863,10 +863,10 @@ body {
       <label>Regu / Tim</label>
       <!-- Opsi diisi/dibatasi otomatis mengikuti Unit Kerja yang dipilih di
            atas — dropdown ini terkunci/kosong sampai Unit Kerja dipilih. -->
-      <select id="in-regu-select" onchange="toggleReguManual(); toggleAsalTimRowField()" disabled>
+      <select id="in-regu-select" onchange="toggleReguManual(); toggleAsalTimRowField(); toggleUlpMitraField()" disabled>
         <option value="">— Pilih unit kerja dulu —</option>
       </select>
-      <input type="text" id="in-regu-manual" placeholder="Ketik nama regu/tim..." autocapitalize="words" oninput="toggleAsalTimRowField()" style="display:none;margin-top:8px">
+      <input type="text" id="in-regu-manual" placeholder="Ketik nama regu/tim..." autocapitalize="words" oninput="toggleAsalTimRowField(); toggleUlpMitraField()" style="display:none;margin-top:8px">
       <div id="in-regu-hint" style="display:none;font-size:11px;color:var(--text-3);margin-top:6px"></div>
     </div>
     <!-- Asal Tim ROW: field tambahan yang HANYA muncul kalau nama Regu/Tim yang
@@ -883,6 +883,19 @@ body {
       <label>Asal Tim ROW</label>
       <select id="in-asal-timrow">
         <option value="" disabled selected>— Pilih Asal ULP —</option>
+      </select>
+    </div>
+    <!-- ULP (khusus PT MITRA): field tambahan yang HANYA muncul kalau Unit
+         Kerja yang dipilih adalah "PT MITRA" DAN Regu/Tim sudah diisi — PT
+         MITRA bukan ULP fisik (regu-nya lintas-ULP), jadi petugas perlu
+         menandai secara eksplisit sedang mengerjakan tugas untuk ULP mana
+         hari ini. WAJIB diisi begitu field ini muncul (lihat validasi di
+         doLogin()), dropdown-nya persis sama seperti "Asal Tim ROW" (daftar
+         ULP asli saja, tanpa opsi PT MITRA). -->
+    <div class="field" id="field-ulp-mitra" style="display:none">
+      <label>ULP</label>
+      <select id="in-ulp-mitra">
+        <option value="" disabled selected>— Pilih ULP —</option>
       </select>
     </div>
   </div>
@@ -1163,6 +1176,12 @@ body {
           <option value="">— Pilih Penyulang dulu —</option>
         </select>
       </div>
+    </div>
+
+    <div class="field"><label>Kelompok</label>
+      <select id="lapor-kelompok" style="width:100%">
+        <option value="">— Pilih —</option>
+      </select>
     </div>
 
     <div class="field">
@@ -2608,6 +2627,7 @@ function populateLaporPekerjaanDropdowns() {
   enhanceSearchableSelect('lapor-penyulang');
   enhanceSearchableSelect('lapor-section');
   populateLaporGarduSelect('');
+  fillSimple('lapor-kelompok', RP_KELOMPOK_LIST, true);
   fillSimple('lapor-health-index', RP_HEALTH_INDEX_LIST, true);
   fillSimple('lapor-kategori', RP_KATEGORI_LIST, true);
   fillSimple('lapor-pdkb', RP_PDKB_LIST, false);
@@ -2627,6 +2647,7 @@ function populateUlpDropdown() {
     sel.insertBefore(opt, lainnyaOpt);
   });
   populateAsalTimRowDropdown();
+  populateUlpMitraDropdown();
 }
 
 // Isi dropdown "Asal Tim ROW" dengan daftar ULP asli saja (PT MITRA dikecualikan
@@ -2634,6 +2655,19 @@ function populateUlpDropdown() {
 // pola akses lintas-ULP sendiri yang sudah ditangani terpisah).
 function populateAsalTimRowDropdown() {
   const sel = document.getElementById('in-asal-timrow');
+  if (!sel) return;
+  ULP_LIST.filter(u => u !== 'PT MITRA').forEach(ulp => {
+    const opt = document.createElement('option');
+    opt.value = ulp;
+    opt.textContent = ulp;
+    sel.appendChild(opt);
+  });
+}
+
+// Isi dropdown "ULP" (khusus PT MITRA) dengan daftar ULP asli saja — persis
+// sama isinya dengan dropdown "Asal Tim ROW" di atas.
+function populateUlpMitraDropdown() {
+  const sel = document.getElementById('in-ulp-mitra');
   if (!sel) return;
   ULP_LIST.filter(u => u !== 'PT MITRA').forEach(ulp => {
     const opt = document.createElement('option');
@@ -2661,6 +2695,20 @@ window.toggleAsalTimRowField = function() {
   const show = reguMengandungRow(regu);
   wrap.style.display = show ? 'block' : 'none';
   if (!show) sel.selectedIndex = 0; // balik ke placeholder disabled "— Pilih Asal ULP —"
+};
+
+// Tampil/sembunyikan field "ULP" (khusus PT MITRA) tiap kali Unit Kerja atau
+// Regu/Tim berubah — muncul begitu Unit Kerja = "PT MITRA" DAN Regu/Tim sudah
+// terisi. Dipanggil dari onchange/oninput Regu, dan dari onUlpChange().
+window.toggleUlpMitraField = function() {
+  const ulp  = getUlpTerpilih();
+  const regu = getReguTerpilih();
+  const wrap = document.getElementById('field-ulp-mitra');
+  const sel  = document.getElementById('in-ulp-mitra');
+  if (!wrap || !sel) return;
+  const show = ulp === 'PT MITRA' && !!regu;
+  wrap.style.display = show ? 'block' : 'none';
+  if (!show) sel.selectedIndex = 0; // balik ke placeholder disabled "— Pilih ULP —"
 };
 
 // Isi ulang dropdown Regu/Tim dengan daftar tim yang valid untuk sebuah
@@ -2691,6 +2739,7 @@ window.onUlpChange = function() {
   reguManual.value = '';
   reguManual.style.display = 'none';
   toggleAsalTimRowField(); // regu baru saja direset -> field Asal Tim ROW ikut disembunyikan
+  toggleUlpMitraField();   // begitu juga field ULP (khusus PT MITRA)
 
   if (!ulpSel.value) {
     reguSel.innerHTML = '<option value="">— Pilih unit kerja dulu —</option>';
@@ -2824,17 +2873,27 @@ window.doLogin = function() {
     errEl.style.display = 'block';
     return;
   }
+  // ULP (khusus PT MITRA) — kalau field-nya sedang ditampilkan (Unit Kerja =
+  // PT MITRA & Regu/Tim sudah diisi), WAJIB dipilih sebelum bisa lanjut login.
+  const ulpMitraWrap = document.getElementById('field-ulp-mitra');
+  const ulpMitraVisible = !!(ulpMitraWrap && ulpMitraWrap.style.display !== 'none');
+  const ulpMitra = ulpMitraVisible ? document.getElementById('in-ulp-mitra').value.trim() : '';
+  if (ulpMitraVisible && !ulpMitra) {
+    errEl.textContent = 'ULP wajib dipilih.';
+    errEl.style.display = 'block';
+    return;
+  }
 
   errEl.style.display = 'none';
 
   // "username" internal dibuat dari slug nama regu (dipakai untuk id sesi/laporan),
   // BUKAN akun login — cuma supaya path data tetap unik & konsisten.
   const usernameSlug = regu.toLowerCase().replace(/[^a-z0-9]+/g, '') || 'petugas';
-  currentUser = { regu, ulp, anggotaHadir: anggota, username: usernameSlug, asalTimRow,
+  currentUser = { regu, ulp, anggotaHadir: anggota, username: usernameSlug, asalTimRow, ulpMitra,
     id: usernameSlug + '_' + Date.now().toString(36) };
 
   document.getElementById('prof-nama').textContent = regu;
-  document.getElementById('prof-sub').textContent = ulp + (anggota ? ' · ' + anggota : '') + (asalTimRow ? ' · ↔ Bantu dari ' + asalTimRow : '');
+  document.getElementById('prof-sub').textContent = ulp + (anggota ? ' · ' + anggota : '') + (asalTimRow ? ' · ↔ Bantu dari ' + asalTimRow : '') + (ulpMitra ? ' · 🏗️ Kerja untuk ' + ulpMitra : '');
 
   showScreen('absensi');
   addLog('Login regu: ' + regu + (anggota ? ' (' + anggota + ')' : ''), 'ok');
@@ -2955,6 +3014,8 @@ async function finalizeLogout() {
   document.getElementById('in-regu-hint').style.display = 'none';
   document.getElementById('in-asal-timrow').value = '';
   document.getElementById('field-asal-timrow').style.display = 'none';
+  document.getElementById('in-ulp-mitra').value = '';
+  document.getElementById('field-ulp-mitra').style.display = 'none';
   showScreen('login');
   addLog('Logout — tracking dihentikan', 'info');
 }
@@ -3568,6 +3629,7 @@ function mulaiNativeSync() {
     ulp: currentUser.ulp || '',
     anggotaHadir: currentUser.anggotaHadir || '',
     asalTimRow: currentUser.asalTimRow || '',
+    ulpMitra: currentUser.ulpMitra || '',
     status: currentStatus
   }).then(() => addLog('Sinkronisasi lokasi native (andal) aktif', 'ok'))
     .catch((e) => addLog('Gagal mulai sinkronisasi native: ' + e.message, 'warn'));
@@ -3706,6 +3768,7 @@ function pushLocation(pos) {
     ulp: currentUser.ulp,
     anggotaHadir: currentUser.anggotaHadir || '',
     asalTimRow: currentUser.asalTimRow || '',
+    ulpMitra: currentUser.ulpMitra || '',
     ts: Date.now()
   };
 
@@ -3908,6 +3971,7 @@ window.submitAbsensi = async function() {
       regu: currentUser.regu, ulp: currentUser.ulp,
       anggotaHadir: currentUser.anggotaHadir || '',
       asalTimRow: currentUser.asalTimRow || '',
+      ulpMitra: currentUser.ulpMitra || '',
       fase: 'Standby', lokasi: absenLokasi,
       lat: currentUser.absensi.lat, lng: currentUser.absensi.lng, acc: currentUser.absensi.acc,
       waktu, ...fotoResult
@@ -4108,6 +4172,7 @@ window.submitAbsenCepat = async function() {
       regu: currentUser.regu, ulp: currentUser.ulp,
       anggotaHadir: currentUser.anggotaHadir || '',
       asalTimRow: currentUser.asalTimRow || '',
+      ulpMitra: currentUser.ulpMitra || '',
       fase: AC_CONFIG[acPurpose].label,
       lat: entry.lat, lng: entry.lng, acc: entry.acc,
       waktu, ...fotoResult
@@ -4144,6 +4209,7 @@ window.bukaModalLapor = function() {
   document.getElementById('lapor-penyulang').value = '';
   perbaruiPilihanSection('lapor');
   populateLaporGarduSelect('');
+  document.getElementById('lapor-kelompok').value = '';
   document.getElementById('lapor-health-index').value = '';
   document.getElementById('lapor-kategori').value = '';
   document.getElementById('lapor-jenis-pekerjaan').value = '';
@@ -4244,16 +4310,28 @@ window.listenRevisiDanTugas = function() {
     const list = document.getElementById('tugas-ditugaskan-list');
     if (tugasSaya.length === 0) { card.style.display = 'none'; return; }
     card.style.display = 'block';
-    list.innerHTML = tugasSaya.sort((a,b) => (b[1].waktu||0) - (a[1].waktu||0)).map(([id, t]) => `
-      <div style="background:var(--surface2);border:1px solid var(--border-str);border-radius:12px;padding:10px 12px">
-        <div style="font-family:'SF Mono','Fira Code',monospace;font-size:11px;color:var(--text-muted)">${esc(t.nomor||'')}</div>
+    list.innerHTML = tugasSaya.sort((a,b) => (b[1].waktu||0) - (a[1].waktu||0)).map(([id, t]) => {
+      // Terlambat = tanggal rencana (rpTanggal, format YYYY-MM-DD) sudah
+      // lewat dari hari ini DAN tugasnya belum Selesai (tugasSaya sudah
+      // memfilter statusTiket !== 'Selesai' di atas). Perbandingan string
+      // aman dipakai karena formatnya sama-sama YYYY-MM-DD.
+      const todayStr = new Date().toLocaleDateString('sv-SE'); // 'sv-SE' -> YYYY-MM-DD sesuai timezone lokal browser
+      const isTerlambat = !!(t.rpTanggal && t.rpTanggal < todayStr);
+      return `
+      <div style="background:var(--surface2);border:1px solid ${isTerlambat ? 'rgba(220,53,69,0.4)' : 'var(--border-str)'};border-radius:12px;padding:10px 12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <div style="font-family:'SF Mono','Fira Code',monospace;font-size:11px;color:var(--text-muted)">${esc(t.nomor||'')}</div>
+          ${isTerlambat ? `<span style="background:#C0293C;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap">⚠️ Terlambat</span>` : ''}
+        </div>
         <div style="font-size:12.5px;font-weight:700;color:var(--text);margin-top:5px">${esc(t.jenis) || '—'}</div>
         <div style="font-size:11px;color:var(--text-sec);margin-top:2px">${esc(t.lokasi) || '—'}</div>
+        ${t.rpTanggal ? `<div style="font-size:11px;${isTerlambat ? 'color:#C0293C;font-weight:700' : 'color:var(--text-sec)'};margin-top:2px">📅 ${esc(t.rpTanggal)}${isTerlambat ? ' (sudah lewat)' : ''}</div>` : ''}
         ${t.targetVolume != null ? `<div style="font-size:11px;color:var(--text-sec);margin-top:2px">🎯 Target: <b>${esc(t.targetVolume)}</b>${t.periodeKey ? ' · ' + esc(t.periodeKey) : ''}</div>` : ''}
         ${(t.koordinatAwal || t.koordinatAkhir) ? `<div style="font-size:10.5px;color:var(--text-muted);margin-top:2px;font-family:'SF Mono','Fira Code',monospace">📍 ${esc(t.koordinatAwal||'—')} → ${esc(t.koordinatAkhir||'—')}</div>` : ''}
         <button type="button" onclick="bukaModalLaporUntuk('${esc(t.nomor||'')}')" style="margin-top:8px;background:var(--pln-blue);color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;width:100%">📋 Kerjakan Tugas Ini</button>
       </div>
-    `).join('');
+    `;
+    }).join('');
   });
 };
 
@@ -4306,9 +4384,9 @@ window.onLaporTiketSelectChange = function() {
     }
   }
 
-  // Auto-isi field RKM lain (Penyulang, Section, Gardu, Health Index, Kategori,
-  // Vol, Satuan, PDKB, Metode, Daerah Padam, Jenis Pemadaman, PIC, Keterangan)
-  // dari data penugasan, kalau ada dan field-nya masih kosong.
+  // Auto-isi field RKM lain (Penyulang, Section, Kelompok, Gardu, Health Index,
+  // Kategori, Vol, Satuan, PDKB, Metode, Daerah Padam, Jenis Pemadaman, PIC,
+  // Keterangan) dari data penugasan, kalau ada dan field-nya masih kosong.
   const fillIfEmpty = (id, val) => {
     const el = document.getElementById(id);
     if (el && !el.value && val) el.value = val;
@@ -4327,6 +4405,7 @@ window.onLaporTiketSelectChange = function() {
     secSel.value = found.rpSection;
   }
   if (found.rpGardu && laporGarduSelected.length === 0) populateLaporGarduSelect(found.rpGardu);
+  fillSelectIfEmpty('lapor-kelompok', found.rpKelompok);
   fillSelectIfEmpty('lapor-health-index', found.rpHealthIndex);
   fillSelectIfEmpty('lapor-kategori', found.rpKategori);
   // Vol sengaja TIDAK di-auto-isi dari target — ini realisasi aktual yang
@@ -4457,7 +4536,7 @@ window.pakaiFotoLapor = function() {
 // isi ulang dari nol kalau app sempat ditutup di tengah pengisian.
 const LAPOR_DRAFT_KEY = 'ffm_lapor_draft_v1';
 const LAPOR_DRAFT_FIELD_IDS = [
-  'lapor-tiket-select', 'lapor-penyulang', 'lapor-section',
+  'lapor-tiket-select', 'lapor-penyulang', 'lapor-section', 'lapor-kelompok',
   'lapor-health-index', 'lapor-kategori', 'lapor-jenis-pekerjaan', 'lapor-rincian',
   'lapor-vol', 'lapor-satuan',
   'lapor-konstruksi-material-mitra', 'lapor-konstruksi-pasang', 'lapor-konstruksi-bongkar',
@@ -4568,6 +4647,7 @@ window.submitLaporan = async function() {
   const penyulang = document.getElementById('lapor-penyulang').value.trim();
   const section   = document.getElementById('lapor-section').value.trim();
   const gardu     = laporGarduSelected.length ? laporGarduSelected.join(', ') : '';
+  const kelompok  = document.getElementById('lapor-kelompok').value;
   const healthIndex = document.getElementById('lapor-health-index').value;
   const kategori  = document.getElementById('lapor-kategori').value;
   const volEl = document.getElementById('lapor-vol');
@@ -4638,6 +4718,7 @@ window.submitLaporan = async function() {
     ulp:  currentUser ? currentUser.ulp  : '—',
     anggotaHadir: currentUser ? (currentUser.anggotaHadir || '') : '',
     asalTimRow: currentUser ? (currentUser.asalTimRow || '') : '',
+    ulpMitra: currentUser ? (currentUser.ulpMitra || '') : '',
     jenisPekerjaan: jenisPekerjaan || null,
     rincian,
     // "realisasi" & "material" dipertahankan supaya dashboard supervisor
@@ -4655,6 +4736,7 @@ window.submitLaporan = async function() {
     lapPenyulang: penyulang || null,
     lapSection: section || null,
     lapGardu: gardu || null,
+    lapKelompok: kelompok || null,
     lapHealthIndex: healthIndex || null,
     lapKategori: kategori || null,
     lapPdkb: pdkb || null,
@@ -4799,7 +4881,7 @@ async function restoreSessionIfAny() {
   absensiTerakhirList     = s.absensiTerakhirList || [];
 
   document.getElementById('prof-nama').textContent = currentUser.regu;
-  document.getElementById('prof-sub').textContent  = currentUser.ulp + (currentUser.anggotaHadir ? ' · ' + currentUser.anggotaHadir : '') + (currentUser.asalTimRow ? ' · ↔ Bantu dari ' + currentUser.asalTimRow : '');
+  document.getElementById('prof-sub').textContent  = currentUser.ulp + (currentUser.anggotaHadir ? ' · ' + currentUser.anggotaHadir : '') + (currentUser.asalTimRow ? ' · ↔ Bantu dari ' + currentUser.asalTimRow : '') + (currentUser.ulpMitra ? ' · 🏗️ Kerja untuk ' + currentUser.ulpMitra : '');
 
   if (!currentUser.absensi) {
     // Login sudah tersimpan, tapi absen awal (selfie+GPS pertama) belum
