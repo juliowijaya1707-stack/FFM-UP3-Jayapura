@@ -19,7 +19,7 @@
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 <script src="master-data.js"></script>
@@ -1888,7 +1888,7 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
               <div>
-                <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Vol *</label>
+                <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Target *</label>
                 <input id="rp-vol" type="number" min="0" step="any" placeholder="0" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;font-family:var(--mono);outline:none">
               </div>
               <div>
@@ -1983,7 +1983,13 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
       <div class="card" style="margin-top:14px;">
         <div class="card-header">
           <div class="card-title">Daftar Rencana Pekerjaan</div>
-          <span class="card-count" id="tiketCount">0 rencana</span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="card-count" id="tiketCount">0 rencana</span>
+            <div class="export-group">
+              <button class="btn-export xlsx" onclick="exportTiketExcel()" title="Export daftar rencana pekerjaan sesuai filter ke Excel">📥 Excel</button>
+              <button class="btn-export pdf" onclick="exportTiketPDF()" title="Export daftar rencana pekerjaan sesuai filter ke PDF">📄 PDF</button>
+            </div>
+          </div>
         </div>
 
         <div style="display:flex;flex-wrap:wrap;gap:10px;padding:0 0 14px;align-items:flex-end">
@@ -2000,8 +2006,12 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
             </select>
           </div>
           <div>
-            <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Minggu</label>
-            <input id="tiket-filter-minggu" type="week" onchange="onTiketFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none">
+            <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Periode</label>
+            <div id="tiket-filter-periode-group" style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="tab-btn" id="tiket-filter-periode-hari"   onclick="setTiketFilterPeriode('hari',this)">Hari Ini</button>
+              <button class="tab-btn" id="tiket-filter-periode-minggu" onclick="setTiketFilterPeriode('minggu',this)">Minggu Ini</button>
+              <button class="tab-btn" id="tiket-filter-periode-bulan"  onclick="setTiketFilterPeriode('bulan',this)">Bulan Ini</button>
+            </div>
           </div>
           <div>
             <button onclick="resetTiketFilter()" style="background:none;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--text-2)">↺ Reset Filter</button>
@@ -2049,7 +2059,7 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
             <div class="card-title">Progres &amp; Realisasi</div>
             <div style="font-size:11.5px;color:var(--text-3);margin-top:2px">Realisasi laporan terverifikasi dibanding target yang diatur di atas</div>
           </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div id="tiket-progres-periode-group" style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="tab-btn active" id="tiket-progres-tab-harian" onclick="setTiketProgresPeriode('harian',this)">Hari Ini</button>
             <button class="tab-btn" id="tiket-progres-tab-mingguan" onclick="setTiketProgresPeriode('mingguan',this)">Minggu Ini</button>
             <button class="tab-btn" id="tiket-progres-tab-bulanan" onclick="setTiketProgresPeriode('bulanan',this)">Bulan Ini</button>
@@ -4396,6 +4406,14 @@ function fmtTglRangeID(dateStr) {
 const TIPE_PERIODE_LABEL = { harian: 'Harian', mingguan: 'Mingguan', bulanan: 'Bulanan' };
 
 // Format ringkas "Target & Periode" untuk kolom tabel Daftar Penugasan Aktif.
+// Tabel Daftar Rencana Pekerjaan sudah punya kolom header "ULP", jadi kalau
+// nilainya berupa "ULP Genyem" dsb, prefix "ULP " dibuang di tampilan supaya
+// tidak berulang/dobel dan tidak gampang wrap 2 baris di kolom yang sempit.
+function fmtUlpDisplay(ulp) {
+  if (!ulp) return '—';
+  return String(ulp).replace(/^ULP\s+/i, '');
+}
+
 function fmtTargetPeriode(t) {
   if (t.targetVolume == null || t.targetVolume === '') return '<span style="color:var(--text-3)">—</span>';
   const tipeLabel = TIPE_PERIODE_LABEL[t.tipePeriode] || t.tipePeriode || '—';
@@ -6007,6 +6025,46 @@ function fmtFileStamp() {
   const p = n => String(n).padStart(2,'0');
   return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
 }
+
+// ── Styling Excel bersama (header biru PLN + putih tebal, border tipis di
+// semua sel, garis-garis warna selang-seling/zebra biar gampang dibaca) —
+// dipakai oleh SEMUA fungsi export Excel di aplikasi ini (Laporan, Hasil
+// Verifikasi, Rekap, Rencana Pekerjaan) supaya hasilnya konsisten & tidak
+// polos/flat. Butuh xlsx-js-style (bukan xlsx biasa) karena SheetJS Community
+// Edition tidak menyimpan style saat menulis file .xlsx.
+// headerRow: baris ke berapa (0-based) yang jadi header berwarna — default 0.
+function styleExcelSheet(ws, headerRow = 0) {
+  if (!ws || !ws['!ref']) return;
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  const borderColor = { rgb: 'D9E0EA' };
+  const thinBorder = { style: 'thin', color: borderColor };
+  const border = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
+
+  for (let R = range.s.r; R <= range.e.r; R++) {
+    for (let C = range.s.c; C <= range.e.c; C++) {
+      const addr = XLSX.utils.encode_cell({ r: R, c: C });
+      const cell = ws[addr];
+      if (!cell) continue;
+      const isHeader = R === headerRow;
+      const isEvenDataRow = !isHeader && (R - headerRow) % 2 === 0;
+      cell.s = {
+        font: isHeader ? { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 } : { sz: 10.5, color: { rgb: '1F2A37' } },
+        fill: { fgColor: { rgb: isHeader ? '003D82' : (isEvenDataRow ? 'F2F5FA' : 'FFFFFF') } },
+        alignment: {
+          vertical: 'center',
+          horizontal: isHeader ? 'center' : (cell.t === 'n' ? 'right' : 'left'),
+          wrapText: isHeader
+        },
+        border
+      };
+    }
+  }
+  ws['!rows'] = ws['!rows'] || [];
+  ws['!rows'][headerRow] = { hpt: 22 };
+  // Filter otomatis di baris header supaya bisa disortir/difilter langsung di Excel
+  ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: headerRow, c: range.s.c }, e: { r: range.e.r, c: range.e.c } }) };
+}
+
 // Susun baris data laporan jadi format tabel siap pakai (dipakai bareng oleh Excel & PDF)
 function buildLaporanRows(entries) {
   return entries.map(([, l], i) => ({
@@ -6042,6 +6100,7 @@ window.exportLaporanExcel = function() {
       {wch:4},{wch:16},{wch:10},{wch:10},{wch:22},{wch:14},{wch:35},{wch:20},
       {wch:9},{wch:9},{wch:11},{wch:16},{wch:14},{wch:16},{wch:24},{wch:30},{wch:30}
     ];
+    styleExcelSheet(ws);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Laporan Pekerjaan');
     XLSX.writeFile(wb, `Laporan_Pekerjaan_NUMBAY_${fmtFileStamp()}.xlsx`);
@@ -6600,12 +6659,15 @@ function populateRpDropdowns() {
       list.map(v => `<option value="${v}">${v}</option>`).join('');
     sel.dataset.filled = '1';
   };
-  isiPilihanPenyulang('rp');
-  perbaruiPilihanSection('rp');
-  enhanceSearchableSelect('rp-penyulang');
-  enhanceSearchableSelect('rp-section');
+  // FIX: dropdown sederhana & independen ini SENGAJA diisi PALING AWAL —
+  // sebelum urusan Penyulang/Section/Gardu yang lebih rumit di bawah (sama
+  // seperti fix di populateLaporPekerjaanDropdowns() petugas.html). Kalau
+  // salah satu langkah Penyulang/Section/Gardu gagal/melempar error (mis.
+  // perbaruiPilihanSection() memanggil .value pada elemen yang null), dulu
+  // dropdown ini (Kelompok, Health Index, Kategori, dst) jadi ikut tidak
+  // pernah sempat terisi sama sekali. Dengan diisi duluan di sini, dropdown
+  // ini dijamin selalu terisi apa pun yang terjadi di bagian bawah.
   fillSimple('rp-kelompok', RP_KELOMPOK_LIST, true);
-  populateGarduSelect('rp', '');
   fillSimple('rp-health-index', RP_HEALTH_INDEX_LIST, true);
   fillSimple('rp-kategori', RP_KATEGORI_LIST, true);
   fillSimple('rp-jenis-pekerjaan', RP_JENIS_PEKERJAAN_LIST, true);
@@ -6621,7 +6683,21 @@ function populateRpDropdowns() {
       ).join('');
     rincianSel.dataset.filled = '1';
   }
-  enhanceSearchableSelect('rp-rincian');
+
+  // Bagian Penyulang/Section/Gardu dibungkus try/catch terpisah — supaya
+  // kalau bagian ini gagal, dropdown-dropdown sederhana di atas TETAP
+  // terisi & form tetap bisa dipakai (Penyulang/Section/Gardu jadi opsional
+  // sementara), bukan ikut kosong semua.
+  try {
+    isiPilihanPenyulang('rp');
+    perbaruiPilihanSection('rp');
+    enhanceSearchableSelect('rp-penyulang');
+    enhanceSearchableSelect('rp-section');
+    enhanceSearchableSelect('rp-rincian');
+    populateGarduSelect('rp', '');
+  } catch (e) {
+    console.error('Gagal menyiapkan dropdown Penyulang/Section/Gardu (rp):', e);
+  }
 }
 
 // Saat ULP dipilih, isi dropdown Tim/Regu sesuai roster ULP tsb.
@@ -6957,40 +7033,67 @@ function populateTiketFilters(entries) {
   if (jenisSet.includes(keepJenis)) jenisSel.value = keepJenis;
 }
 
-// Ubah input type="week" (format "2026-W30") jadi rentang tanggal Senin—Minggu
-// (format YYYY-MM-DD) memakai aturan ISO week, supaya bisa dibandingkan
-// langsung (string compare) dengan rpTanggal yang juga tersimpan YYYY-MM-DD.
-function isoWeekRangeStrings(weekStr) {
-  const [yearStr, weekPart] = (weekStr || '').split('-W');
-  const year = +yearStr, week = +weekPart;
-  if (!year || !week) return null;
-  const simple = new Date(Date.UTC(year, 0, 1 + (week - 1) * 7));
-  const dow = simple.getUTCDay() || 7; // Senin=1 ... Minggu=7
-  const monday = new Date(simple); monday.setUTCDate(simple.getUTCDate() - dow + 1);
-  const sunday = new Date(monday); sunday.setUTCDate(monday.getUTCDate() + 6);
-  const fmt = d => d.toISOString().slice(0, 10);
-  return { start: fmt(monday), end: fmt(sunday) };
+// Hitung rentang tanggal (format YYYY-MM-DD, lokal) untuk filter cepat Hari
+// Ini / Minggu Ini / Bulan Ini — dibandingkan langsung (string compare) dengan
+// rpTanggal yang juga tersimpan YYYY-MM-DD. Minggu memakai aturan Senin—Minggu.
+function fmtDateLocal(d) { return d.toLocaleDateString('sv-SE'); } // 'sv-SE' -> YYYY-MM-DD sesuai timezone lokal browser
+function periodeRangeStrings(periode) {
+  const now = new Date();
+  if (periode === 'hari') {
+    const today = fmtDateLocal(now);
+    return { start: today, end: today };
+  }
+  if (periode === 'minggu') {
+    const dow = now.getDay() || 7; // Senin=1 ... Minggu=7
+    const monday = new Date(now); monday.setDate(now.getDate() - dow + 1);
+    const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
+    return { start: fmtDateLocal(monday), end: fmtDateLocal(sunday) };
+  }
+  if (periode === 'bulan') {
+    const first = new Date(now.getFullYear(), now.getMonth(), 1);
+    const last  = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    return { start: fmtDateLocal(first), end: fmtDateLocal(last) };
+  }
+  return null;
 }
+
+let tiketFilterPeriode = ''; // '' | 'hari' | 'minggu' | 'bulan'
 
 function getTiketFilteredEntries() {
   let entries = lastTiketEntries || [];
   const fUlp    = document.getElementById('tiket-filter-ulp')?.value || '';
   const fJenis  = document.getElementById('tiket-filter-jenis')?.value || '';
-  const fMinggu = document.getElementById('tiket-filter-minggu')?.value || '';
 
   if (fUlp)   entries = entries.filter(([, t]) => t.ulp === fUlp);
   if (fJenis) entries = entries.filter(([, t]) => t.jenis === fJenis);
-  if (fMinggu) {
-    const range = isoWeekRangeStrings(fMinggu);
+  if (tiketFilterPeriode) {
+    const range = periodeRangeStrings(tiketFilterPeriode);
     if (range) entries = entries.filter(([, t]) => t.rpTanggal && t.rpTanggal >= range.start && t.rpTanggal <= range.end);
   }
   return entries;
 }
 
+// Klik tombol periode yang sedang aktif lagi -> nonaktifkan (kembali ke "semua").
+// Klik tombol periode lain -> pindah aktif ke situ.
+window.setTiketFilterPeriode = function(tipe, btn) {
+  const grup = document.getElementById('tiket-filter-periode-group');
+  const sudahAktif = btn.classList.contains('active');
+  grup.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  if (sudahAktif) {
+    tiketFilterPeriode = '';
+  } else {
+    tiketFilterPeriode = tipe;
+    btn.classList.add('active');
+  }
+  tiketPage = 1;
+  renderTiketTable();
+};
+
 window.resetTiketFilter = function() {
   document.getElementById('tiket-filter-ulp').value = '';
   document.getElementById('tiket-filter-jenis').value = '';
-  document.getElementById('tiket-filter-minggu').value = '';
+  tiketFilterPeriode = '';
+  document.querySelectorAll('#tiket-filter-periode-group .tab-btn').forEach(b => b.classList.remove('active'));
   tiketPage = 1;
   renderTiketTable();
 };
@@ -7038,7 +7141,7 @@ function renderTiketTable() {
       <td style="font-family:var(--mono);font-size:12px;font-weight:700">${t.nomor||'—'}</td>
       <td style="font-weight:600">${t.jenis||'—'}${t.rpKategori ? `<div style="margin-top:3px"><span style="font-size:10px;font-weight:700;background:var(--info-bg);color:var(--info);padding:1px 7px;border-radius:99px">${t.rpKategori}</span>${t.rpRincian ? ` <span style="font-size:10.5px;color:var(--text-3)">· ${t.rpRincian}</span>` : ''}</div>` : ''}${(t.rpPenyulang||t.rpSection||t.rpGardu) ? `<div style="font-size:10.5px;color:var(--text-3);margin-top:2px">⚡ ${t.rpPenyulang||'—'}${t.rpSection ? ' / ' + t.rpSection : ''}${t.rpGardu ? ' / ' + t.rpGardu : ''}</div>` : ''}</td>
       <td style="font-size:12px;color:var(--text-2)">${t.lokasi||'—'}${(t.koordinatAwal||t.koordinatAkhir) ? `<div style="font-family:var(--mono);font-size:10px;color:var(--text-3);margin-top:2px">📍 ${t.koordinatAwal||'—'} → ${t.koordinatAkhir||'—'}</div>` : ''}</td>
-      <td>${t.ulp||'—'}</td>
+      <td style="white-space:nowrap">${fmtUlpDisplay(t.ulp)}</td>
       <td style="font-size:12px">${t.assignedRegu ? `📌 ${t.assignedRegu}` : '<span style="color:var(--text-3)">Belum ditugaskan</span>'}</td>
       <td style="font-size:12px">${fmtTargetPeriode(t)}</td>
       <td><span class="badge ${statusCls}"><span class="badge-dot"></span>${t.statusTiket||'Aktif'}</span></td>
@@ -7081,6 +7184,89 @@ window.goToTiketPage = function(n) {
   document.getElementById('tiketBody')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 
+// ── Export Daftar Rencana Pekerjaan (Excel & PDF) — ikut filter (ULP, Jenis
+// Pekerjaan, Periode) yang sedang aktif, BUKAN cuma halaman yang sedang tampil. ──
+function buildTiketExportRows(entries) {
+  return entries.map(([, t], i) => ({
+    'No': i + 1,
+    'Nomor Penugasan': t.nomor || '—',
+    'Jenis Pekerjaan': t.jenis || '—',
+    'Kategori': t.rpKategori || '—',
+    'Rincian Pekerjaan': t.rpRincian || '—',
+    'Lokasi / Aset': t.lokasi || '—',
+    'Penyulang': t.rpPenyulang || '—',
+    'ULP': fmtUlpDisplay(t.ulp),
+    'Ditugaskan Ke': t.assignedRegu || 'Belum ditugaskan',
+    'Target & Periode': fmtTargetPeriode(t).replace(/<[^>]+>/g, ''),
+    'Status': t.statusTiket || 'Aktif',
+    'Dibuat': t.waktu ? new Date(t.waktu).toLocaleDateString('id-ID') : '—'
+  }));
+}
+
+window.exportTiketExcel = function() {
+  const entries = getTiketFilteredEntries().sort((a,b) => (b[1].waktu||0) - (a[1].waktu||0));
+  if (!entries.length) { showToast('Tidak ada rencana pekerjaan untuk di-export (cek filter).', 'warn'); return; }
+  if (typeof XLSX === 'undefined') { showToast('Gagal memuat modul Excel. Cek koneksi internet lalu coba lagi.', 'err'); return; }
+  try {
+    const rows = buildTiketExportRows(entries);
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [
+      {wch:4},{wch:16},{wch:26},{wch:16},{wch:28},{wch:24},{wch:16},{wch:14},{wch:24},{wch:20},{wch:11},{wch:12}
+    ];
+    styleExcelSheet(ws);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Rencana Pekerjaan');
+    XLSX.writeFile(wb, `Rencana_Pekerjaan_NUMBAY_${fmtFileStamp()}.xlsx`);
+    showToast('Export Excel berhasil.', 'ok');
+  } catch (e) {
+    showToast('Gagal export Excel: ' + e.message, 'err');
+  }
+};
+
+window.exportTiketPDF = function() {
+  const entries = getTiketFilteredEntries().sort((a,b) => (b[1].waktu||0) - (a[1].waktu||0));
+  if (!entries.length) { showToast('Tidak ada rencana pekerjaan untuk di-export (cek filter).', 'warn'); return; }
+  if (typeof window.jspdf === 'undefined') { showToast('Gagal memuat modul PDF. Cek koneksi internet lalu coba lagi.', 'err'); return; }
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+    doc.setFontSize(13);
+    doc.text('Daftar Rencana Pekerjaan — Field Force Management PLN UP3 Jayapura', 40, 32);
+    doc.setFontSize(9);
+    doc.setTextColor(110);
+    doc.text('Dicetak: ' + new Date().toLocaleString('id-ID') + '  ·  Total: ' + entries.length + ' penugasan', 40, 47);
+
+    const body = entries.map(([, t], i) => [
+      i + 1,
+      t.nomor || '—',
+      t.jenis || '—',
+      t.rpRincian || '—',
+      t.lokasi || '—',
+      fmtUlpDisplay(t.ulp),
+      t.assignedRegu || 'Belum ditugaskan',
+      fmtTargetPeriode(t).replace(/<[^>]+>/g, ''),
+      t.statusTiket || 'Aktif',
+      t.waktu ? new Date(t.waktu).toLocaleDateString('id-ID') : '—'
+    ]);
+
+    doc.autoTable({
+      startY: 58,
+      head: [['No','Nomor Penugasan','Jenis Pekerjaan','Rincian Pekerjaan','Lokasi / Aset','ULP','Ditugaskan Ke','Target & Periode','Status','Dibuat']],
+      body,
+      styles: { fontSize: 7.5, cellPadding: 4, overflow: 'linebreak' },
+      headStyles: { fillColor: [0, 61, 130], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [242, 245, 250] },
+      columnStyles: { 3: { cellWidth: 130 }, 4: { cellWidth: 110 } },
+      margin: { left: 40, right: 40 }
+    });
+
+    doc.save(`Rencana_Pekerjaan_NUMBAY_${fmtFileStamp()}.pdf`);
+    showToast('Export PDF berhasil.', 'ok');
+  } catch (e) {
+    showToast('Gagal export PDF: ' + e.message, 'err');
+  }
+};
+
 // Bangun tabel Penugasan DAN targetKerjaCache (dipakai hitung % capaian di
 // Beranda/Rekap/Progres) dari SATU node Firebase 'penugasan' yang sama —
 // itu titik gabungnya, bukan dua node/listener terpisah seperti sebelumnya.
@@ -7109,7 +7295,7 @@ function listenTiket() {
 let tiketProgresPeriode = 'harian';
 window.setTiketProgresPeriode = function(tipe, btn) {
   tiketProgresPeriode = tipe;
-  document.querySelectorAll('#viewTiket .tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#tiket-progres-periode-group .tab-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderTiketProgres();
 };
@@ -7208,12 +7394,6 @@ function populateVerifRincianDropdowns() {
   fillSimple('vf-metode', RP_METODE_LIST, false);
   fillSimple('vf-jenispemadaman', RP_JENIS_PEMADAMAN_LIST, false);
 
-  isiPilihanPenyulang('vf');
-  perbaruiPilihanSection('vf');
-  enhanceSearchableSelect('vf-penyulang');
-  enhanceSearchableSelect('vf-section');
-  populateGarduSelect('vf', '');
-
   const rincianSel = document.getElementById('vf-rincian');
   if (rincianSel && !rincianSel.dataset.filled) {
     rincianSel.innerHTML = '<option value="">— Pilih Rincian Pekerjaan —</option>' +
@@ -7221,7 +7401,20 @@ function populateVerifRincianDropdowns() {
         `<optgroup label="${grup}">${items.map(v => `<option value="${v}">${v}</option>`).join('')}</optgroup>`
       ).join('');
     rincianSel.dataset.filled = '1';
+  }
+
+  // Bagian Penyulang/Section/Gardu dibungkus try/catch terpisah — supaya
+  // kalau bagian ini gagal, dropdown-dropdown sederhana & Rincian di atas
+  // TETAP terisi & form tetap bisa dipakai, bukan ikut kosong semua.
+  try {
+    isiPilihanPenyulang('vf');
+    perbaruiPilihanSection('vf');
+    enhanceSearchableSelect('vf-penyulang');
+    enhanceSearchableSelect('vf-section');
     enhanceSearchableSelect('vf-rincian');
+    populateGarduSelect('vf', '');
+  } catch (e) {
+    console.error('Gagal menyiapkan dropdown Penyulang/Section/Gardu (vf):', e);
   }
 }
 
@@ -8358,6 +8551,7 @@ window.exportHasilVerifikasiExcel = function() {
         }
       });
     });
+    styleExcelSheet(ws);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Hasil Verifikasi');
     XLSX.writeFile(wb, `Hasil_Verifikasi_NUMBAY_${fmtFileStamp()}.xlsx`);
@@ -8893,6 +9087,17 @@ window.exportRekapExcel = function() {
       ['Rata-rata Realisasi (%)', avgPct]
     ]);
     wsRingkasan['!cols'] = [{wch:26},{wch:30}];
+    wsRingkasan['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 1 } }];
+    // Styling khusus sheet Ringkasan: baris judul biru tebal, baris label ditebalkan
+    const thin = { style: 'thin', color: { rgb: 'D9E0EA' } };
+    const border = { top: thin, bottom: thin, left: thin, right: thin };
+    ['A1','B1'].forEach(addr => { if (wsRingkasan[addr]) wsRingkasan[addr].s = { font: { bold: true, sz: 12, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '003D82' } }, alignment: { vertical: 'center', horizontal: 'left' } }; });
+    for (let r = 1; r <= 7; r++) {
+      const labelAddr = XLSX.utils.encode_cell({ r, c: 0 });
+      const valAddr   = XLSX.utils.encode_cell({ r, c: 1 });
+      if (wsRingkasan[labelAddr]) wsRingkasan[labelAddr].s = { font: { bold: true, sz: 10.5, color: { rgb: '1F2A37' } }, fill: { fgColor: { rgb: r % 2 === 0 ? 'F2F5FA' : 'FFFFFF' } }, border, alignment: { vertical: 'center' } };
+      if (wsRingkasan[valAddr])   wsRingkasan[valAddr].s   = { font: { sz: 10.5, color: { rgb: '1F2A37' } }, fill: { fgColor: { rgb: r % 2 === 0 ? 'F2F5FA' : 'FFFFFF' } }, border, alignment: { vertical: 'center' } };
+    }
     XLSX.utils.book_append_sheet(wb, wsRingkasan, 'Ringkasan');
 
     // Sheet Per Tim
@@ -8901,6 +9106,7 @@ window.exportRekapExcel = function() {
       'Capaian (%)': d.target > 0 ? Math.round(d.realisasi / d.target * 100) : '—'
     })));
     wsTim['!cols'] = [{wch:18},{wch:14},{wch:10},{wch:10},{wch:11}];
+    styleExcelSheet(wsTim);
     XLSX.utils.book_append_sheet(wb, wsTim, 'Per Tim-Regu');
 
     // Sheet Per ULP
@@ -8909,6 +9115,7 @@ window.exportRekapExcel = function() {
       'Capaian (%)': d.target > 0 ? Math.round(d.realisasi / d.target * 100) : '—'
     })));
     wsUlp['!cols'] = [{wch:18},{wch:14},{wch:10},{wch:10},{wch:11}];
+    styleExcelSheet(wsUlp);
     XLSX.utils.book_append_sheet(wb, wsUlp, 'Per ULP');
 
     // Sheet Detail
@@ -8917,6 +9124,7 @@ window.exportRekapExcel = function() {
       {wch:4},{wch:16},{wch:20},{wch:12},{wch:10},{wch:10},{wch:14},{wch:35},{wch:20},
       {wch:9},{wch:9},{wch:11},{wch:16},{wch:14},{wch:16},{wch:24},{wch:30},{wch:30}
     ];
+    styleExcelSheet(wsDetail);
     XLSX.utils.book_append_sheet(wb, wsDetail, 'Detail Laporan');
 
     XLSX.writeFile(wb, `Rekap_Laporan_NUMBAY_${rekapPeriode}_${fmtFileStamp()}.xlsx`);

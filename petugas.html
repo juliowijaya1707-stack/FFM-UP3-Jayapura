@@ -970,6 +970,7 @@ body {
     <div class="camera-actions">
       <button class="btn btn-ghost btn-sm" id="absen-btn-cam"    onclick="bukaKameraAbsen()">📷 Buka Kamera</button>
       <button class="btn btn-primary btn-sm" id="absen-btn-shoot" onclick="ambilFotoAbsen()" style="display:none">📸 Ambil Foto</button>
+      <button class="btn btn-ghost btn-sm"   id="absen-btn-flip" onclick="balikKameraAbsen()" style="display:none">🔄 Balik Kamera</button>
       <button class="btn btn-ghost btn-sm"   id="absen-btn-retake" onclick="ulangFotoAbsen()" style="display:none">↺ Ulangi</button>
     </div>
     <canvas id="absen-canvas" style="display:none"></canvas>
@@ -1283,7 +1284,7 @@ body {
       <textarea id="lapor-keterangan" rows="2" placeholder="Catatan tambahan..."></textarea>
     </div>
     <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--pln-blue);margin-bottom:6px">Foto Sebelum / Progres / Sesudah</div>
-    <div style="font-size:10.5px;color:var(--text-muted);margin-bottom:10px;line-height:1.5">Ambil 3 foto langsung dengan kamera HP dari <b>angle (sudut) yang sama</b> supaya perubahan kondisi terlihat jelas. Saat ambil foto Progres &amp; Sesudah, aplikasi menampilkan bayangan transparan dari foto Sebelum sebagai panduan angle. Foto otomatis tersimpan walau aplikasi ditutup.</div>
+    <div style="font-size:10.5px;color:var(--text-muted);margin-bottom:10px;line-height:1.5">Ambil 3 foto dengan kamera HP (bisa balik ke kamera depan/belakang) atau pilih dari galeri, dari <b>angle (sudut) yang sama</b> supaya perubahan kondisi terlihat jelas. Saat ambil foto Progres &amp; Sesudah, aplikasi menampilkan bayangan transparan dari foto Sebelum sebagai panduan angle. Foto otomatis tersimpan walau aplikasi ditutup.</div>
     <div style="display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--green);font-weight:600;margin-bottom:10px;background:var(--green-dim);border:1px solid var(--green-border);border-radius:8px;padding:7px 10px">🔒 Setiap foto otomatis diberi watermark waktu &amp; koordinat GPS langsung di gambar — bukan cuma metadata.</div>
     <div class="photo-pair">
       <div class="photo-slot" id="slot-before" onclick="bukaKameraLapor('before')">
@@ -1481,9 +1482,12 @@ body {
     </div>
     <div class="camera-actions">
       <button class="btn btn-primary btn-sm"  id="lapor-btn-shoot"  onclick="ambilFotoLapor()">📸 Ambil Foto</button>
+      <button class="btn btn-ghost btn-sm"    id="lapor-btn-flip"   onclick="balikKameraLapor()">🔄 Balik Kamera</button>
+      <button class="btn btn-ghost btn-sm"    id="lapor-btn-galeri" onclick="document.getElementById('lapor-gallery-input').click()">🖼️ Galeri</button>
       <button class="btn btn-ghost btn-sm"    id="lapor-btn-retake" onclick="ulangFotoLapor()" style="display:none">↺ Ulangi</button>
       <button class="btn btn-success btn-sm"  id="lapor-btn-pakai"  onclick="pakaiFotoLapor()" style="display:none">✓ Gunakan</button>
     </div>
+    <input type="file" id="lapor-gallery-input" accept="image/*" style="display:none" onchange="pilihFotoGaleriLapor(event)">
     <canvas id="lapor-canvas" style="display:none"></canvas>
   </div>
 </div>
@@ -1507,6 +1511,7 @@ body {
     <div class="camera-actions">
       <button class="btn btn-ghost btn-sm"   id="ac-btn-cam"    onclick="bukaKameraCepat()">📷 Buka Kamera</button>
       <button class="btn btn-primary btn-sm" id="ac-btn-shoot"  onclick="ambilFotoCepat()" style="display:none">📸 Ambil Foto</button>
+      <button class="btn btn-ghost btn-sm"   id="ac-btn-flip"   onclick="balikKameraCepat()" style="display:none">🔄 Balik Kamera</button>
       <button class="btn btn-ghost btn-sm"   id="ac-btn-retake" onclick="ulangFotoCepat()" style="display:none">↺ Ulangi</button>
     </div>
     <canvas id="ac-canvas" style="display:none"></canvas>
@@ -2386,6 +2391,7 @@ function renderLaporGarduDropdown() {
   const searchEl = document.getElementById('lapor-gardu-search');
   if (searchEl) setTimeout(() => searchEl.focus(), 0);
 }
+window.renderLaporGarduList = renderLaporGarduList;
 
 window.toggleLaporGarduDropdown = function() {
   const dd = document.getElementById('lapor-gardu-dropdown');
@@ -2598,6 +2604,14 @@ function populateLaporPekerjaanDropdowns() {
       list.map(v => `<option value="${v}">${v}</option>`).join('');
     sel.dataset.filled = '1';
   };
+  // FIX: dropdown sederhana & independen ini SENGAJA diisi PALING AWAL —
+  // sebelum urusan Penyulang/Section/Gardu yang lebih rumit di bawah. Dulu
+  // urutannya kebalik (dropdown ini diisi PALING AKHIR), jadi kalau ada
+  // satu saja langkah Penyulang/Section/Gardu yang gagal/melempar error,
+  // KESEMUA dropdown ini (Kelompok, Health Index, Kategori, dst) jadi tidak
+  // pernah sempat ke-isi sama sekali — persis sama seperti kasus modal
+  // Laporan yang tidak kebuka. Dengan diisi duluan di sini, dropdown ini
+  // dijamin selalu terisi apa pun yang terjadi di bagian bawah.
   const jenisSel = document.getElementById('lapor-jenis-pekerjaan');
   if (jenisSel && !jenisSel.dataset.filled) {
     jenisSel.innerHTML = '<option value="">— Pilih —</option>' +
@@ -2612,27 +2626,37 @@ function populateLaporPekerjaanDropdowns() {
       ).join('');
     rincianSel.dataset.filled = '1';
   }
-  enhanceSearchableSelect('lapor-rincian');
-  // Auto-isi Satuan (field setelah Realisasi) mengikuti Rincian Pekerjaan
-  // yang dipilih (RINCIAN_SATUAN_MAP), begitu petugas memilih/mengganti
-  // Rincian Pekerjaan — tapi TIDAK menimpa kalau petugas sudah pernah
-  // mengetik manual di field Satuan itu sendiri (lihat window._satuanManual,
-  // di-set oleh oninput pada field #lapor-satuan).
-  if (rincianSel && !rincianSel.dataset.satuanAutofillBound) {
-    rincianSel.addEventListener('change', applySatuanOtomatis);
-    rincianSel.dataset.satuanAutofillBound = '1';
-  }
-  isiPilihanPenyulang('lapor');
-  perbaruiPilihanSection('lapor');
-  enhanceSearchableSelect('lapor-penyulang');
-  enhanceSearchableSelect('lapor-section');
-  populateLaporGarduSelect('');
   fillSimple('lapor-kelompok', RP_KELOMPOK_LIST, true);
   fillSimple('lapor-health-index', RP_HEALTH_INDEX_LIST, true);
   fillSimple('lapor-kategori', RP_KATEGORI_LIST, true);
   fillSimple('lapor-pdkb', RP_PDKB_LIST, false);
   fillSimple('lapor-metode', RP_METODE_LIST, false);
   fillSimple('lapor-jenis-pemadaman', RP_JENIS_PEMADAMAN_LIST, false);
+
+  // Bagian Penyulang/Section/Gardu dibungkus try/catch terpisah — supaya
+  // kalau bagian ini gagal (mis. data hierarki penyulang bermasalah di
+  // environment tertentu), dropdown-dropdown sederhana di atas TETAP
+  // terisi & form tetap bisa dipakai (Penyulang/Section/Gardu jadi opsional
+  // sementara), bukan ikut kosong semua.
+  try {
+    enhanceSearchableSelect('lapor-rincian');
+    // Auto-isi Satuan (field setelah Realisasi) mengikuti Rincian Pekerjaan
+    // yang dipilih (RINCIAN_SATUAN_MAP), begitu petugas memilih/mengganti
+    // Rincian Pekerjaan — tapi TIDAK menimpa kalau petugas sudah pernah
+    // mengetik manual di field Satuan itu sendiri (lihat window._satuanManual,
+    // di-set oleh oninput pada field #lapor-satuan).
+    if (rincianSel && !rincianSel.dataset.satuanAutofillBound) {
+      rincianSel.addEventListener('change', applySatuanOtomatis);
+      rincianSel.dataset.satuanAutofillBound = '1';
+    }
+    isiPilihanPenyulang('lapor');
+    perbaruiPilihanSection('lapor');
+    enhanceSearchableSelect('lapor-penyulang');
+    enhanceSearchableSelect('lapor-section');
+    populateLaporGarduSelect('');
+  } catch (e) {
+    addLog('Gagal menyiapkan dropdown Penyulang/Section/Gardu: ' + e.message, 'err');
+  }
 }
 
 // Isi dropdown Unit Kerja dengan daftar ULP dari roster (opsi "Lainnya"
@@ -3824,6 +3848,7 @@ window.addLog = addLog;
 // ════════════════════════════════════════════════════════
 let absenLokasi = 'Kantor';
 let absenStream = null;
+let absenFacingMode = 'user'; // bisa dibalik ke 'environment' lewat tombol balik kamera
 let absenPos = null;
 let absenFotoDataUrl = null;
 
@@ -3872,7 +3897,7 @@ window.bukaKameraAbsen = async function() {
   const izinOk = await mintaIzinKamera();
   if (!izinOk) { tampilkanPesanIzinDitolak('absen-cam-placeholder'); return; }
   try {
-    absenStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+    absenStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: absenFacingMode }, audio: false });
     const video = document.getElementById('absen-video');
     video.srcObject = absenStream;
     video.style.display = 'block';
@@ -3881,9 +3906,26 @@ window.bukaKameraAbsen = async function() {
     document.getElementById('absen-btn-cam').style.display = 'none';
     document.getElementById('absen-btn-shoot').style.display = 'block';
     document.getElementById('absen-btn-retake').style.display = 'none';
+    document.getElementById('absen-btn-flip').style.display = 'block';
   } catch (e) {
     addLog('Gagal akses kamera: ' + e.message, 'err');
     document.getElementById('absen-cam-placeholder').innerHTML = '<span class="cam-icon">⚠️</span>' + pesanErrorKamera(e) + '<br><span style="font-size:10px">Ketuk "Buka Kamera" lagi untuk coba ulang.</span>';
+  }
+};
+
+// Balik kamera depan <-> belakang untuk selfie absen. Stream lama dihentikan
+// dulu supaya tidak ada 2 stream kamera nyala berbarengan (boros baterai/error
+// di sebagian HP), baru buka stream baru dengan facingMode kebalikannya.
+window.balikKameraAbsen = async function() {
+  absenFacingMode = (absenFacingMode === 'user') ? 'environment' : 'user';
+  if (absenStream) { absenStream.getTracks().forEach(t => t.stop()); absenStream = null; }
+  try {
+    absenStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: absenFacingMode }, audio: false });
+    document.getElementById('absen-video').srcObject = absenStream;
+  } catch (e) {
+    addLog('Gagal balik kamera absen: ' + e.message, 'err');
+    showToast(pesanErrorKamera(e), 'err', 5000);
+    absenFacingMode = (absenFacingMode === 'user') ? 'environment' : 'user'; // batalkan, kembali ke mode semula
   }
 };
 
@@ -3893,7 +3935,8 @@ window.ambilFotoAbsen = function() {
   canvas.width = video.videoWidth || 480;
   canvas.height = video.videoHeight || 640;
   const ctx = canvas.getContext('2d');
-  ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
+  // Cermin hanya untuk kamera depan (selfie) — kamera belakang digambar apa adanya.
+  if (absenFacingMode === 'user') { ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   absenFotoDataUrl = canvas.toDataURL('image/jpeg', 0.7);
 
@@ -3905,6 +3948,7 @@ window.ambilFotoAbsen = function() {
   if (absenStream) { absenStream.getTracks().forEach(t => t.stop()); absenStream = null; }
 
   document.getElementById('absen-btn-shoot').style.display = 'none';
+  document.getElementById('absen-btn-flip').style.display = 'none';
   document.getElementById('absen-btn-retake').style.display = 'block';
   document.getElementById('absen-time').textContent = new Date().toLocaleString('id-ID');
   addLog('Selfie absensi diambil', 'ok');
@@ -4016,6 +4060,7 @@ window.submitAbsensi = async function() {
 let acPurpose = null;      // 'perjalanan' | 'aktif' | 'selesai'
 let acOnSuccess = null;    // callback dijalankan setelah absen berhasil disimpan
 let acStream = null;
+let acFacingMode = 'user'; // bisa dibalik ke 'environment' lewat tombol balik kamera
 let acPos = null;
 let acFotoDataUrl = null;
 
@@ -4079,7 +4124,7 @@ window.bukaKameraCepat = async function() {
   const izinOk = await mintaIzinKamera();
   if (!izinOk) { tampilkanPesanIzinDitolak('ac-cam-placeholder'); return; }
   try {
-    acStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+    acStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: acFacingMode }, audio: false });
     const video = document.getElementById('ac-video');
     video.srcObject = acStream;
     video.style.display = 'block';
@@ -4088,9 +4133,24 @@ window.bukaKameraCepat = async function() {
     document.getElementById('ac-btn-cam').style.display = 'none';
     document.getElementById('ac-btn-shoot').style.display = 'block';
     document.getElementById('ac-btn-retake').style.display = 'none';
+    document.getElementById('ac-btn-flip').style.display = 'block';
   } catch (e) {
     addLog('Gagal akses kamera: ' + e.message, 'err');
     document.getElementById('ac-cam-placeholder').innerHTML = '<span class="cam-icon">⚠️</span>' + pesanErrorKamera(e) + '<br><span style="font-size:10px">Ketuk "Buka Kamera" lagi untuk coba ulang.</span>';
+  }
+};
+
+// Balik kamera depan <-> belakang untuk selfie absen cepat (mulai kerja aktif/selesai bertugas).
+window.balikKameraCepat = async function() {
+  acFacingMode = (acFacingMode === 'user') ? 'environment' : 'user';
+  if (acStream) { acStream.getTracks().forEach(t => t.stop()); acStream = null; }
+  try {
+    acStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: acFacingMode }, audio: false });
+    document.getElementById('ac-video').srcObject = acStream;
+  } catch (e) {
+    addLog('Gagal balik kamera absen cepat: ' + e.message, 'err');
+    showToast(pesanErrorKamera(e), 'err', 5000);
+    acFacingMode = (acFacingMode === 'user') ? 'environment' : 'user'; // batalkan, kembali ke mode semula
   }
 };
 
@@ -4100,7 +4160,8 @@ window.ambilFotoCepat = function() {
   canvas.width = video.videoWidth || 480;
   canvas.height = video.videoHeight || 640;
   const ctx = canvas.getContext('2d');
-  ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
+  // Cermin hanya untuk kamera depan (selfie) — kamera belakang digambar apa adanya.
+  if (acFacingMode === 'user') { ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   acFotoDataUrl = canvas.toDataURL('image/jpeg', 0.7);
 
@@ -4112,6 +4173,7 @@ window.ambilFotoCepat = function() {
   if (acStream) { acStream.getTracks().forEach(t => t.stop()); acStream = null; }
 
   document.getElementById('ac-btn-shoot').style.display = 'none';
+  document.getElementById('ac-btn-flip').style.display = 'none';
   document.getElementById('ac-btn-retake').style.display = 'block';
   addLog('Selfie absen (' + AC_CONFIG[acPurpose].label + ') diambil', 'ok');
 };
@@ -4200,41 +4262,54 @@ const LAPOR_FASE_ORDER = ['before', 'progres', 'after'];
 const LAPOR_FASE_LABEL = { before: 'Sebelum', progres: 'Progres', after: 'Sesudah' };
 let laporKameraTarget = null;
 let laporStream = null;
+let laporFacingMode = 'environment'; // default kamera belakang untuk foto kondisi, bisa dibalik ke depan
 let laporFotoSementara = null;
 
 window.bukaModalLapor = function() {
-  populateLaporPekerjaanDropdowns();
-  populateLaporTiketSelect('');
-  document.getElementById('tiket-info-box').style.display = 'none';
-  document.getElementById('lapor-penyulang').value = '';
-  perbaruiPilihanSection('lapor');
-  populateLaporGarduSelect('');
-  document.getElementById('lapor-kelompok').value = '';
-  document.getElementById('lapor-health-index').value = '';
-  document.getElementById('lapor-kategori').value = '';
-  document.getElementById('lapor-jenis-pekerjaan').value = '';
-  document.getElementById('lapor-rincian').value = '';
-  document.getElementById('lapor-vol').value = '';
-  document.getElementById('lapor-satuan').value = '';
-  window._satuanManual = false;
-  document.getElementById('lapor-pdkb').value = 'TIDAK';
-  document.getElementById('lapor-metode').value = 'OFFLINE';
-  document.getElementById('lapor-daerah-padam').value = '';
-  document.getElementById('lapor-jenis-pemadaman').value = 'TM';
-  document.getElementById('lapor-pic').value = '';
-  document.getElementById('lapor-keterangan').value = '';
-  // Reset section "Khusus Konstruksi" ke kondisi tertutup/kosong setiap buka form baru
-  document.getElementById('konstruksi-fields').style.display = 'none';
-  document.getElementById('konstruksi-switch').style.background = '#cbd5e1';
-  document.getElementById('konstruksi-switch-knob').style.left = '2px';
-  document.getElementById('lapor-konstruksi-material-mitra').value = '';
-  document.getElementById('lapor-konstruksi-pasang').value = '';
-  document.getElementById('lapor-konstruksi-bongkar').value = '';
-  laporFoto = { before: null, progres: null, after: null };
-  LAPOR_FASE_ORDER.forEach(resetSlotFoto);
-  restoreLaporDraft(); // pulihkan foto Sebelum/Progres/Sesudah yang tersimpan sebelumnya, kalau ada
-  document.getElementById('lapor-err').style.display = 'none';
+  // Modal dibuka DULU, SEBELUM proses isi/reset field² di bawah — supaya
+  // kalau ada satu saja langkah yang gagal/melempar error (mis. karena
+  // environment WebView APK berbeda dari browser, data Firebase belum
+  // sempat sampai, dsb), modal TETAP terbuka (walau mungkin ada field yang
+  // belum sempat ke-reset) daripada tombol terlihat "diam saja" tanpa
+  // reaksi sama sekali seperti sebelumnya. Error apa pun otomatis dicatat
+  // ke Log Aktivitas (bukan cuma console) supaya kelihatan & bisa
+  // dilaporkan balik walau di HP tanpa akses remote-debug.
   document.getElementById('modal-lapor').classList.add('active');
+  document.getElementById('lapor-err').style.display = 'none';
+  try {
+    populateLaporPekerjaanDropdowns();
+    populateLaporTiketSelect('');
+    document.getElementById('tiket-info-box').style.display = 'none';
+    document.getElementById('lapor-penyulang').value = '';
+    perbaruiPilihanSection('lapor');
+    populateLaporGarduSelect('');
+    document.getElementById('lapor-kelompok').value = '';
+    document.getElementById('lapor-health-index').value = '';
+    document.getElementById('lapor-kategori').value = '';
+    document.getElementById('lapor-jenis-pekerjaan').value = '';
+    document.getElementById('lapor-rincian').value = '';
+    document.getElementById('lapor-vol').value = '';
+    document.getElementById('lapor-satuan').value = '';
+    window._satuanManual = false;
+    document.getElementById('lapor-pdkb').value = 'TIDAK';
+    document.getElementById('lapor-metode').value = 'OFFLINE';
+    document.getElementById('lapor-daerah-padam').value = '';
+    document.getElementById('lapor-jenis-pemadaman').value = 'TM';
+    document.getElementById('lapor-pic').value = '';
+    document.getElementById('lapor-keterangan').value = '';
+    // Reset section "Khusus Konstruksi" ke kondisi tertutup/kosong setiap buka form baru
+    document.getElementById('konstruksi-fields').style.display = 'none';
+    document.getElementById('konstruksi-switch').style.background = '#cbd5e1';
+    document.getElementById('konstruksi-switch-knob').style.left = '2px';
+    document.getElementById('lapor-konstruksi-material-mitra').value = '';
+    document.getElementById('lapor-konstruksi-pasang').value = '';
+    document.getElementById('lapor-konstruksi-bongkar').value = '';
+    laporFoto = { before: null, progres: null, after: null };
+    LAPOR_FASE_ORDER.forEach(resetSlotFoto);
+    restoreLaporDraft(); // pulihkan foto Sebelum/Progres/Sesudah yang tersimpan sebelumnya, kalau ada
+  } catch (e) {
+    addLog('Gagal menyiapkan form Laporan: ' + e.message, 'err');
+  }
 };
 
 window.tutupModalLapor = function() {
@@ -4446,6 +4521,8 @@ window.bukaKameraLapor = async function(target) {
   const guideBadge = document.getElementById('lapor-angle-badge');
   video.style.display = 'block'; img.style.display = 'none';
   document.getElementById('lapor-btn-shoot').style.display = 'block';
+  document.getElementById('lapor-btn-flip').style.display = 'block';
+  document.getElementById('lapor-btn-galeri').style.display = 'block';
   document.getElementById('lapor-btn-retake').style.display = 'none';
   document.getElementById('lapor-btn-pakai').style.display = 'none';
 
@@ -4472,12 +4549,28 @@ window.bukaKameraLapor = async function(target) {
   }
 
   try {
-    laporStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    laporStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: laporFacingMode }, audio: false });
     video.srcObject = laporStream;
   } catch (e) {
     addLog('Gagal akses kamera lapor: ' + e.message, 'err');
     showToast(pesanErrorKamera(e) + ' Ketuk lagi untuk coba ulang.', 'err', 5500);
     document.getElementById('modal-kamera-lapor').classList.remove('active');
+  }
+};
+
+// Balik kamera depan <-> belakang untuk foto kondisi (Sebelum/Progres/Sesudah).
+// Default belakang karena biasanya memotret objek pekerjaan, tapi bisa dibalik
+// ke depan kalau perlu selfie/kondisi yang mengarah ke petugas.
+window.balikKameraLapor = async function() {
+  laporFacingMode = (laporFacingMode === 'environment') ? 'user' : 'environment';
+  if (laporStream) { laporStream.getTracks().forEach(t => t.stop()); laporStream = null; }
+  try {
+    laporStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: laporFacingMode }, audio: false });
+    document.getElementById('lapor-video').srcObject = laporStream;
+  } catch (e) {
+    addLog('Gagal balik kamera lapor: ' + e.message, 'err');
+    showToast(pesanErrorKamera(e), 'err', 5000);
+    laporFacingMode = (laporFacingMode === 'environment') ? 'user' : 'environment'; // batalkan, kembali ke mode semula
   }
 };
 
@@ -4491,7 +4584,11 @@ window.ambilFotoLapor = function() {
   const canvas = document.getElementById('lapor-canvas');
   canvas.width = video.videoWidth || 480;
   canvas.height = video.videoHeight || 640;
-  canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+  const ctx = canvas.getContext('2d');
+  // Cermin hanya kalau sedang pakai kamera depan — kamera belakang (default,
+  // dipakai untuk memotret objek pekerjaan) digambar apa adanya, tidak dicermin.
+  if (laporFacingMode === 'user') { ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   laporFotoSementara = canvas.toDataURL('image/jpeg', 0.6);
 
   document.getElementById('lapor-photo-preview').src = laporFotoSementara;
@@ -4502,8 +4599,55 @@ window.ambilFotoLapor = function() {
   if (laporStream) { laporStream.getTracks().forEach(t => t.stop()); laporStream = null; }
 
   document.getElementById('lapor-btn-shoot').style.display = 'none';
+  document.getElementById('lapor-btn-flip').style.display = 'none';
+  document.getElementById('lapor-btn-galeri').style.display = 'none';
   document.getElementById('lapor-btn-retake').style.display = 'block';
   document.getElementById('lapor-btn-pakai').style.display = 'block';
+};
+
+// Pilih foto laporan dari galeri HP (bukan kamera langsung). Diaktifkan atas
+// permintaan supervisor: upload bebas tetap dibolehkan untuk foto laporan,
+// tapi watermark waktu & GPS tetap dipasang berdasarkan posisi & jam SAAT
+// FOTO DIPAKAI (dibaca ulang di compressToBase64/uploadFotoAman saat submit),
+// bukan waktu di dalam file foto — jadi bukti lapangan tetap valid.
+window.pilihFotoGaleriLapor = function(event) {
+  const file = event.target.files && event.target.files[0];
+  event.target.value = ''; // reset input supaya file yang sama bisa dipilih ulang nanti
+  if (!file) return;
+  if (!file.type || !file.type.startsWith('image/')) {
+    showToast('File yang dipilih bukan gambar.', 'err', 4000);
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.getElementById('lapor-canvas');
+      const maxDim = 1280;
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+      canvas.width  = Math.round(img.width  * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      laporFotoSementara = canvas.toDataURL('image/jpeg', 0.75);
+
+      if (laporStream) { laporStream.getTracks().forEach(t => t.stop()); laporStream = null; }
+      document.getElementById('lapor-photo-preview').src = laporFotoSementara;
+      document.getElementById('lapor-photo-preview').style.display = 'block';
+      document.getElementById('lapor-video').style.display = 'none';
+      document.getElementById('lapor-angle-guide').style.display = 'none';
+      document.getElementById('lapor-angle-badge').style.display = 'none';
+      document.getElementById('lapor-btn-shoot').style.display = 'none';
+      document.getElementById('lapor-btn-flip').style.display = 'none';
+      document.getElementById('lapor-btn-galeri').style.display = 'none';
+      document.getElementById('lapor-btn-retake').style.display = 'block';
+      document.getElementById('lapor-btn-pakai').style.display = 'block';
+      addLog('Foto laporan (' + LAPOR_FASE_LABEL[laporKameraTarget] + ') dipilih dari galeri', 'ok');
+    };
+    img.onerror = () => showToast('Gagal memuat gambar yang dipilih.', 'err', 4000);
+    img.src = reader.result;
+  };
+  reader.onerror = () => showToast('Gagal membaca file gambar dari galeri.', 'err', 4000);
+  reader.readAsDataURL(file);
 };
 
 window.ulangFotoLapor = function() {
@@ -4523,9 +4667,11 @@ window.pakaiFotoLapor = function() {
   saveLaporDraft();
 };
 
-// Foto Sebelum/Progres/Sesudah WAJIB diambil langsung dengan kamera (bukan pilih
-// dari galeri) supaya watermark waktu & GPS terjamin sesuai kondisi nyata di
-// lapangan saat itu, dan tidak bisa disusupi foto lama/dari HP lain.
+// Foto Sebelum/Progres/Sesudah bisa diambil langsung dengan kamera (default)
+// ATAU dipilih dari galeri (tombol "🖼️ Galeri" di modal kamera lapor). Watermark
+// waktu & GPS tetap otomatis dipasang saat foto dipakai/diupload (lihat
+// drawWatermark & compressToBase64), jadi baik hasil jepretan langsung maupun
+// foto dari galeri sama-sama tercatat sesuai kondisi/posisi saat itu.
 
 // ── Draft form laporan (foto + SELURUH isian) — simpan ke localStorage supaya
 // TIDAK hilang walau aplikasi/HP ditutup di tengah proses (mis. petugas ambil
