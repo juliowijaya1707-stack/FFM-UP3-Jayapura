@@ -863,11 +863,27 @@ body {
       <label>Regu / Tim</label>
       <!-- Opsi diisi/dibatasi otomatis mengikuti Unit Kerja yang dipilih di
            atas — dropdown ini terkunci/kosong sampai Unit Kerja dipilih. -->
-      <select id="in-regu-select" onchange="toggleReguManual()" disabled>
+      <select id="in-regu-select" onchange="toggleReguManual(); toggleAsalTimRowField()" disabled>
         <option value="">— Pilih unit kerja dulu —</option>
       </select>
-      <input type="text" id="in-regu-manual" placeholder="Ketik nama regu/tim..." autocapitalize="words" style="display:none;margin-top:8px">
+      <input type="text" id="in-regu-manual" placeholder="Ketik nama regu/tim..." autocapitalize="words" oninput="toggleAsalTimRowField()" style="display:none;margin-top:8px">
       <div id="in-regu-hint" style="display:none;font-size:11px;color:var(--text-3);margin-top:6px"></div>
+    </div>
+    <!-- Asal Tim ROW: field tambahan yang HANYA muncul kalau nama Regu/Tim yang
+         dipilih/diketik mengandung kata "ROW" (Tim ROW = tim mitra pihak ketiga
+         yang kadang dipinjam/bantu ke ULP lain di luar ULP asalnya). OPSIONAL —
+         kalau hari itu Tim ROW ini kerja normal di ULP asalnya sendiri (tidak
+         sedang bantu ULP lain), field ini boleh dibiarkan kosong. Kalau diisi,
+         live GPS/absensi/laporan hari ini ikut tampil penuh (termasuk bisa
+         diverifikasi) di dashboard ULP yang dipilih di sini MAUPUN di dashboard
+         Unit Kerja di atas — mirip pola akses PT MITRA yang sudah ada (lihat
+         scopeFilterEntries() di index.html). -->
+    <div class="field" id="field-asal-timrow" style="display:none">
+      <label>Asal Tim ROW <span style="color:var(--text-3);font-weight:400">(opsional)</span></label>
+      <select id="in-asal-timrow">
+        <option value="">— Tidak sedang bantu ULP lain —</option>
+      </select>
+      <div style="font-size:11px;color:var(--text-3);margin-top:6px">Isi kalau Tim ROW ini hari ini sedang bantu tugas di ULP lain, bukan ULP asalnya — supaya live GPS &amp; laporan tetap tampil di dashboard ULP asal juga.</div>
     </div>
   </div>
 
@@ -2610,7 +2626,42 @@ function populateUlpDropdown() {
     opt.textContent = ulp;
     sel.insertBefore(opt, lainnyaOpt);
   });
+  populateAsalTimRowDropdown();
 }
+
+// Isi dropdown "Asal Tim ROW" dengan daftar ULP asli saja (PT MITRA dikecualikan
+// karena bukan ULP fisik tempat Tim ROW bisa "berasal" — mitra konstruksi punya
+// pola akses lintas-ULP sendiri yang sudah ditangani terpisah).
+function populateAsalTimRowDropdown() {
+  const sel = document.getElementById('in-asal-timrow');
+  if (!sel) return;
+  ULP_LIST.filter(u => u !== 'PT MITRA').forEach(ulp => {
+    const opt = document.createElement('option');
+    opt.value = ulp;
+    opt.textContent = ulp;
+    sel.appendChild(opt);
+  });
+}
+
+// Deteksi kata "ROW" berdiri sendiri (word boundary) di nama regu/tim — supaya
+// tidak salah kena nama tim lain yang kebetulan mengandung huruf "row" sebagai
+// bagian dari kata lain.
+function reguMengandungRow(nama) {
+  return /\bROW\b/i.test(nama || '');
+}
+
+// Tampil/sembunyikan field "Asal Tim ROW" tiap kali pilihan/isian Regu/Tim
+// berubah — dipanggil dari onchange dropdown Regu, oninput input manual Regu,
+// dan dari onUlpChange() (supaya field ikut ter-reset saat Unit Kerja diganti).
+window.toggleAsalTimRowField = function() {
+  const regu = getReguTerpilih();
+  const wrap = document.getElementById('field-asal-timrow');
+  const sel  = document.getElementById('in-asal-timrow');
+  if (!wrap || !sel) return;
+  const show = reguMengandungRow(regu);
+  wrap.style.display = show ? 'block' : 'none';
+  if (!show) sel.value = '';
+};
 
 // Isi ulang dropdown Regu/Tim dengan daftar tim yang valid untuk sebuah
 // daftar nama tim tertentu (dipanggil ulang tiap kali Unit Kerja berubah).
@@ -2639,6 +2690,7 @@ window.onUlpChange = function() {
   // tim dari ULP lama yang kebawa/kepilih untuk ULP baru.
   reguManual.value = '';
   reguManual.style.display = 'none';
+  toggleAsalTimRowField(); // regu baru saja direset -> field Asal Tim ROW ikut disembunyikan
 
   if (!ulpSel.value) {
     reguSel.innerHTML = '<option value="">— Pilih unit kerja dulu —</option>';
@@ -2764,14 +2816,22 @@ window.doLogin = function() {
   }
   errEl.style.display = 'none';
 
+  // Asal Tim ROW — hanya relevan/terbaca kalau field-nya sedang ditampilkan
+  // (regu mengandung kata "ROW"); opsional, boleh dikosongkan kalau tim ROW
+  // ini hari ini kerja normal di ULP asalnya sendiri (tidak sedang bantu ULP lain).
+  const asalTimRowWrap = document.getElementById('field-asal-timrow');
+  const asalTimRow = (asalTimRowWrap && asalTimRowWrap.style.display !== 'none')
+    ? document.getElementById('in-asal-timrow').value.trim()
+    : '';
+
   // "username" internal dibuat dari slug nama regu (dipakai untuk id sesi/laporan),
   // BUKAN akun login — cuma supaya path data tetap unik & konsisten.
   const usernameSlug = regu.toLowerCase().replace(/[^a-z0-9]+/g, '') || 'petugas';
-  currentUser = { regu, ulp, anggotaHadir: anggota, username: usernameSlug,
+  currentUser = { regu, ulp, anggotaHadir: anggota, username: usernameSlug, asalTimRow,
     id: usernameSlug + '_' + Date.now().toString(36) };
 
   document.getElementById('prof-nama').textContent = regu;
-  document.getElementById('prof-sub').textContent = ulp + (anggota ? ' · ' + anggota : '');
+  document.getElementById('prof-sub').textContent = ulp + (anggota ? ' · ' + anggota : '') + (asalTimRow ? ' · ↔ Bantu dari ' + asalTimRow : '');
 
   showScreen('absensi');
   addLog('Login regu: ' + regu + (anggota ? ' (' + anggota + ')' : ''), 'ok');
@@ -2890,6 +2950,8 @@ async function finalizeLogout() {
   document.getElementById('in-regu-manual').value = '';
   document.getElementById('in-regu-manual').style.display = 'none';
   document.getElementById('in-regu-hint').style.display = 'none';
+  document.getElementById('in-asal-timrow').value = '';
+  document.getElementById('field-asal-timrow').style.display = 'none';
   showScreen('login');
   addLog('Logout — tracking dihentikan', 'info');
 }
@@ -3502,6 +3564,7 @@ function mulaiNativeSync() {
     regu: currentUser.regu || '',
     ulp: currentUser.ulp || '',
     anggotaHadir: currentUser.anggotaHadir || '',
+    asalTimRow: currentUser.asalTimRow || '',
     status: currentStatus
   }).then(() => addLog('Sinkronisasi lokasi native (andal) aktif', 'ok'))
     .catch((e) => addLog('Gagal mulai sinkronisasi native: ' + e.message, 'warn'));
@@ -3639,6 +3702,7 @@ function pushLocation(pos) {
     regu: currentUser.regu,
     ulp: currentUser.ulp,
     anggotaHadir: currentUser.anggotaHadir || '',
+    asalTimRow: currentUser.asalTimRow || '',
     ts: Date.now()
   };
 
@@ -3840,6 +3904,7 @@ window.submitAbsensi = async function() {
     absensiTersinkron = await safeSet('absensi/' + currentUser.id + '_' + waktu, {
       regu: currentUser.regu, ulp: currentUser.ulp,
       anggotaHadir: currentUser.anggotaHadir || '',
+      asalTimRow: currentUser.asalTimRow || '',
       fase: 'Standby', lokasi: absenLokasi,
       lat: currentUser.absensi.lat, lng: currentUser.absensi.lng, acc: currentUser.absensi.acc,
       waktu, ...fotoResult
@@ -4039,6 +4104,7 @@ window.submitAbsenCepat = async function() {
     tersinkron = await safeSet('absensi/' + currentUser.id + '_' + waktu, {
       regu: currentUser.regu, ulp: currentUser.ulp,
       anggotaHadir: currentUser.anggotaHadir || '',
+      asalTimRow: currentUser.asalTimRow || '',
       fase: AC_CONFIG[acPurpose].label,
       lat: entry.lat, lng: entry.lng, acc: entry.acc,
       waktu, ...fotoResult
@@ -4568,6 +4634,7 @@ window.submitLaporan = async function() {
     regu: currentUser ? currentUser.regu : '—',
     ulp:  currentUser ? currentUser.ulp  : '—',
     anggotaHadir: currentUser ? (currentUser.anggotaHadir || '') : '',
+    asalTimRow: currentUser ? (currentUser.asalTimRow || '') : '',
     jenisPekerjaan: jenisPekerjaan || null,
     rincian,
     // "realisasi" & "material" dipertahankan supaya dashboard supervisor
@@ -4729,7 +4796,7 @@ async function restoreSessionIfAny() {
   absensiTerakhirList     = s.absensiTerakhirList || [];
 
   document.getElementById('prof-nama').textContent = currentUser.regu;
-  document.getElementById('prof-sub').textContent  = currentUser.ulp + (currentUser.anggotaHadir ? ' · ' + currentUser.anggotaHadir : '');
+  document.getElementById('prof-sub').textContent  = currentUser.ulp + (currentUser.anggotaHadir ? ' · ' + currentUser.anggotaHadir : '') + (currentUser.asalTimRow ? ' · ↔ Bantu dari ' + currentUser.asalTimRow : '');
 
   if (!currentUser.absensi) {
     // Login sudah tersimpan, tapi absen awal (selfie+GPS pertama) belum

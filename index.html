@@ -3568,11 +3568,27 @@ function getScopeUlpList() {
 // yang login adalah Admin ULP, hanya baris dengan ulp yang ada di getScopeUlpList()
 // (ULP-nya sendiri ATAU PT MITRA) yang diloloskan — ULP lain (bukan miliknya,
 // bukan PT MITRA) tetap tidak pernah tampil untuk Admin ULP mana pun.
+//
+// PENGECUALIAN — Tim ROW lintas-ULP: petugas.html punya field opsional "Asal
+// Tim ROW" yang diisi kalau sebuah Tim ROW hari itu sedang bantu tugas di ULP
+// lain (bukan ULP asalnya). Kalau field itu terisi, `v.asalTimRow` berisi nama
+// ULP asal tim tsb. Baris itu WAJIB tetap lolos untuk Admin ULP asal juga —
+// bukan cuma Admin ULP tempat dia bertugas hari itu — supaya live GPS,
+// absensi, & laporan Tim ROW yang sedang dipinjam tetap kelihatan (akses
+// penuh, termasuk bisa diverifikasi) di dashboard ULP asalnya. Ini persis pola
+// akses PT MITRA yang sudah ada, cuma sumbernya dinamis per-baris data
+// (bukan daftar ULP tetap) karena Tim ROW yang sama bisa kadang bantu ULP
+// lain, kadang kerja normal di ULP asalnya sendiri (asalTimRow dikosongkan).
 function scopeFilterEntries(entries) {
   const scopeList = getScopeUlpList();
   if (!scopeList) return entries;
   const scopeKeys = scopeList.map(normalizeUlp);
-  return entries.filter(([, v]) => scopeKeys.includes(normalizeUlp(v && v.ulp)));
+  return entries.filter(([, v]) => {
+    if (!v) return false;
+    if (scopeKeys.includes(normalizeUlp(v.ulp))) return true;
+    if (v.asalTimRow && scopeKeys.includes(normalizeUlp(v.asalTimRow))) return true;
+    return false;
+  });
 }
 
 window.doLoginTLAdmin = function() {
@@ -4626,6 +4642,7 @@ function renderPetugasCardHtml(id, p) {
     : (p.status !== 'Offline' && minsAgo !== null && minsAgo > 240
         ? `<div style="font-size:10.5px;color:var(--warn);font-weight:700;margin-top:3px">⚠ Sesi tidak aktif — GPS terakhir ${ago}, mohon dicek</div>`
         : '');
+  const asalNote = p.asalTimRow ? ` <span style="color:var(--text-3)">↔ asal ${esc(p.asalTimRow)}</span>` : '';
   return `<div class="petugas-card">
       <div class="team-avatar-wrap">
         <div class="petugas-avatar" style="background:${ulpColor};box-shadow:0 2px 8px ${hexToRgba(ulpColor,0.35)}">${avatarEmoji}</div>
@@ -4633,7 +4650,7 @@ function renderPetugasCardHtml(id, p) {
       </div>
       <div style="flex:1;min-width:0">
         <div class="petugas-name">${esc(p.regu)||'—'}</div>
-        <div class="petugas-meta">${esc(p.ulp)||'—'}${p.anggotaHadir ? ' · ' + esc(p.anggotaHadir) : ''}</div>
+        <div class="petugas-meta">${esc(p.ulp)||'—'}${asalNote}${p.anggotaHadir ? ' · ' + esc(p.anggotaHadir) : ''}</div>
         <div class="petugas-meta" style="margin-top:3px">📡 ${ago} · ${p.lat ? p.lat.toFixed(4)+', '+p.lng.toFixed(4) : 'GPS —'}</div>
         ${peringatan}
       </div>
@@ -4774,12 +4791,16 @@ function buildPetugasPopup(p) {
     ? anggotaList.map(nm => `<div>${esc(nm)}</div>`).join('')
     : '—';
   const waktuTxt = p.ts ? new Date(p.ts).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : '—';
+  const asalTimRowHtml = p.asalTimRow
+    ? `<div style="font-size:10.5px;padding:5px 10px;color:var(--text-3);border-bottom:1px solid var(--line)">↔ Tim asal <b>${esc(p.asalTimRow)}</b> — sedang bantu tugas di ${esc(p.ulp)||'ULP ini'}</div>`
+    : '';
   return `
     <div class="popup-card" style="border-left:4px solid ${ulpColor}">
       <div class="popup-head" style="background:${hexToRgba(ulpColor,0.08)}">
         <div class="popup-title">${teamIcon.icon} ${esc(p.regu)||'—'}${badgeTxt}</div>
         <span class="popup-jenis" style="background:${ulpColor};color:#fff">${esc(p.ulp)||'—'}</span>
       </div>
+      ${asalTimRowHtml}
       <div class="popup-block">
         <span class="popup-label">Anggota Hadir</span>
         <div class="popup-anggota">${anggotaHtml}</div>
@@ -5805,7 +5826,7 @@ function renderLaporanCardHtml(id, l) {
   return `<div class="laporan-card">
     <div class="laporan-card-header">
       <div>
-        <div class="laporan-card-name">👷 ${esc(l.regu)||'—'} <span style="font-weight:400;color:var(--text-secondary);font-size:11px">${esc(l.ulp)||''}${l.anggotaHadir ? ' · ' + esc(l.anggotaHadir) : ''}</span></div>
+        <div class="laporan-card-name">👷 ${esc(l.regu)||'—'} <span style="font-weight:400;color:var(--text-secondary);font-size:11px">${esc(l.ulp)||''}${l.asalTimRow ? ' · ↔ asal ' + esc(l.asalTimRow) : ''}${l.anggotaHadir ? ' · ' + esc(l.anggotaHadir) : ''}</span></div>
         <div class="laporan-card-meta">${waktu}</div>
         ${editedBadge}
       </div>
