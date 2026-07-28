@@ -1983,38 +1983,36 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
       <div class="card" style="margin-top:14px;">
         <div class="card-header">
           <div class="card-title">Daftar Rencana Pekerjaan</div>
-          <div style="display:flex;align-items:center;gap:10px">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             <span class="card-count" id="tiketCount">0 rencana</span>
-            <div class="export-group">
-              <button class="btn-export xlsx" onclick="exportTiketExcel()" title="Export daftar rencana pekerjaan sesuai filter ke Excel">📥 Excel</button>
-              <button class="btn-export pdf" onclick="exportTiketPDF()" title="Export daftar rencana pekerjaan sesuai filter ke PDF">📄 PDF</button>
-            </div>
+            <button onclick="exportTiketPDF()" style="background:linear-gradient(135deg,#DC3545,#B02A37);color:#fff;border:none;border-radius:var(--radius-xs);padding:9px 16px;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(220,53,69,0.25)">📄 Export PDF</button>
+            <button onclick="exportTiketExcel()" style="background:linear-gradient(135deg,#1A8C3C,#136B2E);color:#fff;border:none;border-radius:var(--radius-xs);padding:9px 16px;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(26,140,60,0.25)">📊 Export Excel</button>
           </div>
         </div>
 
-        <div style="display:flex;flex-wrap:wrap;gap:10px;padding:0 0 14px;align-items:flex-end">
+        <div style="display:flex;flex-wrap:wrap;gap:16px;padding:14px 18px 14px;align-items:flex-end">
           <div>
-            <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">ULP</label>
-            <select id="tiket-filter-ulp" onchange="onTiketFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:150px">
+            <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">ULP</label>
+            <select id="tiket-filter-ulp" onchange="onTiketFilterChange()" style="height:38px;box-sizing:border-box;border:1px solid var(--line);border-radius:var(--radius-xs);padding:0 11px;font-size:12.5px;outline:none;min-width:190px">
               <option value="">Semua ULP</option>
             </select>
           </div>
           <div>
-            <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Jenis Pekerjaan</label>
-            <select id="tiket-filter-jenis" onchange="onTiketFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:220px">
+            <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Jenis Pekerjaan</label>
+            <select id="tiket-filter-jenis" onchange="onTiketFilterChange()" style="height:38px;box-sizing:border-box;border:1px solid var(--line);border-radius:var(--radius-xs);padding:0 11px;font-size:12.5px;outline:none;min-width:220px">
               <option value="">Semua Jenis Pekerjaan</option>
             </select>
           </div>
           <div>
-            <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Periode</label>
+            <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Periode</label>
             <div id="tiket-filter-periode-group" style="display:flex;gap:8px;flex-wrap:wrap">
-              <button class="tab-btn" id="tiket-filter-periode-hari"   onclick="setTiketFilterPeriode('hari',this)">Hari Ini</button>
-              <button class="tab-btn" id="tiket-filter-periode-minggu" onclick="setTiketFilterPeriode('minggu',this)">Minggu Ini</button>
-              <button class="tab-btn" id="tiket-filter-periode-bulan"  onclick="setTiketFilterPeriode('bulan',this)">Bulan Ini</button>
+              <button class="tab-btn" id="tiket-filter-periode-hari"   onclick="setTiketFilterPeriode('hari',this)"   style="height:38px;box-sizing:border-box">Hari Ini</button>
+              <button class="tab-btn" id="tiket-filter-periode-minggu" onclick="setTiketFilterPeriode('minggu',this)" style="height:38px;box-sizing:border-box">Minggu Ini</button>
+              <button class="tab-btn" id="tiket-filter-periode-bulan"  onclick="setTiketFilterPeriode('bulan',this)"  style="height:38px;box-sizing:border-box">Bulan Ini</button>
             </div>
           </div>
           <div>
-            <button onclick="resetTiketFilter()" style="background:none;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--text-2)">↺ Reset Filter</button>
+            <button onclick="resetTiketFilter()" style="height:38px;box-sizing:border-box;background:none;border:1px solid var(--line);border-radius:var(--radius-xs);padding:0 14px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--text-2)">↺ Reset Filter</button>
           </div>
         </div>
 
