@@ -1731,6 +1731,15 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
           </div>
         </div>
         <div id="rekapRowFilterNote" style="font-size:11px;color:var(--text-3);margin-top:8px;line-height:1.4"></div>
+        <!-- Asal Tim ROW: KHUSUS laporan Tim ROW, field ini beda dari kolom
+             "NAMA ULP" di tabel rekap — Asal Tim ROW = ULP asal timnya sendiri
+             (selalu 1 ULP tetap per tim), sedangkan NAMA ULP = ULP yang lagi
+             dibantu hari itu (bisa beda-beda / lintas-ULP). Filter ini nyaring
+             berdasarkan ULP ASAL timnya, bukan ULP yang dibantu. -->
+        <div style="margin-top:12px">
+          <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Asal Tim ROW</label>
+          <select id="rekapRowAsal" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none"></select>
+        </div>
         <div id="rekapRowErr" style="display:none;background:var(--crit-bg);color:var(--crit);padding:9px 13px;border-radius:var(--radius-xs);font-size:12px;margin-top:14px;border:1px solid rgba(220,53,69,0.2)"></div>
         <div style="display:flex;gap:10px;margin-top:20px">
           <button onclick="tutupModalRekapRow()" style="flex:1;padding:11px;border:1px solid var(--line);border-radius:var(--radius-xs);background:none;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-2)">Batal</button>
@@ -6539,6 +6548,15 @@ window.bukaModalRekapRow = function() {
   selM.innerHTML = '<option value="">Semua Mitra</option>' + mitraList.map(m => `<option value="${m.replace(/"/g,'&quot;')}">${m}</option>`).join('');
   selM.value = mitraList.includes(activeMitra) ? activeMitra : '';
 
+  // Asal Tim ROW: daftar ULP asal (l.asalTimRow), BEDA dari daftar ULP tujuan
+  // (l.ulp efektif / kolom "NAMA ULP" di tabel rekap). Tidak ada filter
+  // sepadan di panel Hasil Verifikasi, jadi tidak ada prefill, selalu mulai
+  // dari "Semua Asal Tim ROW".
+  const asalList = [...new Set(semuaUntukMitra.map(([, l]) => l.asalTimRow).filter(Boolean))].sort();
+  const selA = document.getElementById('rekapRowAsal');
+  selA.innerHTML = '<option value="">Semua Asal Tim ROW</option>' + asalList.map(a => `<option value="${a.replace(/"/g,'&quot;')}">${a}</option>`).join('');
+  selA.value = '';
+
   const noteEl = document.getElementById('rekapRowFilterNote');
   if (activeStatus || activeMitra) {
     noteEl.textContent = 'Terisi otomatis mengikuti filter Hasil Verifikasi yang sedang usher pakai. Bisa diubah lagi di sini sebelum export.';
@@ -6558,6 +6576,7 @@ window.generateRekapitulasiRow = async function() {
   const tahun = parseInt(document.getElementById('rekapRowTahun').value, 10);
   const statusFilter = document.getElementById('rekapRowStatus').value; // '' = Semua Status
   const mitraFilter  = document.getElementById('rekapRowMitra').value;  // '' = Semua Mitra
+  const asalFilter   = document.getElementById('rekapRowAsal').value;   // '' = Semua Asal Tim ROW
   const errEl = document.getElementById('rekapRowErr');
   errEl.style.display = 'none';
   if (typeof ExcelJS === 'undefined') { errEl.textContent = 'Gagal memuat modul Excel. Cek koneksi internet lalu coba lagi.'; errEl.style.display = 'block'; return; }
@@ -6581,6 +6600,9 @@ window.generateRekapitulasiRow = async function() {
     // tidak lolos filter ini juga tidak ikut kena hitungan "terlewat".
     if (statusFilter && l.statusVerifikasi !== statusFilter) continue;
     if (mitraFilter && laporanNamaPT(l) !== mitraFilter) continue;
+    // Asal Tim ROW = ULP asal timnya (field terpisah dari ULP efektif/tujuan
+    // di bawah), lihat catatan di bukaModalRekapRow().
+    if (asalFilter && (l.asalTimRow || '') !== asalFilter) continue;
     const klas = rekapRowKlasifikasiRincian(l.rincian);
     if (!klas) {
       if (/^(Rabas|Tebang) Pohon$/i.test((l.rincian || '').trim())) terlewat++;
@@ -6615,7 +6637,8 @@ window.generateRekapitulasiRow = async function() {
     let pesanKosong = `Tidak ada laporan Rabas/Tebang Pohon Tim ROW pada ${REKAP_ROW_BULAN_NAMA[bulan - 1]} ${tahun}`;
     if (statusFilter) pesanKosong += ` dengan status "${statusFilter}"`;
     if (mitraFilter) pesanKosong += ` dari mitra "${mitraFilter}"`;
-    pesanKosong += statusFilter || mitraFilter ? '. Coba longgarkan filter Status/Mitra di atas.' : '.';
+    if (asalFilter) pesanKosong += ` asal Tim ROW "${asalFilter}"`;
+    pesanKosong += statusFilter || mitraFilter || asalFilter ? '. Coba longgarkan filter Status/Mitra/Asal Tim ROW di atas.' : '.';
     errEl.textContent = pesanKosong;
     errEl.style.display = 'block';
     return;
@@ -6631,6 +6654,13 @@ window.generateRekapitulasiRow = async function() {
 
   try {
     const wb = new ExcelJS.Workbook();
+    // Paksa aplikasi office (Excel/LibreOffice/WPS) mengkalkulasi ulang semua
+    // formula begitu file dibuka, sebagai jaring pengaman tambahan di luar
+    // cached `result` yang sudah ditulis langsung ke tiap formula (lihat
+    // kolom GWG & baris TOTAL di bawah) — jadi dobel aman: yang tidak
+    // recalculate tetap kelihatan angkanya (dari cache), yang recalculate
+    // pun hasilnya taruh sama.
+    wb.calcProperties.fullCalcOnLoad = true;
     const thin = { style: 'thin', color: { argb: 'FF9AA7B8' } };
     const border = { top: thin, bottom: thin, left: thin, right: thin };
     const headerFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF003D82' } };
@@ -6708,6 +6738,7 @@ window.generateRekapitulasiRow = async function() {
       ws.getRow(4).height = 26;
 
       let rIdx = 5;
+      const gwgValues = []; // dipakai buat cached result baris TOTAL (lihat catatan di bawah)
       rows.forEach((g, i) => {
         const row = ws.getRow(rIdx);
         row.getCell(1).value = i + 1;
@@ -6715,7 +6746,18 @@ window.generateRekapitulasiRow = async function() {
         row.getCell(3).value = g.asalTimRow || '-';
         row.getCell(4).value = g.penyulang;
         row.getCell(5).value = ulp;
-        row.getCell(6).value = { formula: `(G${rIdx}/${div[0]})+(H${rIdx}/${div[1]})+(I${rIdx}/${div[2]})+(J${rIdx}/${div[3]})+(K${rIdx})+(L${rIdx})` };
+        // GWG dihitung juga di JS (bukan cuma ditulis sebagai formula Excel)
+        // supaya nilainya LANGSUNG kelihatan begitu file dibuka, tanpa
+        // tergantung aplikasi pembukanya mau recalculate formula atau tidak
+        // (banyak viewer, termasuk beberapa preview/quick-look & Excel Online
+        // versi tertentu, tidak auto-recalculate formula tanpa cached result,
+        // jadi kolom GWG kelihatan kosong meski datanya sebenarnya ada).
+        // `result` di bawah ini ADALAH nilai cache itu; formula-nya tetap ada
+        // supaya kalau usher edit angka K-1..K-5 manual di Excel, GWG ikut
+        // otomatis kalkulasi ulang seperti biasa.
+        const gwgVal = (g.rabas[1] / div[0]) + (g.rabas[2] / div[1]) + (g.rabas[3] / div[2]) + (g.rabas[4] / div[3]) + g.rabas[5] + g.rabas.tuntas;
+        gwgValues.push(gwgVal);
+        row.getCell(6).value = { formula: `(G${rIdx}/${div[0]})+(H${rIdx}/${div[1]})+(I${rIdx}/${div[2]})+(J${rIdx}/${div[3]})+(K${rIdx})+(L${rIdx})`, result: gwgVal };
         row.getCell(7).value = g.rabas[1]; row.getCell(8).value = g.rabas[2]; row.getCell(9).value = g.rabas[3];
         row.getCell(10).value = g.rabas[4]; row.getCell(11).value = g.rabas[5]; row.getCell(12).value = g.rabas.tuntas;
         row.getCell(13).value = g.tebang[1]; row.getCell(14).value = g.tebang[2]; row.getCell(15).value = g.tebang[3];
@@ -6735,9 +6777,24 @@ window.generateRekapitulasiRow = async function() {
       const totalRow = ws.getRow(baseRow);
       ws.mergeCells(`A${baseRow}:E${baseRow}`);
       totalRow.getCell(1).value = 'TOTAL';
-      for (const col of ['F','G','H','I','J','K','L','M','N','O','P','Q']) {
-        totalRow.getCell(col).value = { formula: `SUM(${col}5:${col}${baseRow - 1})` };
-      }
+      // Sama seperti GWG per baris di atas: total tiap kolom juga dihitung
+      // langsung di JS jadi cached `result`, bukan cuma formula SUM() polos,
+      // supaya baris TOTAL juga langsung kelihatan angkanya begitu dibuka.
+      const totalSumCol = (colIdx) => rows.reduce((sum, g, i) => {
+        if (colIdx === 6) return sum + gwgValues[i];
+        if (colIdx === 7) return sum + g.rabas[1]; if (colIdx === 8) return sum + g.rabas[2];
+        if (colIdx === 9) return sum + g.rabas[3]; if (colIdx === 10) return sum + g.rabas[4];
+        if (colIdx === 11) return sum + g.rabas[5]; if (colIdx === 12) return sum + g.rabas.tuntas;
+        if (colIdx === 13) return sum + g.tebang[1]; if (colIdx === 14) return sum + g.tebang[2];
+        if (colIdx === 15) return sum + g.tebang[3]; if (colIdx === 16) return sum + g.tebang[4];
+        if (colIdx === 17) return sum + g.tebang[5];
+        return sum;
+      }, 0);
+      const totalColLetters = ['F','G','H','I','J','K','L','M','N','O','P','Q'];
+      totalColLetters.forEach((col, idx) => {
+        const colIdx = idx + 6; // F=6 .. Q=17
+        totalRow.getCell(col).value = { formula: `SUM(${col}5:${col}${baseRow - 1})`, result: totalSumCol(colIdx) };
+      });
       for (let c = 1; c <= 18; c++) {
         const cell = totalRow.getCell(c);
         cell.font = { bold: true, size: 10.5 };
