@@ -1714,6 +1714,23 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
             <select id="rekapRowTahun" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none"></select>
           </div>
         </div>
+        <!-- Status Verifikasi & Mitra (PT): otomatis ke-prefill dari filter yang
+             sedang dipakai usher di panel Hasil Verifikasi (lihat bukaModalRekapRow()),
+             tapi tetap ditampilkan & bisa diubah lagi di sini sebelum export, supaya
+             usher selalu sadar data mana yang akan masuk rekap resmi ini. Default
+             Status sengaja dikunci ke "Terverifikasi" kalau usher belum pilih status
+             spesifik di panel, karena rekap ini dipakai untuk tanda tangan resmi. -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+          <div>
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Status Verifikasi</label>
+            <select id="rekapRowStatus" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none"></select>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Mitra (PT)</label>
+            <select id="rekapRowMitra" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none"></select>
+          </div>
+        </div>
+        <div id="rekapRowFilterNote" style="font-size:11px;color:var(--text-3);margin-top:8px;line-height:1.4"></div>
         <div id="rekapRowErr" style="display:none;background:var(--crit-bg);color:var(--crit);padding:9px 13px;border-radius:var(--radius-xs);font-size:12px;margin-top:14px;border:1px solid rgba(220,53,69,0.2)"></div>
         <div style="display:flex;gap:10px;margin-top:20px">
           <button onclick="tutupModalRekapRow()" style="flex:1;padding:11px;border:1px solid var(--line);border-radius:var(--radius-xs);background:none;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-2)">Batal</button>
@@ -6494,6 +6511,41 @@ window.bukaModalRekapRow = function() {
   }
   selB.value = String(now.getMonth()+1);
   selT.value = String(now.getFullYear());
+
+  // Prefill Status Verifikasi & Mitra (PT) dari filter yang sedang aktif di
+  // panel Hasil Verifikasi (hv-filter-status / hv-filter-mitra), supaya
+  // "apa yang usher sudah cek di layar" = "apa yang di-export" secara default.
+  // Field tetap ditampilkan & bisa diubah lagi di dalam modal ini.
+  const activeStatus = document.getElementById('hv-filter-status')?.value || '';
+  const activeMitra  = document.getElementById('hv-filter-mitra')?.value || '';
+
+  const selS = document.getElementById('rekapRowStatus');
+  selS.innerHTML = `
+    <option value="Terverifikasi">✓ Terverifikasi saja (disarankan)</option>
+    <option value="Perlu Revisi">⚠ Perlu Revisi saja</option>
+    <option value="Ditolak">✕ Ditolak saja</option>
+    <option value="">Semua Status (termasuk belum final)</option>`;
+  // Kalau usher sudah pilih status spesifik di panel (bukan "Semua Status"),
+  // ikut itu. Kalau panel masih "Semua Status", modal tetap default ke
+  // "Terverifikasi saja" (bukan ikut kosong) karena rekap ini dipakai untuk
+  // tanda tangan resmi Manager/Team Leader/PT, jadi harus data yang final.
+  selS.value = activeStatus || 'Terverifikasi';
+
+  // Daftar Mitra (PT) diambil dari data laporan yang sedang ada (sama sumber
+  // dengan dropdown filter Mitra di panel Hasil Verifikasi), bukan diketik manual.
+  const semuaUntukMitra = (hasilVerifikasiEntries && hasilVerifikasiEntries.length ? hasilVerifikasiEntries : lastLaporanEntries) || [];
+  const mitraList = [...new Set(semuaUntukMitra.map(([, l]) => laporanNamaPT(l)).filter(Boolean))].sort();
+  const selM = document.getElementById('rekapRowMitra');
+  selM.innerHTML = '<option value="">Semua Mitra</option>' + mitraList.map(m => `<option value="${m.replace(/"/g,'&quot;')}">${m}</option>`).join('');
+  selM.value = mitraList.includes(activeMitra) ? activeMitra : '';
+
+  const noteEl = document.getElementById('rekapRowFilterNote');
+  if (activeStatus || activeMitra) {
+    noteEl.textContent = 'Terisi otomatis mengikuti filter Hasil Verifikasi yang sedang usher pakai. Bisa diubah lagi di sini sebelum export.';
+  } else {
+    noteEl.textContent = '';
+  }
+
   document.getElementById('rekapRowErr').style.display = 'none';
   document.getElementById('modal-rekap-row').style.display = 'flex';
 };
@@ -6504,6 +6556,8 @@ window.tutupModalRekapRow = function() {
 window.generateRekapitulasiRow = async function() {
   const bulan = parseInt(document.getElementById('rekapRowBulan').value, 10);
   const tahun = parseInt(document.getElementById('rekapRowTahun').value, 10);
+  const statusFilter = document.getElementById('rekapRowStatus').value; // '' = Semua Status
+  const mitraFilter  = document.getElementById('rekapRowMitra').value;  // '' = Semua Mitra
   const errEl = document.getElementById('rekapRowErr');
   errEl.style.display = 'none';
   if (typeof ExcelJS === 'undefined') { errEl.textContent = 'Gagal memuat modul Excel. Cek koneksi internet lalu coba lagi.'; errEl.style.display = 'block'; return; }
@@ -6521,6 +6575,12 @@ window.generateRekapitulasiRow = async function() {
     if (!l.waktu) continue;
     const d = new Date(l.waktu);
     if (d.getMonth() + 1 !== bulan || d.getFullYear() !== tahun) continue;
+    // Status Verifikasi & Mitra (PT): filter export sesuai pilihan usher di
+    // modal ini (lihat bukaModalRekapRow() untuk prefill dari panel Hasil
+    // Verifikasi). Diterapkan SEBELUM klasifikasi rincian supaya laporan yang
+    // tidak lolos filter ini juga tidak ikut kena hitungan "terlewat".
+    if (statusFilter && l.statusVerifikasi !== statusFilter) continue;
+    if (mitraFilter && laporanNamaPT(l) !== mitraFilter) continue;
     const klas = rekapRowKlasifikasiRincian(l.rincian);
     if (!klas) {
       if (/^(Rabas|Tebang) Pohon$/i.test((l.rincian || '').trim())) terlewat++;
@@ -6552,7 +6612,11 @@ window.generateRekapitulasiRow = async function() {
 
   const semuaGrup = Object.values(grup);
   if (semuaGrup.length === 0) {
-    errEl.textContent = `Tidak ada laporan Rabas/Tebang Pohon Tim ROW pada ${REKAP_ROW_BULAN_NAMA[bulan - 1]} ${tahun}.`;
+    let pesanKosong = `Tidak ada laporan Rabas/Tebang Pohon Tim ROW pada ${REKAP_ROW_BULAN_NAMA[bulan - 1]} ${tahun}`;
+    if (statusFilter) pesanKosong += ` dengan status "${statusFilter}"`;
+    if (mitraFilter) pesanKosong += ` dari mitra "${mitraFilter}"`;
+    pesanKosong += statusFilter || mitraFilter ? '. Coba longgarkan filter Status/Mitra di atas.' : '.';
+    errEl.textContent = pesanKosong;
     errEl.style.display = 'block';
     return;
   }
@@ -6560,6 +6624,10 @@ window.generateRekapitulasiRow = async function() {
   const perUlp = {};
   for (const g of semuaGrup) { (perUlp[g.ulp] = perUlp[g.ulp] || []).push(g); }
   const urutanUlp = REKAP_ROW_ULP_URUTAN.filter(u => perUlp[u]).concat(Object.keys(perUlp).filter(u => !REKAP_ROW_ULP_URUTAN.includes(u)));
+  // Dikumpulkan kalau ada 1 sheet ULP yang datanya tercampur >1 mitra (PT)
+  // sekaligus, supaya bisa diberi tanda di sheet-nya sendiri (kop A2) DAN
+  // diringkas jadi 1 peringatan ke usher setelah file selesai diunduh.
+  const warnMultiMitra = [];
 
   try {
     const wb = new ExcelJS.Workbook();
@@ -6584,6 +6652,10 @@ window.generateRekapitulasiRow = async function() {
       rows.forEach(g => { if (g.namaPt) hitungMitra[g.namaPt] = (hitungMitra[g.namaPt] || 0) + 1; });
       const namaMitraEntries = Object.entries(hitungMitra).sort((a, b) => b[1] - a[1]);
       const namaMitra = namaMitraEntries.length ? namaMitraEntries[0][0] : '';
+      const isMultiMitra = namaMitraEntries.length > 1;
+      if (isMultiMitra) {
+        warnMultiMitra.push(`${ulp}: ${namaMitraEntries.map(([n, c]) => `${n} (${c} baris)`).join(', ')}`);
+      }
 
       ws.columns = [
         { key: 'no', width: 5 }, { key: 'tgl', width: 16 }, { key: 'asal', width: 16 },
@@ -6598,8 +6670,16 @@ window.generateRekapitulasiRow = async function() {
       ws.getCell('A1').font = { bold: true, size: 12 };
       ws.getCell('A1').alignment = { horizontal: 'center' };
       ws.mergeCells('A2:R2');
-      ws.getCell('A2').value = namaMitra ? `PT. ${namaMitra}` : 'PT. ..........................';
+      // Kalau sheet ULP ini tercampur >1 mitra (jarang, tapi mungkin), kop
+      // sengaja diberi tanda peringatan supaya usher tidak salah kirim rekap
+      // dengan nama PT yang belum tentu benar (bukan diam-diam pakai mitra
+      // yang paling sering muncul saja). Ringkasan lengkapnya ada di
+      // peringatan setelah file selesai diunduh.
+      ws.getCell('A2').value = isMultiMitra
+        ? `⚠ TERCAMPUR ${namaMitraEntries.length} MITRA — cek ulang / pakai filter Mitra (PT) sebelum export (PT. ${namaMitra} paling banyak)`
+        : (namaMitra ? `PT. ${namaMitra}` : 'PT. ..........................');
       ws.getCell('A2').alignment = { horizontal: 'center' };
+      ws.getCell('A2').font = isMultiMitra ? { bold: true, color: { argb: 'FFC0293C' } } : undefined;
       ws.getRow(1).height = 20;
       ws.getRow(2).height = 16;
 
@@ -6702,6 +6782,11 @@ window.generateRekapitulasiRow = async function() {
     let pesan = `Rekapitulasi ${urutanUlp.length} ULP berhasil diunduh.`;
     if (terlewat > 0) pesan += ` (${terlewat} laporan Rabas/Tebang tanpa kriteria spesifik dilewati, tidak masuk rekap.)`;
     showToast(pesan, 'ok');
+    // Peringatan terpisah (bukan digabung ke toast "berhasil" di atas) supaya
+    // tetap kelihatan jelas meski toast utamanya sudah hilang duluan.
+    if (warnMultiMitra.length > 0) {
+      showToast(`Sheet tercampur >1 mitra, cek kop tiap sheet: ${warnMultiMitra.join(' | ')}`, 'warn', 9000);
+    }
   } catch (e) {
     errEl.textContent = 'Gagal membuat rekapitulasi: ' + e.message;
     errEl.style.display = 'block';
