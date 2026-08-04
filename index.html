@@ -214,12 +214,12 @@ body {
 }
 .nav-item:hover  { background: rgba(255,255,255,0.06); color: #fff; }
 .nav-item.active {
-  background: linear-gradient(90deg, rgba(255,184,0,0.16), rgba(255,184,0,0.04) 80%);
-  color: #fff; font-weight: 700;
-  box-shadow: inset 3px 0 0 var(--pln-yellow);
+  background: linear-gradient(135deg, var(--pln-yellow), var(--pln-yellow-deep));
+  color: var(--ink-900); font-weight: 700;
+  box-shadow: 0 3px 12px rgba(255,184,0,0.28);
 }
-.nav-item.active .nav-icon { color: var(--pln-yellow); }
-.nav-icon { font-size: 15px; width: 19px; text-align: center; flex-shrink: 0; transition: color 0.18s var(--ease); }
+.nav-item.active .nav-icon { color: var(--ink-900); }
+.nav-icon { font-size: 15px; width: 19px; text-align: center; flex-shrink: 0; }
 .nav-badge {
   margin-left: auto;
   background: var(--crit); color: #fff;
@@ -228,8 +228,7 @@ body {
   font-family: var(--mono);
   min-width: 18px; text-align: center;
 }
-.nav-item.active .nav-badge { background: var(--crit); color: #fff; box-shadow: 0 0 0 2px rgba(255,184,0,0.16); }
-.sidebar.collapsed .nav-item.active { box-shadow: inset 3px 0 0 var(--pln-yellow); }
+.nav-item.active .nav-badge { background: rgba(10,20,36,0.25); color: var(--ink-900); }
 
 .sidebar-footer {
   padding: 14px 12px;
@@ -275,29 +274,22 @@ body {
   display: flex; align-items: center; gap: 16px;
   height: 64px; flex-shrink: 0;
   position: sticky; top: 0; z-index: 50;
-  position: relative;
-}
-.topbar::after {
-  content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
-  background: linear-gradient(90deg, var(--pln-yellow) 0%, rgba(255,184,0,0) 22%);
-  opacity: 0.55; pointer-events: none;
 }
 .topbar-title { font-family: var(--font-display); font-size: 17px; font-weight: 800; color: var(--text-1); letter-spacing: -0.3px; }
 .topbar-sub   { font-size: 12px; color: var(--text-3); margin-left: 10px; font-weight: 500; }
 .topbar-spacer { flex: 1; }
 .topbar-pill {
-  display: flex; align-items: center; gap: 9px;
+  display: flex; align-items: center; gap: 8px;
   background: var(--surface-2);
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--line);
   border-radius: 99px;
-  padding: 7px 14px 7px 11px;
+  padding: 7px 14px 7px 12px;
   font-size: 12.5px; font-weight: 600; color: var(--text-2);
-  font-variant-numeric: tabular-nums;
 }
 .live-dot {
   width: 7px; height: 7px; border-radius: 50%;
   background: var(--ok);
-  box-shadow: 0 0 0 3px var(--ok-bg);
+  box-shadow: 0 0 0 0 rgba(14,161,91,0.5);
   animation: pulse-live 2s ease-in-out infinite;
 }
 .topbar-btn {
@@ -352,7 +344,7 @@ body {
 .kpi-card::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
   background: var(--accent-color, transparent);
-  opacity: 0.45; transition: opacity 0.22s var(--ease);
+  opacity: 0; transition: opacity 0.22s var(--ease);
 }
 .kpi-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); border-color: var(--line-strong); }
 .kpi-card:hover::before { opacity: 1; }
@@ -582,7 +574,6 @@ thead th {
   padding: 11px 14px; text-align: left;
   background: var(--surface-2);
   border-bottom: 1px solid var(--line-strong);
-  box-shadow: 0 1px 0 0 var(--line-strong), 0 4px 8px -4px rgba(10,22,40,0.08);
   position: sticky; top: 0; z-index: 1;
   white-space: nowrap;
 }
@@ -593,7 +584,6 @@ tbody td {
 }
 tbody tr:last-child td { border-bottom: none; }
 tbody tr { transition: background 0.12s var(--ease); }
-tbody tr:nth-child(even) td { background: rgba(10,22,40,0.014); }
 tbody tr:hover td { background: var(--surface-2); }
 
 #viewTable { flex: 1; display: flex; flex-direction: column; min-height: 0; }
@@ -605,16 +595,16 @@ tbody tr:hover td { background: var(--surface-2); }
 /* ── BADGES ── */
 .badge {
   display: inline-flex; align-items: center; gap: 5px;
-  padding: 3px 10px; border-radius: 99px;
+  padding: 3.5px 10px; border-radius: 99px;
   font-size: 10.5px; font-weight: 700; white-space: nowrap;
-  letter-spacing: 0.1px; border: 1px solid transparent;
+  letter-spacing: 0.1px;
 }
 .badge-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
-.badge-red    { background: var(--crit-bg); color: var(--crit); border-color: rgba(220,53,69,0.22); }
-.badge-amber  { background: var(--warn-bg); color: var(--warn); border-color: rgba(217,123,10,0.22); }
-.badge-green  { background: var(--ok-bg); color: var(--ok); border-color: rgba(14,161,91,0.22); }
-.badge-blue   { background: var(--info-bg); color: var(--info); border-color: rgba(37,99,235,0.22); }
-.badge-gray   { background: var(--done-bg); color: var(--done); border-color: rgba(107,122,147,0.22); }
+.badge-red    { background: var(--crit-bg); color: var(--crit); }
+.badge-amber  { background: var(--warn-bg); color: var(--warn); }
+.badge-green  { background: var(--ok-bg); color: var(--ok); }
+.badge-blue   { background: var(--info-bg); color: var(--info); }
+.badge-gray   { background: var(--done-bg); color: var(--done); }
 .tag {
   display: inline-block; padding: 3px 10px;
   border-radius: var(--radius-xs); font-size: 9.5px; font-weight: 800;
@@ -867,14 +857,13 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
 .petugas-meta { font-size: 11px; color: var(--text-2); margin-top: 2px; }
 .petugas-status {
   margin-left: auto; font-size: 10px; font-weight: 700;
-  padding: 3.5px 10px; border-radius: 99px; white-space: nowrap;
-  border: 1px solid transparent;
+  padding: 4px 10px; border-radius: 99px; white-space: nowrap;
 }
-.ps-aktif      { background: var(--ok-bg); color: var(--ok); border-color: rgba(14,161,91,0.22); }
-.ps-perjalanan { background: var(--warn-bg); color: var(--warn); border-color: rgba(217,123,10,0.22); }
-.ps-standby    { background: var(--info-bg);  color: var(--info); border-color: rgba(37,99,235,0.22); }
-.ps-offline    { background: var(--crit-bg);   color: var(--crit); border-color: rgba(220,53,69,0.22); }
-.ps-terputus   { background: var(--done-bg);   color: var(--done); border-color: rgba(107,122,147,0.22); }
+.ps-aktif      { background: var(--ok-bg); color: var(--ok); }
+.ps-perjalanan { background: var(--warn-bg); color: var(--warn); }
+.ps-standby    { background: var(--info-bg);  color: var(--info); }
+.ps-offline    { background: var(--crit-bg);   color: var(--crit); }
+.ps-terputus   { background: var(--done-bg);   color: var(--done); }
 
 /* laporan card */
 .laporan-card {
@@ -1032,38 +1021,6 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
   border: 1px solid rgba(220,53,69,0.2);
 }
 .login-hint { font-size: 11.5px; color: var(--text-3); margin-top: 16px; text-align: center; line-height: 1.5; }
-
-/* ══════════════════════════════════════
-   POLISH: scrollbar, focus, selection, map-card accent
-   (Samsara-inspired command-center detailing)
-══════════════════════════════════════ */
-.content::-webkit-scrollbar, .table-container::-webkit-scrollbar,
-.sidebar-nav::-webkit-scrollbar, .side-panel .card::-webkit-scrollbar { width: 8px; height: 8px; }
-.content::-webkit-scrollbar-track, .table-container::-webkit-scrollbar-track { background: transparent; }
-.content::-webkit-scrollbar-thumb, .table-container::-webkit-scrollbar-thumb {
-  background: var(--line-strong); border-radius: 99px; border: 2px solid var(--bg);
-}
-.content::-webkit-scrollbar-thumb:hover, .table-container::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
-.sidebar-nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); border-radius: 99px; }
-.sidebar-nav::-webkit-scrollbar-track { background: transparent; }
-
-::selection { background: var(--pln-blue-light); color: #fff; }
-
-button:focus-visible, .nav-item:focus-visible, .tab-btn:focus-visible,
-input:focus-visible, select:focus-visible, .pg-btn:focus-visible {
-  outline: 2px solid var(--pln-blue-light); outline-offset: 2px;
-}
-
-/* map card: garis aksen "live" tipis di header untuk memberi kesan pusat kendali */
-.card-map .card-header {
-  position: relative;
-  background: linear-gradient(180deg, var(--surface) 0%, var(--surface) 100%);
-}
-.card-map .card-header::after {
-  content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
-  background: linear-gradient(90deg, var(--ok) 0%, rgba(14,161,91,0) 30%);
-  opacity: 0.6;
-}
 </style>
 </head>
 <body>
@@ -1650,6 +1607,7 @@ input:focus-visible, select:focus-visible, .pg-btn:focus-visible {
           <div class="export-group">
             <button class="btn-export xlsx" onclick="exportLaporanExcel()" title="Export laporan sesuai filter ke Excel">📥 Excel</button>
             <button class="btn-export pdf" onclick="exportLaporanPDF()" title="Export laporan sesuai filter ke PDF">📄 PDF</button>
+            <button class="btn-export xlsx" onclick="bukaModalRekapRow()" title="Rekapitulasi Rabas &amp; Tebang Tim ROW per ULP, sesuai format resmi, siap kirim (baris dikunci)">🌳 Rekap ROW</button>
           </div>
         </div>
       </div>
@@ -1733,6 +1691,34 @@ input:focus-visible, select:focus-visible, .pg-btn:focus-visible {
         <div style="display:flex;gap:10px;margin-top:20px">
           <button onclick="tutupModalEditLaporan()" style="flex:1;padding:11px;border:1px solid var(--line);border-radius:var(--radius-xs);background:none;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-2)">Batal</button>
           <button onclick="simpanEditLaporan()" style="flex:2;padding:11px;border:none;border-radius:var(--radius-xs);background:linear-gradient(135deg,var(--pln-yellow),var(--pln-yellow-deep));color:var(--ink-900);font-size:13px;font-weight:800;cursor:pointer;box-shadow:var(--shadow-glow-yellow)">✓ Simpan Perubahan</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Rekapitulasi Rabas & Tebang Tim ROW -->
+    <div id="modal-rekap-row" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(10,20,36,0.55);align-items:center;justify-content:center;">
+      <div style="background:var(--surface);border-radius:var(--radius-lg);padding:28px;width:100%;max-width:420px;box-shadow:var(--shadow-lg);position:relative;margin:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <div style="font-family:var(--font-display);font-size:16px;font-weight:800">🌳 Rekapitulasi Rabas &amp; Tebang — Tim ROW</div>
+          <button onclick="tutupModalRekapRow()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-3);padding:4px">✕</button>
+        </div>
+        <div style="font-size:12px;color:var(--text-2);margin-bottom:16px;line-height:1.5">
+          Satu sheet Excel akan dibuat otomatis untuk <b>tiap ULP</b> yang punya laporan Rabas/Tebang pada bulan terpilih (rumus GWG mengikuti pembagi ULP masing-masing), dan baris tabelnya <b>dikunci</b> supaya tidak bisa di-copy.
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Bulan</label>
+            <select id="rekapRowBulan" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none"></select>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:6px">Tahun</label>
+            <select id="rekapRowTahun" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:9px 12px;font-size:13px;outline:none"></select>
+          </div>
+        </div>
+        <div id="rekapRowErr" style="display:none;background:var(--crit-bg);color:var(--crit);padding:9px 13px;border-radius:var(--radius-xs);font-size:12px;margin-top:14px;border:1px solid rgba(220,53,69,0.2)"></div>
+        <div style="display:flex;gap:10px;margin-top:20px">
+          <button onclick="tutupModalRekapRow()" style="flex:1;padding:11px;border:1px solid var(--line);border-radius:var(--radius-xs);background:none;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-2)">Batal</button>
+          <button onclick="generateRekapitulasiRow()" style="flex:2;padding:11px;border:none;border-radius:var(--radius-xs);background:linear-gradient(135deg,var(--pln-yellow),var(--pln-yellow-deep));color:var(--ink-900);font-size:13px;font-weight:800;cursor:pointer;box-shadow:var(--shadow-glow-yellow)">📥 Buat &amp; Unduh Excel</button>
         </div>
       </div>
     </div>
@@ -2364,6 +2350,24 @@ input:focus-visible, select:focus-visible, .pg-btn:focus-visible {
             <option value="">Semua Jenis Pekerjaan</option>
           </select>
         </div>
+        <div>
+          <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Mitra (PT)</label>
+          <select id="hv-filter-mitra" onchange="onHasilVerifikasiFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:170px">
+            <option value="">Semua Mitra</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Bulan</label>
+          <select id="hv-filter-bulan" onchange="onHasilVerifikasiFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:160px">
+            <option value="">Semua Bulan</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Penyulang</label>
+          <select id="hv-filter-penyulang" onchange="onHasilVerifikasiFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:170px">
+            <option value="">Semua Penyulang</option>
+          </select>
+        </div>
         <div style="flex:1;min-width:180px">
           <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Cari</label>
           <input id="hv-filter-search" type="text" placeholder="Cari regu, tiket, catatan..." oninput="onHasilVerifikasiFilterChange()" style="width:100%;border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none">
@@ -2375,6 +2379,9 @@ input:focus-visible, select:focus-visible, .pg-btn:focus-visible {
             <option value="ulp" selected>Per ULP</option>
             <option value="jenis">Per Jenis Pekerjaan</option>
             <option value="status">Per Status</option>
+            <option value="mitra">Per Mitra (PT)</option>
+            <option value="bulan">Per Bulan</option>
+            <option value="penyulang">Per Penyulang</option>
           </select>
         </div>
         <div>
@@ -6405,6 +6412,297 @@ window.exportLaporanPDF = function() {
   }
 };
 
+// ══════════════════════════════════════════════════════════════════════
+// EXPORT REKAPITULASI RABAS & TEBANG — TIM ROW (per ULP), mengikuti format
+// resmi TEMPLATE_LAPORAN_RABAS_DAN_TEBANG.xlsx yang dipakai UP3 Jayapura.
+// Beda dari Export Laporan biasa di atas:
+// - SATU SHEET per ULP (hanya ULP yang punya laporan Rabas/Tebang di bulan
+//   terpilih yang dibuatkan sheet-nya), bukan 1 tabel gabungan semua ULP,
+//   karena format resminya memang begitu (1 rekap = 1 ULP/bulan).
+// - Satu baris = satu kombinasi (Tanggal, Regu, Penyulang) di ULP itu;
+//   kriteria K-1..K-5 & Tuntas dijumlahkan dari semua laporan Rabas/Tebang
+//   yang cocok pada kombinasi itu (petugas biasa lapor per-kriteria
+//   terpisah, jadi bisa >1 laporan untuk 1 baris rekap).
+// - Kolom RABAS POHON (GWG) memakai RUMUS Excel (bukan angka statis),
+//   persis pola template resmi: (K1/d1)+(K2/d2)+(K3/d3)+(K4/d4)+K5+Tuntas.
+//   Pembagi (d1..d4) BEDA per kelompok ULP, sesuai catatan di template asli:
+//     ULP Sarmi / Genyem / Arso        → dibagi 6, 6, 4, 4
+//     ULP Jayapura / Abepura / Sentani → dibagi 5, 5, 3, 3
+// - Setiap sheet DIKUNCI (Protect Sheet, opsi "select locked cells" OFF)
+//   supaya baris tabelnya tidak bisa di-select/di-copy oleh penerima.
+//
+// CATATAN PERBAIKAN dari file TEMPLATE_LAPORAN_RABAS_DAN_TEBANG.xlsx asli:
+// pada template sumber, header kolom TEBANG POHON punya 6 kolom (M:R) tapi
+// label "K-2" dobel (harusnya salah satunya "K-3") dan kolom ke-6 tidak
+// pernah dipakai (di data aplikasi/RINCIAN_SATUAN_MAP tidak ada "Tebang
+// Pohon Tuntas", cuma ada Kriteria-1..5). Supaya tidak ikut salah, export
+// ini disederhanakan jadi 5 kolom Tebang Pohon (K-1..K-5) sesuai data yang
+// benar-benar ada, kolom "Jumlah Anggota" pindah tepat setelahnya. Kalau
+// ternyata memang ada maksud lain untuk kolom ke-6 itu, tinggal bilang saja.
+// ══════════════════════════════════════════════════════════════════════
+const REKAP_ROW_ULP_URUTAN = ['ULP Jayapura','ULP Abepura','ULP Sentani','ULP Arso','ULP Genyem','ULP Sarmi'];
+const REKAP_ROW_DIVISOR = {
+  'ULP Sarmi':    [6,6,4,4],
+  'ULP Genyem':   [6,6,4,4],
+  'ULP Arso':     [6,6,4,4],
+  'ULP Jayapura': [5,5,3,3],
+  'ULP Abepura':  [5,5,3,3],
+  'ULP Sentani':  [5,5,3,3],
+};
+const REKAP_ROW_BULAN_NAMA = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+// Klasifikasi 1 laporan: masuk kriteria Rabas/Tebang yang mana. Rincian
+// generik tanpa kriteria ("Rabas Pohon" / "Tebang Pohon" polos) sengaja
+// TIDAK dimasukkan (dihitung di `terlewat`) karena tidak jelas masuk kolom
+// K berapa, supaya rekap tidak salah taruh angka.
+function rekapRowKlasifikasiRincian(rincian) {
+  const s = (rincian || '').trim();
+  let m = /^Rabas Pohon Kriteria-([1-5])$/i.exec(s);
+  if (m) return { jenis: 'rabas', kriteria: +m[1] };
+  if (/^Rabas Pohon Tuntas$/i.test(s)) return { jenis: 'rabas', tuntas: true };
+  m = /^Tebang Pohon Kriteria-([1-5])$/i.exec(s);
+  if (m) return { jenis: 'tebang', kriteria: +m[1] };
+  return null;
+}
+function fmtHariTanggalRow(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  const hari = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'][d.getDay()];
+  const p = n => String(n).padStart(2, '0');
+  return `${hari}, ${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()}`;
+}
+
+// "Jumlah Anggota" di rekap resmi berarti JUMLAH (angka), bukan daftar nama.
+// anggotaHadir dari Laporan Petugas berisi nama-nama dipisah koma/titik-koma/
+// baris baru (sama persis pola split yang dipakai di tempat lain, mis.
+// tampilan kartu petugas), jadi tinggal dihitung jumlah nama yang terisi.
+function hitungJumlahAnggotaRow(anggotaHadir) {
+  if (!anggotaHadir) return 0;
+  return anggotaHadir.split(/\s*[,;•\n]\s*/).map(s => s.trim()).filter(Boolean).length;
+}
+
+window.bukaModalRekapRow = function() {
+  const now = new Date();
+  const selB = document.getElementById('rekapRowBulan');
+  const selT = document.getElementById('rekapRowTahun');
+  if (selB.options.length === 0) {
+    selB.innerHTML = REKAP_ROW_BULAN_NAMA.map((b,i) => `<option value="${i+1}">${b}</option>`).join('');
+  }
+  if (selT.options.length === 0) {
+    const y = now.getFullYear();
+    selT.innerHTML = [y-1,y,y+1].map(t => `<option value="${t}">${t}</option>`).join('');
+  }
+  selB.value = String(now.getMonth()+1);
+  selT.value = String(now.getFullYear());
+  document.getElementById('rekapRowErr').style.display = 'none';
+  document.getElementById('modal-rekap-row').style.display = 'flex';
+};
+window.tutupModalRekapRow = function() {
+  document.getElementById('modal-rekap-row').style.display = 'none';
+};
+
+window.generateRekapitulasiRow = async function() {
+  const bulan = parseInt(document.getElementById('rekapRowBulan').value, 10);
+  const tahun = parseInt(document.getElementById('rekapRowTahun').value, 10);
+  const errEl = document.getElementById('rekapRowErr');
+  errEl.style.display = 'none';
+  if (typeof ExcelJS === 'undefined') { errEl.textContent = 'Gagal memuat modul Excel. Cek koneksi internet lalu coba lagi.'; errEl.style.display = 'block'; return; }
+
+  const semua = lastLaporanEntries || [];
+  // grup: key -> { tglKey, waktu, ulp, penyulang, regu, asalTimRow, namaPt, anggotaHadir, rabas:{1..5,tuntas}, tebang:{1..5} }
+  const grup = {};
+  let terlewat = 0;
+  for (const [, l] of semua) {
+    if (!l.waktu) continue;
+    const d = new Date(l.waktu);
+    if (d.getMonth() + 1 !== bulan || d.getFullYear() !== tahun) continue;
+    const klas = rekapRowKlasifikasiRincian(l.rincian);
+    if (!klas) {
+      if (/^(Rabas|Tebang) Pohon$/i.test((l.rincian || '').trim())) terlewat++;
+      continue;
+    }
+    // ULP efektif: kalau petugas login sbg "PT MITRA", ULP fisiknya ada di
+    // ulpMitra (ULP tujuan kerja), bukan "PT MITRA" itu sendiri.
+    const ulp = laporanUlpEfektif(l);
+    const tglKey = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const key = tglKey + '|' + ulp + '|' + (l.lapPenyulang || '—') + '|' + (l.regu || '—');
+    if (!grup[key]) {
+      grup[key] = {
+        tglKey, waktu: l.waktu, ulp, penyulang: l.lapPenyulang || '—', regu: l.regu || '—',
+        asalTimRow: l.asalTimRow || '', namaPt: laporanNamaPT(l), anggotaHadir: l.anggotaHadir || '',
+        rabas: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, tuntas: 0 }, tebang: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+      };
+    }
+    const g = grup[key];
+    if (!g.anggotaHadir && l.anggotaHadir) g.anggotaHadir = l.anggotaHadir;
+    if (!g.asalTimRow && l.asalTimRow) g.asalTimRow = l.asalTimRow;
+    if (!g.namaPt && laporanNamaPT(l)) g.namaPt = laporanNamaPT(l);
+    const nilai = parseFloat(l.realisasi) || 0;
+    if (klas.jenis === 'rabas') {
+      if (klas.tuntas) g.rabas.tuntas += nilai; else g.rabas[klas.kriteria] += nilai;
+    } else {
+      g.tebang[klas.kriteria] += nilai;
+    }
+  }
+
+  const semuaGrup = Object.values(grup);
+  if (semuaGrup.length === 0) {
+    errEl.textContent = `Tidak ada laporan Rabas/Tebang Pohon Tim ROW pada ${REKAP_ROW_BULAN_NAMA[bulan - 1]} ${tahun}.`;
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const perUlp = {};
+  for (const g of semuaGrup) { (perUlp[g.ulp] = perUlp[g.ulp] || []).push(g); }
+  const urutanUlp = REKAP_ROW_ULP_URUTAN.filter(u => perUlp[u]).concat(Object.keys(perUlp).filter(u => !REKAP_ROW_ULP_URUTAN.includes(u)));
+
+  try {
+    const wb = new ExcelJS.Workbook();
+    const thin = { style: 'thin', color: { argb: 'FF9AA7B8' } };
+    const border = { top: thin, bottom: thin, left: thin, right: thin };
+    const headerFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF003D82' } };
+    const headerFont = { bold: true, color: { argb: 'FFFFFFFF' }, size: 10.5 };
+    const bannerFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0057B8' } };
+
+    for (const ulp of urutanUlp) {
+      const rows = perUlp[ulp].sort((a, b) => a.tglKey.localeCompare(b.tglKey) || a.penyulang.localeCompare(b.penyulang) || a.regu.localeCompare(b.regu));
+      const div = REKAP_ROW_DIVISOR[ulp] || [5, 5, 3, 3]; // default kalau ada ULP di luar 6 ULP UP3 Jayapura
+      const namaSheet = (ulp.replace('ULP ', '') || 'ULP').slice(0, 28);
+      const ws = wb.addWorksheet(namaSheet, { properties: { defaultColWidth: 12 } });
+
+      // Nama PT (mitra pelaksana) diambil dari Laporan Petugas (regu saat
+      // Unit Kerja = PT MITRA), BUKAN diketik manual. Kalau dalam satu sheet
+      // ULP ada lebih dari satu PT yang lapor (jarang, tapi mungkin), dipakai
+      // yang paling sering muncul supaya kop & tanda tangan tetap konsisten
+      // satu nama.
+      const hitungMitra = {};
+      rows.forEach(g => { if (g.namaPt) hitungMitra[g.namaPt] = (hitungMitra[g.namaPt] || 0) + 1; });
+      const namaMitraEntries = Object.entries(hitungMitra).sort((a, b) => b[1] - a[1]);
+      const namaMitra = namaMitraEntries.length ? namaMitraEntries[0][0] : '';
+
+      ws.columns = [
+        { key: 'no', width: 5 }, { key: 'tgl', width: 16 }, { key: 'asal', width: 16 },
+        { key: 'peny', width: 20 }, { key: 'ulp', width: 14 },
+        { key: 'gwg', width: 10 }, { key: 'k1', width: 7 }, { key: 'k2', width: 7 }, { key: 'k3', width: 7 }, { key: 'k4', width: 7 }, { key: 'k5', width: 7 }, { key: 'tuntas', width: 12 },
+        { key: 'tk1', width: 7 }, { key: 'tk2', width: 7 }, { key: 'tk3', width: 7 }, { key: 'tk4', width: 7 }, { key: 'tk5', width: 7 },
+        { key: 'anggota', width: 13 }
+      ];
+
+      ws.mergeCells('A1:R1');
+      ws.getCell('A1').value = `REKAPITULASI HARIAN PEKERJAAN RABAS DAN TEBANG BULAN ${REKAP_ROW_BULAN_NAMA[bulan - 1].toUpperCase()} ${ulp.toUpperCase()} TAHUN ${tahun}`;
+      ws.getCell('A1').font = { bold: true, size: 12 };
+      ws.getCell('A1').alignment = { horizontal: 'center' };
+      ws.mergeCells('A2:R2');
+      ws.getCell('A2').value = namaMitra ? `PT. ${namaMitra}` : 'PT. ..........................';
+      ws.getCell('A2').alignment = { horizontal: 'center' };
+      ws.getRow(1).height = 20;
+      ws.getRow(2).height = 16;
+
+      ws.mergeCells('A3:A4'); ws.getCell('A3').value = 'NO';
+      ws.mergeCells('B3:B4'); ws.getCell('B3').value = 'HARI/TANGGAL';
+      ws.mergeCells('C3:C4'); ws.getCell('C3').value = 'ASAL TIM ROW';
+      ws.mergeCells('D3:D4'); ws.getCell('D3').value = 'NAMA PENYULANG';
+      ws.mergeCells('E3:E4'); ws.getCell('E3').value = 'NAMA ULP';
+      ws.mergeCells('F3:F4'); ws.getCell('F3').value = 'RABAS POHON\n(GWG)';
+      ws.mergeCells('G3:L3'); ws.getCell('G3').value = 'RABAS POHON';
+      ws.mergeCells('M3:Q3'); ws.getCell('M3').value = 'TEBANG POHON';
+      ws.mergeCells('R3:R4'); ws.getCell('R3').value = 'JUMLAH ANGGOTA';
+      ['G','H','I','J','K','L'].forEach((c, i) => { ws.getCell(c + '4').value = ['K-1','K-2','K-3','K-4','K-5','RABAS TUNTAS'][i]; });
+      ['M','N','O','P','Q'].forEach((c, i) => { ws.getCell(c + '4').value = ['K-1','K-2','K-3','K-4','K-5'][i]; });
+
+      for (let r = 3; r <= 4; r++) {
+        for (let c = 1; c <= 18; c++) {
+          const cell = ws.getRow(r).getCell(c);
+          cell.font = headerFont;
+          cell.fill = (r === 3 && c >= 7 && c <= 17) ? bannerFill : headerFill;
+          cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+          cell.border = border;
+        }
+      }
+      ws.getRow(3).height = 20;
+      ws.getRow(4).height = 26;
+
+      let rIdx = 5;
+      rows.forEach((g, i) => {
+        const row = ws.getRow(rIdx);
+        row.getCell(1).value = i + 1;
+        row.getCell(2).value = fmtHariTanggalRow(g.waktu);
+        row.getCell(3).value = g.asalTimRow || '-';
+        row.getCell(4).value = g.penyulang;
+        row.getCell(5).value = ulp;
+        row.getCell(6).value = { formula: `(G${rIdx}/${div[0]})+(H${rIdx}/${div[1]})+(I${rIdx}/${div[2]})+(J${rIdx}/${div[3]})+(K${rIdx})+(L${rIdx})` };
+        row.getCell(7).value = g.rabas[1]; row.getCell(8).value = g.rabas[2]; row.getCell(9).value = g.rabas[3];
+        row.getCell(10).value = g.rabas[4]; row.getCell(11).value = g.rabas[5]; row.getCell(12).value = g.rabas.tuntas;
+        row.getCell(13).value = g.tebang[1]; row.getCell(14).value = g.tebang[2]; row.getCell(15).value = g.tebang[3];
+        row.getCell(16).value = g.tebang[4]; row.getCell(17).value = g.tebang[5];
+        row.getCell(18).value = hitungJumlahAnggotaRow(g.anggotaHadir);
+        for (let c = 1; c <= 18; c++) {
+          const cell = row.getCell(c);
+          cell.border = border;
+          cell.alignment = { vertical: 'middle', horizontal: c <= 5 ? 'left' : 'center' };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: i % 2 === 0 ? 'FFF2F5FA' : 'FFFFFFFF' } };
+          cell.font = { size: 10 };
+        }
+        rIdx++;
+      });
+
+      const baseRow = rIdx;
+      const totalRow = ws.getRow(baseRow);
+      ws.mergeCells(`A${baseRow}:E${baseRow}`);
+      totalRow.getCell(1).value = 'TOTAL';
+      for (const col of ['F','G','H','I','J','K','L','M','N','O','P','Q']) {
+        totalRow.getCell(col).value = { formula: `SUM(${col}5:${col}${baseRow - 1})` };
+      }
+      for (let c = 1; c <= 18; c++) {
+        const cell = totalRow.getCell(c);
+        cell.font = { bold: true, size: 10.5 };
+        cell.border = border;
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE7ECF4' } };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      }
+      rIdx += 2;
+
+      const ttdBaris = rIdx;
+      const ttd = [
+        ['D', 'E', 'Mengetahui,', 'Asman Jaringan dan Konstruksi'],
+        ['G', 'H', 'Mengetahui,', `Manager ${ulp}`],
+        ['J', 'L', 'Pemeriksa,', `Team Leader ${ulp}`],
+        ['N', 'Q', 'Pelaksana,', namaMitra ? `PT. ${namaMitra}` : 'PT...']
+      ];
+      ttd.forEach(([colStart, colEnd, l1, l2]) => {
+        ws.mergeCells(`${colStart}${ttdBaris}:${colEnd}${ttdBaris}`);
+        ws.getCell(`${colStart}${ttdBaris}`).value = l1;
+        ws.mergeCells(`${colStart}${ttdBaris + 1}:${colEnd}${ttdBaris + 1}`);
+        ws.getCell(`${colStart}${ttdBaris + 1}`).value = l2;
+        ws.mergeCells(`${colStart}${ttdBaris + 5}:${colEnd}${ttdBaris + 5}`);
+        ws.getCell(`${colStart}${ttdBaris + 5}`).value = '.............';
+        [ttdBaris, ttdBaris + 1, ttdBaris + 5].forEach(rr => { ws.getCell(`${colStart}${rr}`).alignment = { horizontal: 'center' }; });
+      });
+
+      // KUNCI SHEET: semua sel bawaan ExcelJS locked=true, proteksi TANPA opsi
+      // "select locked cells" → tabel tidak bisa di-select sama sekali,
+      // sehingga tidak bisa di-copy (Ctrl+C) oleh siapa pun yang membuka file.
+      await ws.protect('', {
+        selectLockedCells: false,
+        selectUnlockedCells: false,
+        formatCells: false, formatColumns: false, formatRows: false,
+        insertRows: false, insertColumns: false, deleteRows: false, deleteColumns: false,
+        sort: false, autoFilter: false, pivotTables: false
+      });
+    }
+
+    const namaFile = `Rekapitulasi_Rabas_Tebang_TimROW_${REKAP_ROW_BULAN_NAMA[bulan - 1]}${tahun}_${fmtFileStamp()}.xlsx`;
+    await ejUnduhWorkbook(wb, namaFile);
+    tutupModalRekapRow();
+    let pesan = `Rekapitulasi ${urutanUlp.length} ULP berhasil diunduh.`;
+    if (terlewat > 0) pesan += ` (${terlewat} laporan Rabas/Tebang tanpa kriteria spesifik dilewati, tidak masuk rekap.)`;
+    showToast(pesan, 'ok');
+  } catch (e) {
+    errEl.textContent = 'Gagal membuat rekapitulasi: ' + e.message;
+    errEl.style.display = 'block';
+  }
+};
+
 // ── Edit Laporan (TL/Admin/Admin), #8: edit pasca-verifikasi wajib verifikasi ulang ──
 let currentEditLaporanId = null;
 let currentEditLaporanData = null;
@@ -8272,31 +8570,86 @@ function listenVerifikasi() {
 // ══════════════════════════════════════
 let hasilVerifikasiEntries = [];
 
+// Nama PT (perusahaan mitra) HANYA valid kalau petugas login dengan Unit
+// Kerja = "PT MITRA" — di kondisi itu, field Regu/Tim yang mereka isi berisi
+// nama PT-nya sendiri (bukan "asal Tim ROW", yang isinya ULP asal, dan bukan
+// juga field ulpMitra, yang isinya ULP TUJUAN kerja PT itu hari ini).
+// Lihat field-ulp-mitra & field-asal-timrow di petugas.html.
+function laporanNamaPT(l) {
+  return (l && l.ulp === 'PT MITRA') ? (l.regu || '') : '';
+}
+// ULP efektif tempat pekerjaan itu benar-benar dilakukan: kalau Unit Kerja
+// petugas "PT MITRA", ULP fisiknya ada di ulpMitra (ULP tujuan), bukan
+// "PT MITRA" itu sendiri (yang bukan ULP asli).
+function laporanUlpEfektif(l) {
+  if (!l) return '—';
+  return (l.ulp === 'PT MITRA' ? l.ulpMitra : l.ulp) || '—';
+}
+
+// Kunci "Bulan" dibentuk M-YYYY (mis. "8-2026") dari waktu laporan, supaya
+// bisa difilter per periode tanpa tercampur lintas tahun. Label memakai
+// REKAP_ROW_BULAN_NAMA yang sudah ada (dipakai juga di Rekap Tim ROW),
+// jadi konsisten satu penamaan bulan di seluruh app.
+function hvBulanKey(waktu) {
+  if (!waktu) return null;
+  const d = new Date(waktu);
+  return (d.getMonth() + 1) + '-' + d.getFullYear();
+}
+function hvBulanLabel(key) {
+  const [m, y] = key.split('-').map(Number);
+  return `${REKAP_ROW_BULAN_NAMA[m - 1]} ${y}`;
+}
+
 function populateHasilVerifikasiFilters(entries) {
   const processed = entries.filter(([, l]) => !!l.statusVerifikasi);
-  const ulpSel   = document.getElementById('hv-filter-ulp');
-  const jenisSel = document.getElementById('hv-filter-jenis');
-  if (!ulpSel || !jenisSel) return;
+  const ulpSel      = document.getElementById('hv-filter-ulp');
+  const jenisSel     = document.getElementById('hv-filter-jenis');
+  const mitraSel     = document.getElementById('hv-filter-mitra');
+  const bulanSel     = document.getElementById('hv-filter-bulan');
+  const penyulangSel = document.getElementById('hv-filter-penyulang');
+  if (!ulpSel || !jenisSel || !mitraSel || !bulanSel || !penyulangSel) return;
 
-  const keepUlp   = ulpSel.value;
-  const keepJenis = jenisSel.value;
+  const keepUlp       = ulpSel.value;
+  const keepJenis      = jenisSel.value;
+  const keepMitra      = mitraSel.value;
+  const keepBulan      = bulanSel.value;
+  const keepPenyulang  = penyulangSel.value;
 
-  const ulpSet   = [...new Set(processed.map(([, l]) => l.ulp).filter(Boolean))].sort();
-  const jenisSet = [...new Set(processed.map(([, l]) => l.rincian).filter(Boolean))].sort();
+  const ulpSet       = [...new Set(processed.map(([, l]) => l.ulp).filter(Boolean))].sort();
+  const jenisSet      = [...new Set(processed.map(([, l]) => l.rincian).filter(Boolean))].sort();
+  // Mitra (PT) & Penyulang, sama seperti field lain di Hasil Verifikasi,
+  // diambil langsung dari data Laporan yang dikirim Petugas (l.ulpMitra /
+  // l.lapPenyulang), bukan input manual terpisah.
+  const mitraSet      = [...new Set(processed.map(([, l]) => laporanNamaPT(l)).filter(Boolean))].sort();
+  const penyulangSet  = [...new Set(processed.map(([, l]) => l.lapPenyulang).filter(Boolean))].sort();
+  const bulanKeys     = [...new Set(processed.map(([, l]) => hvBulanKey(l.waktu)).filter(Boolean))]
+    .sort((a, b) => { const [ma,ya]=a.split('-').map(Number), [mb,yb]=b.split('-').map(Number); return yb - ya || mb - ma; });
 
   ulpSel.innerHTML = '<option value="">Semua ULP</option>' +
     ulpSet.map(u => `<option value="${u}">${u}</option>`).join('');
   jenisSel.innerHTML = '<option value="">Semua Jenis Pekerjaan</option>' +
     jenisSet.map(j => `<option value="${j.replace(/"/g,'&quot;')}">${j}</option>`).join('');
+  mitraSel.innerHTML = '<option value="">Semua Mitra</option>' +
+    mitraSet.map(m => `<option value="${m.replace(/"/g,'&quot;')}">${m}</option>`).join('');
+  penyulangSel.innerHTML = '<option value="">Semua Penyulang</option>' +
+    penyulangSet.map(p => `<option value="${p.replace(/"/g,'&quot;')}">${p}</option>`).join('');
+  bulanSel.innerHTML = '<option value="">Semua Bulan</option>' +
+    bulanKeys.map(k => `<option value="${k}">${hvBulanLabel(k)}</option>`).join('');
 
   if (ulpSet.includes(keepUlp)) ulpSel.value = keepUlp;
   if (jenisSet.includes(keepJenis)) jenisSel.value = keepJenis;
+  if (mitraSet.includes(keepMitra)) mitraSel.value = keepMitra;
+  if (penyulangSet.includes(keepPenyulang)) penyulangSel.value = keepPenyulang;
+  if (bulanKeys.includes(keepBulan)) bulanSel.value = keepBulan;
 }
 
 window.resetHasilVerifikasiFilter = function() {
   document.getElementById('hv-filter-status').value = '';
   document.getElementById('hv-filter-ulp').value = '';
   document.getElementById('hv-filter-jenis').value = '';
+  document.getElementById('hv-filter-mitra').value = '';
+  document.getElementById('hv-filter-bulan').value = '';
+  document.getElementById('hv-filter-penyulang').value = '';
   document.getElementById('hv-filter-search').value = '';
   document.getElementById('hv-groupby').value = 'ulp';
   hasilVerifikasiPage = 1;
@@ -8362,15 +8715,21 @@ function renderHasilVerifikasiCard(id, l) {
 }
 
 function getHasilVerifikasiFilteredEntries() {
-  const fStatus = document.getElementById('hv-filter-status')?.value || '';
-  const fUlp    = document.getElementById('hv-filter-ulp')?.value || '';
-  const fJenis  = document.getElementById('hv-filter-jenis')?.value || '';
-  const fSearch = (document.getElementById('hv-filter-search')?.value || '').toLowerCase().trim();
+  const fStatus    = document.getElementById('hv-filter-status')?.value || '';
+  const fUlp       = document.getElementById('hv-filter-ulp')?.value || '';
+  const fJenis     = document.getElementById('hv-filter-jenis')?.value || '';
+  const fMitra     = document.getElementById('hv-filter-mitra')?.value || '';
+  const fBulan     = document.getElementById('hv-filter-bulan')?.value || '';
+  const fPenyulang = document.getElementById('hv-filter-penyulang')?.value || '';
+  const fSearch    = (document.getElementById('hv-filter-search')?.value || '').toLowerCase().trim();
 
   let entries = (hasilVerifikasiEntries || []).filter(([, l]) => !!l.statusVerifikasi);
-  if (fStatus) entries = entries.filter(([, l]) => l.statusVerifikasi === fStatus);
-  if (fUlp)    entries = entries.filter(([, l]) => l.ulp === fUlp);
-  if (fJenis)  entries = entries.filter(([, l]) => l.rincian === fJenis);
+  if (fStatus)    entries = entries.filter(([, l]) => l.statusVerifikasi === fStatus);
+  if (fUlp)       entries = entries.filter(([, l]) => l.ulp === fUlp);
+  if (fJenis)     entries = entries.filter(([, l]) => l.rincian === fJenis);
+  if (fMitra)     entries = entries.filter(([, l]) => laporanNamaPT(l) === fMitra);
+  if (fPenyulang) entries = entries.filter(([, l]) => l.lapPenyulang === fPenyulang);
+  if (fBulan)     entries = entries.filter(([, l]) => hvBulanKey(l.waktu) === fBulan);
   if (fSearch) entries = entries.filter(([, l]) => {
     const hay = `${l.regu||''} ${l.nomorTiket||''} ${l.rincian||''} ${l.verifCatatan||''} ${l.material||''}`.toLowerCase();
     return hay.includes(fSearch);
@@ -8422,8 +8781,11 @@ window.renderHasilVerifikasiGrid = function() {
     return;
   }
 
-  const groupKeyFn = groupBy === 'ulp'    ? (l => l.ulp || 'Tanpa ULP')
-                    : groupBy === 'jenis' ? (l => l.rincian || 'Tanpa Jenis Pekerjaan')
+  const groupKeyFn = groupBy === 'ulp'       ? (l => l.ulp || 'Tanpa ULP')
+                    : groupBy === 'jenis'     ? (l => l.rincian || 'Tanpa Jenis Pekerjaan')
+                    : groupBy === 'mitra'     ? (l => laporanNamaPT(l) || 'Tanpa Mitra')
+                    : groupBy === 'penyulang' ? (l => l.lapPenyulang || 'Tanpa Penyulang')
+                    : groupBy === 'bulan'     ? (l => { const k = hvBulanKey(l.waktu); return k ? hvBulanLabel(k) : 'Tanpa Waktu'; })
                     : (l => l.statusVerifikasi);
 
   const groups = {};
