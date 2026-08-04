@@ -6508,7 +6508,12 @@ window.generateRekapitulasiRow = async function() {
   errEl.style.display = 'none';
   if (typeof ExcelJS === 'undefined') { errEl.textContent = 'Gagal memuat modul Excel. Cek koneksi internet lalu coba lagi.'; errEl.style.display = 'block'; return; }
 
-  const semua = lastLaporanEntries || [];
+  // Tombol "Rekap ROW" sekarang ada di halaman Hasil Verifikasi, jadi
+  // sumber datanya diambil dari situ (hasilVerifikasiEntries, diisi oleh
+  // listenVerifikasi() yang aktif saat halaman itu dibuka), bukan lagi
+  // lastLaporanEntries (yang cuma terisi kalau halaman Laporan Pekerjaan
+  // pernah dibuka). lastLaporanEntries tetap dipakai sebagai fallback.
+  const semua = (hasilVerifikasiEntries && hasilVerifikasiEntries.length ? hasilVerifikasiEntries : lastLaporanEntries) || [];
   // grup: key -> { tglKey, waktu, ulp, penyulang, regu, asalTimRow, namaPt, anggotaHadir, rabas:{1..5,tuntas}, tebang:{1..5} }
   const grup = {};
   let terlewat = 0;
