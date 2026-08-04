@@ -1607,7 +1607,6 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
           <div class="export-group">
             <button class="btn-export xlsx" onclick="exportLaporanExcel()" title="Export laporan sesuai filter ke Excel">📥 Excel</button>
             <button class="btn-export pdf" onclick="exportLaporanPDF()" title="Export laporan sesuai filter ke PDF">📄 PDF</button>
-            <button class="btn-export xlsx" onclick="bukaModalRekapRow()" title="Rekapitulasi Rabas &amp; Tebang Tim ROW per ULP, sesuai format resmi, siap kirim (baris dikunci)">🌳 Rekap ROW</button>
           </div>
         </div>
       </div>
@@ -2321,6 +2320,7 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <span id="hasilVerifikasiCount" class="card-count">0 laporan</span>
+          <button onclick="bukaModalRekapRow()" style="background:linear-gradient(135deg,var(--pln-yellow),var(--pln-yellow-deep));color:var(--ink-900);border:none;border-radius:var(--radius-xs);padding:9px 16px;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:var(--shadow-glow-yellow)" title="Rekapitulasi Rabas &amp; Tebang Tim ROW per ULP, sesuai format resmi, siap kirim (baris dikunci)">🌳 Rekap ROW</button>
           <button onclick="exportHasilVerifikasiPDF()" style="background:linear-gradient(135deg,#DC3545,#B02A37);color:#fff;border:none;border-radius:var(--radius-xs);padding:9px 16px;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(220,53,69,0.25)">📄 Export PDF</button>
           <button onclick="exportHasilVerifikasiExcel()" style="background:linear-gradient(135deg,#1A8C3C,#136B2E);color:#fff;border:none;border-radius:var(--radius-xs);padding:9px 16px;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(26,140,60,0.25)">📊 Export Excel</button>
         </div>
@@ -2345,9 +2345,9 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
           </select>
         </div>
         <div>
-          <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Jenis Pekerjaan</label>
-          <select id="hv-filter-jenis" onchange="onHasilVerifikasiFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:200px">
-            <option value="">Semua Jenis Pekerjaan</option>
+          <label style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2);display:block;margin-bottom:5px">Tim/Regu</label>
+          <select id="hv-filter-regu" onchange="onHasilVerifikasiFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:200px">
+            <option value="">Semua Tim/Regu</option>
           </select>
         </div>
         <div>
@@ -2377,7 +2377,7 @@ td.truncate  { max-width: 160px; overflow: hidden; text-overflow: ellipsis; whit
           <select id="hv-groupby" onchange="onHasilVerifikasiFilterChange()" style="border:1px solid var(--line);border-radius:var(--radius-xs);padding:8px 11px;font-size:12.5px;outline:none;min-width:150px">
             <option value="none">Tanpa Kelompok</option>
             <option value="ulp" selected>Per ULP</option>
-            <option value="jenis">Per Jenis Pekerjaan</option>
+            <option value="regu">Per Tim/Regu</option>
             <option value="status">Per Status</option>
             <option value="mitra">Per Mitra (PT)</option>
             <option value="bulan">Per Bulan</option>
@@ -8575,8 +8575,20 @@ let hasilVerifikasiEntries = [];
 // nama PT-nya sendiri (bukan "asal Tim ROW", yang isinya ULP asal, dan bukan
 // juga field ulpMitra, yang isinya ULP TUJUAN kerja PT itu hari ini).
 // Lihat field-ulp-mitra & field-asal-timrow di petugas.html.
+// Nama PT (perusahaan mitra) bisa datang dari 2 pola data yang sama-sama
+// dipakai di lapangan:
+// 1) Petugas login dengan Unit Kerja = "PT MITRA" -> Regu/Tim yang mereka
+//    isi ADALAH nama PT-nya sendiri (mekanisme khusus PT MITRA, lihat
+//    field-ulp-mitra di petugas.html).
+// 2) Tim ROW yang login langsung di bawah ULP asli (bukan "PT MITRA"),
+//    dengan nama Regu/Tim berpola "Tim ROW <Nama PT>" (mis. "Tim ROW PT
+//    Intrabes") -> nama PT diambil dari teks setelah kata "ROW".
 function laporanNamaPT(l) {
-  return (l && l.ulp === 'PT MITRA') ? (l.regu || '') : '';
+  if (!l) return '';
+  if (l.ulp === 'PT MITRA') return l.regu || '';
+  const regu = (l.regu || '').trim();
+  const m = /\bROW\b\s*[-–:]?\s*(.+)$/i.exec(regu);
+  return m ? m[1].trim() : '';
 }
 // ULP efektif tempat pekerjaan itu benar-benar dilakukan: kalau Unit Kerja
 // petugas "PT MITRA", ULP fisiknya ada di ulpMitra (ULP tujuan), bukan
@@ -8586,49 +8598,49 @@ function laporanUlpEfektif(l) {
   return (l.ulp === 'PT MITRA' ? l.ulpMitra : l.ulp) || '—';
 }
 
-// Kunci "Bulan" dibentuk M-YYYY (mis. "8-2026") dari waktu laporan, supaya
-// bisa difilter per periode tanpa tercampur lintas tahun. Label memakai
-// REKAP_ROW_BULAN_NAMA yang sudah ada (dipakai juga di Rekap Tim ROW),
-// jadi konsisten satu penamaan bulan di seluruh app.
+// Kunci "Bulan" cuma nomor bulan (1-12), TANPA tahun — sesuai permintaan,
+// filter Bulan ini menggabungkan semua tahun jadi satu opsi per nama bulan
+// (mis. semua laporan Agustus, dari tahun manapun, masuk satu filter
+// "Agustus"). Kalau nanti perlu dipisah per tahun juga, tinggal ganti balik
+// ke kunci M-YYYY.
 function hvBulanKey(waktu) {
   if (!waktu) return null;
-  const d = new Date(waktu);
-  return (d.getMonth() + 1) + '-' + d.getFullYear();
+  return new Date(waktu).getMonth() + 1;
 }
 function hvBulanLabel(key) {
-  const [m, y] = key.split('-').map(Number);
-  return `${REKAP_ROW_BULAN_NAMA[m - 1]} ${y}`;
+  return REKAP_ROW_BULAN_NAMA[key - 1];
 }
 
 function populateHasilVerifikasiFilters(entries) {
   const processed = entries.filter(([, l]) => !!l.statusVerifikasi);
   const ulpSel      = document.getElementById('hv-filter-ulp');
-  const jenisSel     = document.getElementById('hv-filter-jenis');
+  const reguSel      = document.getElementById('hv-filter-regu');
   const mitraSel     = document.getElementById('hv-filter-mitra');
   const bulanSel     = document.getElementById('hv-filter-bulan');
   const penyulangSel = document.getElementById('hv-filter-penyulang');
-  if (!ulpSel || !jenisSel || !mitraSel || !bulanSel || !penyulangSel) return;
+  if (!ulpSel || !reguSel || !mitraSel || !bulanSel || !penyulangSel) return;
 
   const keepUlp       = ulpSel.value;
-  const keepJenis      = jenisSel.value;
+  const keepRegu       = reguSel.value;
   const keepMitra      = mitraSel.value;
   const keepBulan      = bulanSel.value;
   const keepPenyulang  = penyulangSel.value;
 
   const ulpSet       = [...new Set(processed.map(([, l]) => l.ulp).filter(Boolean))].sort();
-  const jenisSet      = [...new Set(processed.map(([, l]) => l.rincian).filter(Boolean))].sort();
+  const reguSet       = [...new Set(processed.map(([, l]) => l.regu).filter(Boolean))].sort();
   // Mitra (PT) & Penyulang, sama seperti field lain di Hasil Verifikasi,
   // diambil langsung dari data Laporan yang dikirim Petugas (l.ulpMitra /
   // l.lapPenyulang), bukan input manual terpisah.
   const mitraSet      = [...new Set(processed.map(([, l]) => laporanNamaPT(l)).filter(Boolean))].sort();
   const penyulangSet  = [...new Set(processed.map(([, l]) => l.lapPenyulang).filter(Boolean))].sort();
+  // Bulan: hanya nomor bulan (1-12), diurutkan Januari -> Desember, tanpa tahun.
   const bulanKeys     = [...new Set(processed.map(([, l]) => hvBulanKey(l.waktu)).filter(Boolean))]
-    .sort((a, b) => { const [ma,ya]=a.split('-').map(Number), [mb,yb]=b.split('-').map(Number); return yb - ya || mb - ma; });
+    .sort((a, b) => a - b);
 
   ulpSel.innerHTML = '<option value="">Semua ULP</option>' +
     ulpSet.map(u => `<option value="${u}">${u}</option>`).join('');
-  jenisSel.innerHTML = '<option value="">Semua Jenis Pekerjaan</option>' +
-    jenisSet.map(j => `<option value="${j.replace(/"/g,'&quot;')}">${j}</option>`).join('');
+  reguSel.innerHTML = '<option value="">Semua Tim/Regu</option>' +
+    reguSet.map(r => `<option value="${r.replace(/"/g,'&quot;')}">${r}</option>`).join('');
   mitraSel.innerHTML = '<option value="">Semua Mitra</option>' +
     mitraSet.map(m => `<option value="${m.replace(/"/g,'&quot;')}">${m}</option>`).join('');
   penyulangSel.innerHTML = '<option value="">Semua Penyulang</option>' +
@@ -8637,16 +8649,16 @@ function populateHasilVerifikasiFilters(entries) {
     bulanKeys.map(k => `<option value="${k}">${hvBulanLabel(k)}</option>`).join('');
 
   if (ulpSet.includes(keepUlp)) ulpSel.value = keepUlp;
-  if (jenisSet.includes(keepJenis)) jenisSel.value = keepJenis;
+  if (reguSet.includes(keepRegu)) reguSel.value = keepRegu;
   if (mitraSet.includes(keepMitra)) mitraSel.value = keepMitra;
   if (penyulangSet.includes(keepPenyulang)) penyulangSel.value = keepPenyulang;
-  if (bulanKeys.includes(keepBulan)) bulanSel.value = keepBulan;
+  if (bulanKeys.map(String).includes(keepBulan)) bulanSel.value = keepBulan;
 }
 
 window.resetHasilVerifikasiFilter = function() {
   document.getElementById('hv-filter-status').value = '';
   document.getElementById('hv-filter-ulp').value = '';
-  document.getElementById('hv-filter-jenis').value = '';
+  document.getElementById('hv-filter-regu').value = '';
   document.getElementById('hv-filter-mitra').value = '';
   document.getElementById('hv-filter-bulan').value = '';
   document.getElementById('hv-filter-penyulang').value = '';
@@ -8717,7 +8729,7 @@ function renderHasilVerifikasiCard(id, l) {
 function getHasilVerifikasiFilteredEntries() {
   const fStatus    = document.getElementById('hv-filter-status')?.value || '';
   const fUlp       = document.getElementById('hv-filter-ulp')?.value || '';
-  const fJenis     = document.getElementById('hv-filter-jenis')?.value || '';
+  const fRegu      = document.getElementById('hv-filter-regu')?.value || '';
   const fMitra     = document.getElementById('hv-filter-mitra')?.value || '';
   const fBulan     = document.getElementById('hv-filter-bulan')?.value || '';
   const fPenyulang = document.getElementById('hv-filter-penyulang')?.value || '';
@@ -8726,10 +8738,10 @@ function getHasilVerifikasiFilteredEntries() {
   let entries = (hasilVerifikasiEntries || []).filter(([, l]) => !!l.statusVerifikasi);
   if (fStatus)    entries = entries.filter(([, l]) => l.statusVerifikasi === fStatus);
   if (fUlp)       entries = entries.filter(([, l]) => l.ulp === fUlp);
-  if (fJenis)     entries = entries.filter(([, l]) => l.rincian === fJenis);
+  if (fRegu)      entries = entries.filter(([, l]) => l.regu === fRegu);
   if (fMitra)     entries = entries.filter(([, l]) => laporanNamaPT(l) === fMitra);
   if (fPenyulang) entries = entries.filter(([, l]) => l.lapPenyulang === fPenyulang);
-  if (fBulan)     entries = entries.filter(([, l]) => hvBulanKey(l.waktu) === fBulan);
+  if (fBulan)     entries = entries.filter(([, l]) => String(hvBulanKey(l.waktu)) === fBulan);
   if (fSearch) entries = entries.filter(([, l]) => {
     const hay = `${l.regu||''} ${l.nomorTiket||''} ${l.rincian||''} ${l.verifCatatan||''} ${l.material||''}`.toLowerCase();
     return hay.includes(fSearch);
@@ -8782,7 +8794,7 @@ window.renderHasilVerifikasiGrid = function() {
   }
 
   const groupKeyFn = groupBy === 'ulp'       ? (l => l.ulp || 'Tanpa ULP')
-                    : groupBy === 'jenis'     ? (l => l.rincian || 'Tanpa Jenis Pekerjaan')
+                    : groupBy === 'regu'      ? (l => l.regu || 'Tanpa Tim/Regu')
                     : groupBy === 'mitra'     ? (l => laporanNamaPT(l) || 'Tanpa Mitra')
                     : groupBy === 'penyulang' ? (l => l.lapPenyulang || 'Tanpa Penyulang')
                     : groupBy === 'bulan'     ? (l => { const k = hvBulanKey(l.waktu); return k ? hvBulanLabel(k) : 'Tanpa Waktu'; })
